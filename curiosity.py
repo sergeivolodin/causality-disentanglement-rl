@@ -30,7 +30,7 @@ def encode_onehot(x, dim):
     out[x] = 1
     return out
 
-def buffer_to_dataset(replay_buffer):
+def buffer_to_dataset(replay_buffer, v_n):
     """Create a dataset from a replay buffer."""
     types = replay_buffer.gather_all().step_type.numpy()[0]
     obs = replay_buffer.gather_all().observation.numpy()[0]
@@ -74,6 +74,7 @@ class CuriosityWrapper(wrappers.PyEnvironmentBaseWrapper):
 
         def model_for_obs_and_action(obs, act):
             """Take observation and action as a number, return next observation."""
+            v_n = env.wrapped_env().env.n # assuming TimeLimit(VectorIncrementTF)
             z = [np.hstack([obs, encode_onehot(act, v_n)])]
             z = np.array(z, dtype=np.float32)
          #   print(z)
@@ -127,7 +128,7 @@ class CuriosityWrapper(wrappers.PyEnvironmentBaseWrapper):
         self.last_action = action
         return self.transform_step(self._env.step(action))
     
-def m_passthrough_action(decoder):
+def m_passthrough_action(decoder, v_k, v_n):
     """Create a model with last v_n components in input passed through."""
     inputs = tf.keras.Input(shape=(v_k + v_n,))
 
