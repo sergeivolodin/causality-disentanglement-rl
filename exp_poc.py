@@ -222,17 +222,18 @@ def experiment(
     train_returns = [train_avg_return]
     curiosity_loss = []
 
-    global w_count
-    w_count = 0
+    #global w_count
+    global w_history
+    w_history = []
     def print_weights():
         """Show weights."""
-        global w_count
+        global w_history
         w1 = decoder_layer_agent.get_weights()[0]
         w2 = env_model.layers[2].get_weights()
         print_exp("DECODER:" + str(w1))
         print_exp("MODEL:" + str(w2))
-        pickle.dump([w1, w2], open(name + ".weights.%010d.pkl" % w_count, "wb"))
-        w_count += 1
+        w_history.append([w1, w2])
+        #w_count += 1
 
     for _ in range(num_iterations):
 
@@ -329,6 +330,7 @@ def experiment(
     print_exp(env_model.weights)
 
     pickle.dump([curiosity_loss, returns, train_returns, eval_loss], open(name + ".history.pkl", "wb"))
+    pickle.dump(w_history, open(name + ".weights.pkl", "wb"))
 
 
     # # The problem now
