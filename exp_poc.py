@@ -48,6 +48,11 @@ import pickle
 
 import time
 
+from tensorflow_model_optimization.python.core.sparsity.keras import pruning_schedule as pruning_sched
+from tensorflow_model_optimization.python.core.sparsity.keras import pruning_wrapper
+from tensorflow_model_optimization.python.core.sparsity.keras import prune
+from tensorflow_model_optimization.python.core.sparsity.keras import pruning_callbacks
+
 def experiment(
     # Environment hyperparameters
     v_n = 2,
@@ -79,7 +84,7 @@ def experiment(
     # Curiosity parameters
     alpha = 1.0,
     curiosity_interval = 20,
-
+    sparsity=0.5,
     name = "experiment"):
 
     f = open(name + ".out.%d.txt" % time.time(), "w")
@@ -111,10 +116,17 @@ def experiment(
     # In[8]:
 
 
+    pruning_params = {
+        'pruning_schedule': pruning_sched.ConstantSparsity(sparsity, 0),
+        'block_size': (1, 1),
+        'block_pooling_type': 'AVG'
+    }
+
+
     env_model = tf.keras.Sequential([
         m_passthrough_action(decoder, v_k, v_n),
         tf.keras.layers.InputLayer(input_shape=(v_k + v_n,)), # input: [state, one-hot action]
-        tf.keras.layers.Dense(v_k, kernel_regularizer=tf.keras.regularizers.l1(l1coeff)) # output: state
+        prune.prune_low_magnitude(tf.keras.layers.Dense(v_k, kernel_regularizer=tf.keras.regularizers.l1(l1coeff)), **pruning_params) # output: state
     ])
 
     env_model.compile('adam', 'mse')
@@ -268,7 +280,7 @@ def experiment(
         
         # setting weights from the agent to the model...
         decoder_layer.set_weights(decoder_layer_agent.get_weights())
-        history = env_model.fit(xs, ys, epochs=model_train_epochs, verbose=0)
+        history = env_model.fit(xs, ys, epochs=model_train_epochs, verbose=0, callbacks=[pruning_callbacks.UpdatePruningStep()])
         
         # setting weights from the model to the agent...
         decoder_layer_agent.set_weights(decoder_layer.get_weights())
