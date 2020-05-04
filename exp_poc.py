@@ -58,6 +58,7 @@ def experiment(
     v_n = 2,
     v_k = 2,
     v_seed = 43,
+    seed_rest = 42,
     do_transform = True,
     time_limit = 20,
 
@@ -86,6 +87,8 @@ def experiment(
     curiosity_interval = 20,
     sparsity=0.5,
     name = "experiment"):
+
+    tf.random.set_seed(seed_rest)
 
     f = open(name + ".out.%d.txt" % time.time(), "w")
     def print_exp(s):
@@ -155,6 +158,8 @@ def experiment(
 
     train_env = get_env(add_curiosity_reward=True)
     eval_env = get_env(add_curiosity_reward=False)
+
+    tf.random.set_seed(seed_rest)
 
 
     # In[12]:
