@@ -160,6 +160,20 @@ def loss_reconstructor(reconstructor, decoder, x):
     L = tf.reduce_mean(tf.abs(reconstructor(decoder(x)) - x))
     return L
 
+def list_of_lists_to_list(lst_of_lst):
+    """Flatten a list of lists."""
+    return [x for lst in lst_of_lst for x in lst]
+
+def apply_optimizer(loss, models, optimizer, tape):
+    """Do a step on the loss."""
+    # all their variables
+    all_variables = [model.trainable_variables for model in models]
+
+    grads = tape.gradient(loss, all_variables)
+    optimizer.apply_gradients(zip(list_of_lists_to_list(grads),
+                                  list_of_lists_to_list(all_variables)))
+
+
 @gin.configurable
 def step(model, decoder, reconstructor, xs, ys, optimizer, l_rec_coeff=1):
     """One optimization step."""
@@ -185,16 +199,8 @@ def step(model, decoder, reconstructor, xs, ys, optimizer, l_rec_coeff=1):
     # list of models
     models = [model, decoder, reconstructor]
 
-    # all their variables
-    all_variables = [model.trainable_variables for model in models]
-
-    def list_of_lists_to_list(lst_of_lst):
-        """Flatten a list of lists"""
-        return [x for lst in lst_of_lst for x in lst]
-
-    grads = tape.gradient(total_loss, all_variables)
-    optimizer.apply_gradients(zip(list_of_lists_to_list(grads),
-                                  list_of_lists_to_list(all_variables)))
+    apply_optimizer(loss=total_loss, optimizer=optimizer,
+                    tape=tape, models=models)
 
     return {'l_fit': l_fit.numpy(), 'l_rec': l_rec.numpy()}
 
