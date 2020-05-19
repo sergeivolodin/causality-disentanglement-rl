@@ -180,13 +180,22 @@ def step(model, decoder, reconstructor, xs, ys, optimizer, l_rec_coeff=1):
                                    decoder=decoder, x=xs)
 
         # total loss
-        model_loss = l_fit + l_rec_coeff * l_rec
+        total_loss = l_fit + l_rec_coeff * l_rec
 
-    # Calculate gradients
-    model_gradients = tape.gradient(model_loss, model.trainable_variables)
+    # list of models
+    models = [model, decoder, reconstructor]
 
-    # Update model
-    optimizer.apply_gradients(zip(model_gradients, model.trainable_variables))
+    # all their variables
+    all_variables = [model.trainable_variables for model in models]
+
+    def list_of_lists_to_list(lst_of_lst):
+        """Flatten a list of lists"""
+        return [x for lst in lst_of_lst for x in lst]
+
+    grads = tape.gradient(total_loss, all_variables)
+    optimizer.apply_gradients(zip(list_of_lists_to_list(grads),
+                                  list_of_lists_to_list(all_variables)))
+
     return {'l_fit': l_fit.numpy(), 'l_rec': l_rec.numpy()}
 
 def arr_of_dicts_to_dict_of_arrays(arr):
