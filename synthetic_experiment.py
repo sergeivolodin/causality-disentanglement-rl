@@ -175,6 +175,38 @@ def apply_optimizer(loss, models, optimizer, tape):
 
 
 @gin.configurable
+def step_multi_opt(model, decoder, reconstructor, xs, ys, optimizer_fit, optimizer_rec,
+                   l_rec_coeff=1):
+    """One optimization step."""
+    # xs - observations + actions
+    # ys - next observations
+
+    # converting dtype
+    xs = np.array(xs, dtype=np.float32)
+    ys = np.array(ys, dtype=np.float32)
+
+    with tf.GradientTape() as tape_fit, tf.GradientTape() as tape_rec:
+        # Make prediction
+        y_pred = model(xs)
+
+        # Calculate loss
+        l_fit = loss_model_fit(ys, y_pred, decoder=decoder)
+        l_rec = loss_reconstructor(reconstructor=reconstructor,
+                                   decoder=decoder, x=xs)
+        l_rec *= l_rec_coeff
+
+    # list of models
+    models = [model, decoder, reconstructor]
+
+    apply_optimizer(loss=l_fit, optimizer=optimizer_fit,
+                    tape=tape_fit, models=models)
+
+    apply_optimizer(loss=l_rec, optimizer=optimizer_rec,
+                    tape=tape_rec, models=models)
+
+    return {'l_fit': l_fit.numpy(), 'l_rec': l_rec.numpy()}
+
+@gin.configurable
 def step(model, decoder, reconstructor, xs, ys, optimizer, l_rec_coeff=1):
     """One optimization step."""
     # xs - observations + actions
@@ -210,7 +242,7 @@ def arr_of_dicts_to_dict_of_arrays(arr):
     return {key: [v[key] for v in arr] for key in all_keys}
 
 @gin.configurable
-def get_results(xs_e, ys_e, Q1, batch_size=16, epochs=1, optimizer=None, l_rec_coeff=1):
+def get_results(xs_e, ys_e, Q1, batch_size=16, epochs=1, step=None, l_rec_coeff=1):
     """Compute results."""
     # input for the decoder (features)
     inp_dec = tf.keras.Input(shape=(2,))
@@ -223,7 +255,6 @@ def get_results(xs_e, ys_e, Q1, batch_size=16, epochs=1, optimizer=None, l_rec_c
     # compiling
     model.compile(optimizer='adam', loss=partial(loss_model_fit,
                                                 decoder=decoder))
-    model.optimizer = optimizer
 
     # for weight pruning
     #step_callback = pruning_callbacks.UpdatePruningStep()
@@ -259,8 +290,7 @@ def get_results(xs_e, ys_e, Q1, batch_size=16, epochs=1, optimizer=None, l_rec_c
             loss = step(model=model, decoder=decoder,
                           reconstructor=reconstructor,
                           xs=x_train[n:n+batch_size],
-                          ys=y_train[n:n+batch_size],
-                          optimizer=optimizer)
+                          ys=y_train[n:n+batch_size])
             L.append(loss)
 
             # hard sparsity
