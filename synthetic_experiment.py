@@ -28,8 +28,11 @@ def matrix_dist(A, B):
 
 def projection_simplex_sort(v, z=1):
     n_features = v.shape[0]
-    if np.linalg.norm(v) <= z:
+    if np.linalg.norm(v, ord=1) <= z:
         return v
+        
+    # algorithm from
+    # https://gist.github.com/EdwardRaff/f4f4cf0c927c2addfb39
     u = np.sort(v)[::-1]
     cssv = np.cumsum(u) - z
     ind = np.arange(n_features) + 1
