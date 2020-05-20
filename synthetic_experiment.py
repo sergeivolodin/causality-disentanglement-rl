@@ -18,6 +18,8 @@ import itertools
 import multiprocessing
 import pickle
 
+from copy import deepcopy
+
 from tensorflow_model_optimization.python.core.sparsity.keras import pruning_schedule as pruning_sched
 from tensorflow_model_optimization.python.core.sparsity.keras import pruning_wrapper
 from tensorflow_model_optimization.python.core.sparsity.keras import prune
@@ -54,26 +56,33 @@ def project_l1(v, z=1):
     #assert np.allclose(np.linalg.norm(u, ord=1), 1)
     return u
 
-def projection_step(model, l1_ball_size):
+@gin.configurable
+def projection_step(w, l1_ball_size=None):
     """Project weights onto an l1 ball."""
-    assert len(model.trainable_variables) == 1,\
-      "Only support 1 weight tensor (now)."
-    weights = model.trainable_variables[0]
+    #assert len(model.trainable_variables) == 1,\
+    #  "Only support 1 weight tensor (now)."
+    weights = w
     #w_flat = flatten_array_of_tensors(weights)
     w_numpy = weights.numpy()
     w_flat = np.reshape(w_numpy, (-1,))
+    
+    if l1_ball_size is None:
+        norm = np.linalg.norm(w_flat, ord=1)
+        return norm
+    
     w_flat_new = project_l1(w_flat, l1_ball_size)
     norm = np.linalg.norm(w_flat_new, ord=1)
     w_flat_new = np.reshape(w_flat_new, w_numpy.shape)
     weights.assign(w_flat_new)
     return norm
 
-def mask_step(model, mask=None, eps=1e-3):
+@gin.configurable
+def mask_step(w, mask=None, eps=1e-3):
     """Project weights onto an l1 ball."""
     
-    assert len(model.trainable_variables) == 1,\
-      "Only support 1 weight tensor (now)."
-    weights = model.trainable_variables[0]
+    #assert len(model.trainable_variables) == 1,\
+    #  "Only support 1 weight tensor (now)."
+    weights = w # model.trainable_variables[0]
     nnz = np.sum(np.abs(weights.numpy()) > eps)
     
     if mask is None: return nnz
@@ -84,6 +93,7 @@ def mask_step(model, mask=None, eps=1e-3):
     nnz = np.sum(np.abs(weights.numpy()) > eps)
     return nnz
 
+@gin.configurable
 def compute_mask(w, components_to_keep=5):
     """Select biggest components in w."""
     
@@ -319,20 +329,25 @@ def step(model, decoder, reconstructor, xs, ys, optimizer,
         l_fit = loss_model_fit(ys, y_pred, decoder=decoder)
         l_rec = loss_reconstructor(reconstructor=reconstructor,
                                    decoder=decoder, x=xs)
-        l_l1 = tf.norm(flatten_array_of_tensors(model.weights), ord=1)
+                                                # weight 0 is decoder
+        l_l1 = tf.norm(flatten_array_of_tensors([model.weights[1]]),
+                       ord=1)
 
         # total loss
         total_loss = l_fit + l_rec_coeff * l_rec + \
                      l1_coeff * l_l1
 
     # list of models
-    models = [model, decoder, reconstructor]
+    models = [model, reconstructor] # decoder weights are in the model
 
     apply_optimizer(loss=total_loss, optimizer=optimizer,
                     tape=tape, models=models)
+            
+    nnz = mask_step(model.weights[1])
+    l1 = projection_step(model.weights[1])
 
     return {'l_fit': l_fit.numpy(), 'l_rec': l_rec.numpy(),
-            'l_l1': l_l1.numpy()}
+            'l_l1': l1, 'nnz': nnz}
 
 def arr_of_dicts_to_dict_of_arrays(arr):
     """ Array of dicts to dict of arrays """
@@ -376,7 +391,7 @@ def get_results(xs_e, ys_e, Q1, batch_size=16, epochs=1, step=None, l_rec_coeff=
     evaluate_dist()
 
     # epoch loop
-    with tqdm(total=epochs) as pbar:
+    with tqdm(total=epochs, ncols='100%') as pbar:
       for epoch in range(epochs):
         L = []
 
@@ -411,7 +426,11 @@ def get_results(xs_e, ys_e, Q1, batch_size=16, epochs=1, step=None, l_rec_coeff=
         curr_loss = {x: np.mean(y) for x, y in L.items()}
         losses.append(curr_loss)
         evaluate_dist()
-        pbar.set_description(str(curr_loss) + str(" de=") + str(distances[-1]))
+        
+        descr_dict = deepcopy(curr_loss)
+        descr_dict['l_de'] = distances[-1]
+        descr = ' '.join(['%s:%.2f' % (x, y) for x, y in descr_dict.items()])
+        pbar.set_description(descr)
         pbar.update(1)
 
     # final evaluation
