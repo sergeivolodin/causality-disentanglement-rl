@@ -42,6 +42,91 @@ def projection_simplex_sort(v, z=1):
     w = np.maximum(v - theta, 0)
     return w
 
+def project_l1(v, z=1):
+    """Project onto |x|_1<=z."""
+    v = np.array(v)
+    signs = np.sign(v)
+    v_unsigned = np.multiply(v, signs)
+    u_unsigned = projection_simplex_sort(v_unsigned, z)
+    u = np.multiply(u_unsigned, signs)
+    norm = np.linalg.norm(u, ord=1)
+    assert norm <= z * 1.1, "Got norm %.2f %s" % (norm, str(u))
+    #assert np.allclose(np.linalg.norm(u, ord=1), 1)
+    return u
+
+def projection_step(model, l1_ball_size):
+    """Project weights onto an l1 ball."""
+    assert len(model.trainable_variables) == 1,\
+      "Only support 1 weight tensor (now)."
+    weights = model.trainable_variables[0]
+    #w_flat = flatten_array_of_tensors(weights)
+    w_numpy = weights.numpy()
+    w_flat = np.reshape(w_numpy, (-1,))
+    w_flat_new = project_l1(w_flat, l1_ball_size)
+    norm = np.linalg.norm(w_flat_new, ord=1)
+    w_flat_new = np.reshape(w_flat_new, w_numpy.shape)
+    weights.assign(w_flat_new)
+    return norm
+
+def mask_step(model, mask=None, eps=1e-3):
+    """Project weights onto an l1 ball."""
+    
+    assert len(model.trainable_variables) == 1,\
+      "Only support 1 weight tensor (now)."
+    weights = model.trainable_variables[0]
+    nnz = np.sum(np.abs(weights.numpy()) > eps)
+    
+    if mask is None: return nnz
+    w_numpy = weights.numpy()
+    assert w_numpy.shape == mask.shape, "Bad mask shape %s %s" % \
+      (str(w_numpy.shape), str(mask.shape))
+    weights.assign(np.multiply(mask, w_numpy))
+    nnz = np.sum(np.abs(weights.numpy()) > eps)
+    return nnz
+
+def compute_mask(w, components_to_keep=5):
+    """Select biggest components in w."""
+    
+    # assuming no duplicates...
+    
+    assert isinstance(components_to_keep, int), "Want int, got %s" % \
+      str(components_to_keep)
+    assert components_to_keep > 0, "No sense doing 0 components"
+
+    # weights of the model
+    w_flat = w.flatten()
+
+    # number of components in weights
+    n_components = w_flat.shape[0]
+
+    #print(n_components, components_to_keep)
+    
+    # clamping components_to_keep
+    if components_to_keep > n_components:
+        
+        components_to_keep = n_components
+
+    # selecting the threshold so that we have
+    # the correct number of components
+    threshold = np.sort(np.abs(w_flat))[::-1][components_to_keep - 1]
+    
+    # print(w_flat, threshold)
+    
+    # abs of w
+    w_abs = np.abs(w)
+
+    # computing the mask
+    mask = 1. * (w_abs > threshold)
+    left = components_to_keep - np.sum(mask > 0)
+    a, b = np.where(w_abs == threshold)
+    for i in range(left):
+        mask[a[i], b[i]] = 1.0
+
+    assert np.sum(mask > 0) == components_to_keep,\
+      "Wrong mask %s %d" % (str(mask), components_to_keep)
+    
+    return mask
+
 class MaxNorm1(tf.keras.constraints.Constraint):
   def __init__(self, max_value=2, axis=0):
     self.max_value = max_value
