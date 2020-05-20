@@ -128,7 +128,7 @@ def build_reconstructor_model(init_fp_dist=None):
     return reconstructor
 
 @gin.configurable
-def build_feature_model(decoder, init_fp_dist=None):
+def build_feature_model(decoder, init_fp_dist=None, l1coeff=0.0):
     """Build the feature transition dynamics model."""
     # maps observations to features
     model = tf.keras.Sequential([ # M
