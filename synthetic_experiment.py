@@ -163,6 +163,11 @@ def loss_reconstructor(reconstructor, decoder, x):
 def list_of_lists_to_list(lst_of_lst):
     """Flatten a list of lists."""
     return [x for lst in lst_of_lst for x in lst]
+    
+@tf.function
+def flatten_array_of_tensors(W):
+    """Take an array of tensor and turn into a single flat tensor."""
+    return tf.concat([tf.reshape(w, (-1,)) for w in W], axis=0)
 
 def apply_optimizer(loss, models, optimizer, tape):
     """Do a step on the loss."""
@@ -207,7 +212,9 @@ def step_multi_opt(model, decoder, reconstructor, xs, ys, optimizer_fit, optimiz
     return {'l_fit': l_fit.numpy(), 'l_rec': l_rec.numpy()}
 
 @gin.configurable
-def step(model, decoder, reconstructor, xs, ys, optimizer, l_rec_coeff=1):
+def step(model, decoder, reconstructor, xs, ys, optimizer,
+         l_rec_coeff=1.0,
+         l1_coeff=0.0):
     """One optimization step."""
     # xs - observations + actions
     # ys - next observations
@@ -224,9 +231,11 @@ def step(model, decoder, reconstructor, xs, ys, optimizer, l_rec_coeff=1):
         l_fit = loss_model_fit(ys, y_pred, decoder=decoder)
         l_rec = loss_reconstructor(reconstructor=reconstructor,
                                    decoder=decoder, x=xs)
+        l_l1 = tf.norm(flatten_array_of_tensors(model.weights), ord=1)
 
         # total loss
-        total_loss = l_fit + l_rec_coeff * l_rec
+        total_loss = l_fit + l_rec_coeff * l_rec + \
+                     l1_coeff * l_l1
 
     # list of models
     models = [model, decoder, reconstructor]
@@ -234,7 +243,8 @@ def step(model, decoder, reconstructor, xs, ys, optimizer, l_rec_coeff=1):
     apply_optimizer(loss=total_loss, optimizer=optimizer,
                     tape=tape, models=models)
 
-    return {'l_fit': l_fit.numpy(), 'l_rec': l_rec.numpy()}
+    return {'l_fit': l_fit.numpy(), 'l_rec': l_rec.numpy(),
+            'l_l1': l_l1.numpy()}
 
 def arr_of_dicts_to_dict_of_arrays(arr):
     """ Array of dicts to dict of arrays """
@@ -313,7 +323,7 @@ def get_results(xs_e, ys_e, Q1, batch_size=16, epochs=1, step=None, l_rec_coeff=
         curr_loss = {x: np.mean(y) for x, y in L.items()}
         losses.append(curr_loss)
         evaluate_dist()
-        pbar.set_description(str(curr_loss))
+        pbar.set_description(str(curr_loss) + str(" de=") + str(distances[-1]))
         pbar.update(1)
 
     # final evaluation
