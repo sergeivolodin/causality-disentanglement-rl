@@ -408,17 +408,19 @@ def step_2opt(model, decoder, reconstructor, xs, ys,
     models_md = [model] # decoder weights are in the model
     models_rd  = [reconstructor, decoder]
     
-    nnz = mask_step(model.weights[1])
-    l1 = projection_step(model.weights[1])
-    
     # returning the old loss to output post-projection values
-    results = {'l_fit': l_fit.numpy(), 'l_rec': l_rec.numpy(),
-            'l_l1': l1, 'nnz': nnz}
+    results = {'l_fit': l_fit.numpy(), 'l_rec': l_rec.numpy()}
 
     apply_optimizer(loss=md_loss, optimizer=optimizer_md,
                     tape=tape_md, models=models_md)
     apply_optimizer(loss=rd_loss, optimizer=optimizer_rd,
                     tape=tape_rd, models=models_rd)
+                    
+    nnz = mask_step(model.weights[1])
+    l1 = projection_step(model.weights[1])
+    
+    results['nnz'] = nnz
+    results['l_l1'] = l1
 
     return results
 
