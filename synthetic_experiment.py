@@ -249,6 +249,13 @@ def loss_model_fit(y_true, y_pred, decoder=None, sample_weight=None):
     # y_pred = from the model
     L = tf.reduce_mean(tf.abs(y_pred - decoder(y_true)))
     return L
+    
+def loss_model_fit_rmd(y_true, y_pred, reconstructor=None, sample_weight=None):
+    """How well the model fits the data?"""
+    del sample_weight
+    # y_pred = from the model
+    L = tf.reduce_mean(tf.abs(reconstructor(y_pred) - y_true))
+    return L
 
 def loss_reconstructor(reconstructor, decoder, x):
     """How well the reconstructor can obtain observations?"""
@@ -278,8 +285,10 @@ def apply_optimizer(loss, models, optimizer, tape):
 
 
 @gin.configurable
-def step_multi_opt(model, decoder, reconstructor, xs, ys, optimizer_fit, optimizer_rec,
-                   l_rec_coeff=1):
+def step_rmd(model, decoder, reconstructor, xs, ys,
+         optimizer,
+         l_rec_coeff=1.0,
+         l1_coeff=0.0):
     """One optimization step."""
     # xs - observations + actions
     # ys - next observations
@@ -288,7 +297,101 @@ def step_multi_opt(model, decoder, reconstructor, xs, ys, optimizer_fit, optimiz
     xs = np.array(xs, dtype=np.float32)
     ys = np.array(ys, dtype=np.float32)
 
-    with tf.GradientTape() as tape_fit, tf.GradientTape() as tape_rec:
+    with tf.GradientTape() as tape:
+        # Make prediction
+        y_pred = model(xs)
+
+        # Calculate loss
+        l_fit = loss_model_fit_rmd(ys, y_pred, reconstructor=reconstructor)
+        l_rec = loss_reconstructor(reconstructor=reconstructor,
+                                   decoder=decoder, x=xs)
+                                                # weight 0 is decoder
+        l_l1 = tf.norm(flatten_array_of_tensors([model.weights[1]]),
+                       ord=1)
+
+        # total loss
+        total_loss = l_fit + l_rec_coeff * l_rec + \
+                     l1_coeff * l_l1
+
+    # list of models
+    models = [model, reconstructor] # decoder weights are in the model
+
+    apply_optimizer(loss=total_loss, optimizer=optimizer,
+                    tape=tape, models=models)
+            
+    nnz = mask_step(model.weights[1])
+    l1 = projection_step(model.weights[1])
+
+    return {'l_fit': l_fit.numpy(), 'l_rec': l_rec.numpy(),
+            'l_l1': l1, 'nnz': nnz}
+
+
+@gin.configurable
+def step_rmd_2opt(model, decoder, reconstructor, xs, ys,
+         optimizer_rmd, optimizer_rd,
+         l_rec_coeff=1.0,
+         l1_coeff=0.0):
+    """One optimization step."""
+    # xs - observations + actions
+    # ys - next observations
+
+    # converting dtype
+    xs = np.array(xs, dtype=np.float32)
+    ys = np.array(ys, dtype=np.float32)
+    
+    # left out deliberately, don't want to update on it.
+    l_l1 = tf.norm(flatten_array_of_tensors([model.weights[1]]),
+                   ord=1)
+
+    with tf.GradientTape() as tape_rmd, tf.GradientTape() as tape_rd:
+        # Make prediction
+        y_pred = model(xs)
+
+        # Calculate loss
+        l_fit = loss_model_fit_rmd(ys, y_pred, reconstructor=reconstructor)
+        l_rec = loss_reconstructor(reconstructor=reconstructor,
+                                   decoder=decoder, x=xs)
+                                                # weight 0 is decoder
+        
+        rmd_loss = l_fit
+        rd_loss  = l_rec
+
+    # list of models
+    models_rmd = [model, reconstructor] # decoder weights are in the model
+    models_rd  = [reconstructor, decoder]
+    
+    nnz = mask_step(model.weights[1])
+    l1 = projection_step(model.weights[1])
+    
+    # returning the old loss to output post-projection values
+    results = {'l_fit': l_fit.numpy(), 'l_rec': l_rec.numpy(),
+            'l_l1': l1, 'nnz': nnz}
+
+    apply_optimizer(loss=rmd_loss, optimizer=optimizer_rmd,
+                    tape=tape_rmd, models=models_rmd)
+    apply_optimizer(loss=rd_loss, optimizer=optimizer_rd,
+                    tape=tape_rd, models=models_rd)
+
+    return results
+    
+@gin.configurable
+def step_2opt(model, decoder, reconstructor, xs, ys,
+         optimizer_md, optimizer_rd,
+         l_rec_coeff=1.0,
+         l1_coeff=0.0):
+    """One optimization step."""
+    # xs - observations + actions
+    # ys - next observations
+
+    # converting dtype
+    xs = np.array(xs, dtype=np.float32)
+    ys = np.array(ys, dtype=np.float32)
+    
+    # left out deliberately, don't want to update on it.
+    l_l1 = tf.norm(flatten_array_of_tensors([model.weights[1]]),
+                   ord=1)
+
+    with tf.GradientTape() as tape_md, tf.GradientTape() as tape_rd:
         # Make prediction
         y_pred = model(xs)
 
@@ -296,18 +399,28 @@ def step_multi_opt(model, decoder, reconstructor, xs, ys, optimizer_fit, optimiz
         l_fit = loss_model_fit(ys, y_pred, decoder=decoder)
         l_rec = loss_reconstructor(reconstructor=reconstructor,
                                    decoder=decoder, x=xs)
-        l_rec *= l_rec_coeff
+                                                # weight 0 is decoder
+        
+        md_loss = l_fit
+        rd_loss  = l_rec
 
     # list of models
-    models = [model, decoder, reconstructor]
+    models_md = [model] # decoder weights are in the model
+    models_rd  = [reconstructor, decoder]
+    
+    nnz = mask_step(model.weights[1])
+    l1 = projection_step(model.weights[1])
+    
+    # returning the old loss to output post-projection values
+    results = {'l_fit': l_fit.numpy(), 'l_rec': l_rec.numpy(),
+            'l_l1': l1, 'nnz': nnz}
 
-    apply_optimizer(loss=l_fit, optimizer=optimizer_fit,
-                    tape=tape_fit, models=models)
+    apply_optimizer(loss=md_loss, optimizer=optimizer_md,
+                    tape=tape_md, models=models_md)
+    apply_optimizer(loss=rd_loss, optimizer=optimizer_rd,
+                    tape=tape_rd, models=models_rd)
 
-    apply_optimizer(loss=l_rec, optimizer=optimizer_rec,
-                    tape=tape_rec, models=models)
-
-    return {'l_fit': l_fit.numpy(), 'l_rec': l_rec.numpy()}
+    return results
 
 @gin.configurable
 def step(model, decoder, reconstructor, xs, ys, optimizer,
