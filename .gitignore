@@ -1,4 +1,6 @@
 __pycache__
 .idea
+image*.png
+*.gif
 output
 .ipynb_checkpoints
