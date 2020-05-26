@@ -378,7 +378,8 @@ def step_rmd_2opt(model, decoder, reconstructor, xs, ys,
 def step_2opt(model, decoder, reconstructor, xs, ys,
          optimizer_md, optimizer_rd,
          l_rec_coeff=1.0,
-         l1_coeff=0.0):
+         l1_coeff=0.0,
+         rec_iters=1):
     """One optimization step."""
     # xs - observations + actions
     # ys - next observations
@@ -387,42 +388,95 @@ def step_2opt(model, decoder, reconstructor, xs, ys,
     xs = np.array(xs, dtype=np.float32)
     ys = np.array(ys, dtype=np.float32)
     
+    # list of models
+    models_md = [model] # decoder weights are in the model
+    models_rd  = [reconstructor, decoder]
+    
+    for _ in range(rec_iters):
+        with tf.GradientTape() as tape_rd:
+            l_rec = loss_reconstructor(reconstructor=reconstructor,
+                                       decoder=decoder, x=xs)
+        apply_optimizer(loss=l_rec, optimizer=optimizer_rd,
+                    tape=tape_rd, models=models_rd)
+    
     # left out deliberately, don't want to update on it.
     l_l1 = tf.norm(flatten_array_of_tensors([model.weights[1]]),
                    ord=1)
 
-    with tf.GradientTape() as tape_md, tf.GradientTape() as tape_rd:
+    with tf.GradientTape() as tape_md, tf.GradientTape() as tape_g1,\
+        tf.GradientTape() as tape_g2:
         # Make prediction
         y_pred = model(xs)
 
         # Calculate loss
         l_fit = loss_model_fit(ys, y_pred, decoder=decoder)
-        l_rec = loss_reconstructor(reconstructor=reconstructor,
-                                   decoder=decoder, x=xs)
                                                 # weight 0 is decoder
+        l_rec = loss_reconstructor(reconstructor=reconstructor,
+                                       decoder=decoder, x=xs)
         
         md_loss = l_fit
         rd_loss  = l_rec
-
-    # list of models
-    models_md = [model] # decoder weights are in the model
-    models_rd  = [reconstructor, decoder]
     
     # returning the old loss to output post-projection values
     results = {'l_fit': l_fit.numpy(), 'l_rec': l_rec.numpy()}
 
     apply_optimizer(loss=md_loss, optimizer=optimizer_md,
                     tape=tape_md, models=models_md)
-    apply_optimizer(loss=rd_loss, optimizer=optimizer_rd,
-                    tape=tape_rd, models=models_rd)
+    
+                    
+    grad_d_md = tape_g1.gradient(l_fit, decoder.trainable_variables)
+    grad_d_rd = tape_g2.gradient(l_rec, decoder.trainable_variables)
+    
+    g1 = flatten_array_of_tensors(grad_d_md).numpy()
+    g2 = flatten_array_of_tensors(grad_d_rd).numpy()
+    cos = np.dot(g1, g2) / (np.linalg.norm(g1) * np.linalg.norm(g2) + 1e-20)
                     
     nnz = mask_step(model.weights[1])
     l1 = projection_step(model.weights[1])
     
     results['nnz'] = nnz
     results['l_l1'] = l1
+    results['cos'] = cos
 
     return results
+    
+@gin.configurable
+def step_inv_reg(model, decoder, xs, ys, optimizer,
+        l_rec_coeff=1.,
+         l1_coeff=0.0):
+    """One optimization step."""
+    # xs - observations + actions
+    # ys - next observations
+
+    # converting dtype
+    xs = np.array(xs, dtype=np.float32)
+    ys = np.array(ys, dtype=np.float32)
+
+    with tf.GradientTape() as tape:
+        # Make prediction
+        y_pred = model(xs)
+
+        # Calculate loss
+        l_fit = loss_model_fit(ys, y_pred, decoder=decoder)
+        l_rec = tf.reduce_mean(tf.abs(tf.linalg.pinv(decoder.weights[0])))
+        l_l1 = tf.norm(flatten_array_of_tensors([model.weights[1]]),
+                       ord=1)
+
+        # total loss
+        total_loss = l_fit + l_rec_coeff * l_rec + \
+                     l1_coeff * l_l1
+
+    # list of models
+    models = [model, reconstructor] # decoder weights are in the model
+
+    apply_optimizer(loss=total_loss, optimizer=optimizer,
+                    tape=tape, models=models)
+            
+    nnz = mask_step(model.weights[1])
+    l1 = projection_step(model.weights[1])
+
+    return {'l_fit': l_fit.numpy(), 'l_rec': l_rec.numpy(),
+            'l_l1': l1, 'nnz': nnz}
 
 @gin.configurable
 def step(model, decoder, reconstructor, xs, ys, optimizer,
