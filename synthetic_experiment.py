@@ -25,6 +25,12 @@ from tensorflow_model_optimization.python.core.sparsity.keras import pruning_wra
 from tensorflow_model_optimization.python.core.sparsity.keras import prune
 from tensorflow_model_optimization.python.core.sparsity.keras import pruning_callbacks
 
+dim = 2
+
+def set_dimension(d):
+    global dim
+    dim = d
+
 def matrix_dist(A, B):
     return np.linalg.norm((A - B).flatten(), ord=1)
 
@@ -173,7 +179,10 @@ pruning_params = {
 def component_diff_normalized(v):
     """How much the vector is close to (1,0) or (0,1)."""
     v = np.abs(v)
-    return 1. - (max(v) - min(v)) / max(v)
+    v = np.sort(v)[::-1]
+    maxv = v[0]
+    smaxv = v[1]
+    return 1. - (maxv - smaxv) / maxv
 
 def vec_angle_normalized(v1, v2):
     """Cos betweeen vectors."""
@@ -181,17 +190,23 @@ def vec_angle_normalized(v1, v2):
 
 def repr_quality(A):
     """Loss for representation quality for matrix A."""
-    [s_1, s_2] = A.T # basis vectors = columns
-    return component_diff_normalized(s_1) + \
-           component_diff_normalized(s_2) + \
-           vec_angle_normalized(s_1, s_2)
+    columns = A.T # basis vectors = columns
+    result = 0
+    for i1, c1 in enumerate(columns):
+        for i2, c2 in enumerate(columns):
+            if i1 > i2: continue
+            elif i1 == i2:
+                result += component_diff_normalized(c1)
+            else:
+                result += vec_angle_normalized(c1, c2)
+    return result
 
 @gin.configurable
 def build_decoder_model(input_layer, init_fp_dist=None):
     """Create a decoder model."""
     decoder = tf.keras.Sequential([ #D
         input_layer,
-        tf.keras.layers.Dense(2, activation=None, use_bias=False, #kernel_regularizer=tf.keras.regularizers.l2(l2coeff),
+        tf.keras.layers.Dense(dim, activation=None, use_bias=False, #kernel_regularizer=tf.keras.regularizers.l2(l2coeff),
                              #kernel_initializer='random_normal',
                              #kernel_constraint=tf.keras.constraints.UnitNorm()
                              kernel_constraint=tf.keras.constraints.MinMaxNorm(0.5, 1.5) # == 1 --
@@ -200,7 +215,7 @@ def build_decoder_model(input_layer, init_fp_dist=None):
 
     if init_fp_dist is not None:
         decoder.layers[-1].set_weights([np.linalg.inv(Q1).T +\
-                                        np.ones((2, 2)) * init_fp_dist])
+                                        np.ones((dim, dim)) * init_fp_dist])
     return decoder
 
 @gin.configurable
@@ -209,18 +224,18 @@ def build_reconstructor_model(init_fp_dist=None):
     # encoder model -- imitates the RL agent which has converged to something -- and needs to reconstruct the state
     # but the policy is "fixed" and the reward = max
     reconstructor = tf.keras.Sequential([ # E
-        tf.keras.Input(shape=(2,)),
-        tf.keras.layers.Dense(2, activation=None, use_bias=False, #kernel_regularizer=tf.keras.regularizers.l2(l2coeff),
+        tf.keras.Input(shape=(dim,)),
+        tf.keras.layers.Dense(dim, activation=None, use_bias=False, #kernel_regularizer=tf.keras.regularizers.l2(l2coeff),
                              #kernel_initializer='random_normal',
                              #kernel_constraint=tf.keras.constraints.UnitNorm()
 
                              # how can we take the scale out of this -- decompose
-                             kernel_constraint=tf.keras.constraints.MinMaxNorm(0.5, 1.5)
+                             kernel_constraint=tf.keras.constraints.MinMaxNorm(0.4, 2)
                              ),
     ])
 
     if init_fp_dist is not None:
-        reconstructor.layers[-1].set_weights([Q1.T + np.ones((2, 2)) * init_fp_dist])
+        reconstructor.layers[-1].set_weights([Q1.T + np.ones((dim, dim)) * init_fp_dist])
         #reconstructor.layers[-1].set_weights([np.linalg.inv(decoder.get_weights()[0])])
 
     return reconstructor
@@ -230,17 +245,17 @@ def build_feature_model(decoder, init_fp_dist=None, l1coeff=0.0):
     """Build the feature transition dynamics model."""
     # maps observations to features
     model = tf.keras.Sequential([ # M
-        m_passthrough_action(decoder, 2, 2), # D
-        tf.keras.Input(shape=(4,)),
+        m_passthrough_action(decoder, dim, dim), # D
+        tf.keras.Input(shape=(2 * dim,)),
         #prune.prune_low_magnitude(
-            tf.keras.layers.Dense(2, activation=None, use_bias=False, kernel_regularizer=tf.keras.regularizers.l1(l1coeff),
+            tf.keras.layers.Dense(dim, activation=None, use_bias=False, kernel_regularizer=tf.keras.regularizers.l1(l1coeff),
                                  #kernel_initializer='random_normal'
                                  ), # M_D
         #**pruning_params)
     ])
 
     if init_fp_dist is not None:
-        model.layers[-1].set_weights([A.T + np.ones((4, 2)) * init_fp_dist])
+        model.layers[-1].set_weights([A.T + np.ones((2 * dim, dim)) * init_fp_dist])
     return model
 
 def loss_model_fit(y_true, y_pred, decoder=None, sample_weight=None):
@@ -261,7 +276,7 @@ def loss_reconstructor(reconstructor, decoder, x):
     """How well the reconstructor can obtain observations?"""
     # x is the input tensor (observations)
     if x is None: return 0
-    x = x[:, :2]
+    x = x[:, :dim]
     L = tf.reduce_mean(tf.abs(reconstructor(decoder(x)) - x))
     return L
 
@@ -409,12 +424,16 @@ def step_2opt(model, decoder, reconstructor, xs, ys,
         y_pred = model(xs)
 
         # Calculate loss
+        l_l1 = tf.norm(flatten_array_of_tensors([model.weights[1]]),
+                       ord=1)
         l_fit = loss_model_fit(ys, y_pred, decoder=decoder)
+                  
+
                                                 # weight 0 is decoder
         l_rec = loss_reconstructor(reconstructor=reconstructor,
                                        decoder=decoder, x=xs)
         
-        md_loss = l_fit
+        md_loss = l_fit + l1_coeff * l_l1
         rd_loss  = l_rec
     
     # returning the old loss to output post-projection values
@@ -442,9 +461,11 @@ def step_2opt(model, decoder, reconstructor, xs, ys,
     
 @gin.configurable
 def step_inv_reg(model, decoder, xs, ys, optimizer,
-        l_rec_coeff=1.,
-         l1_coeff=0.0):
+        l_Dinv_coeff=1.,
+        l1_coeff=0.0, reconstructor=None):
     """One optimization step."""
+    del reconstructor
+    
     # xs - observations + actions
     # ys - next observations
 
@@ -452,22 +473,33 @@ def step_inv_reg(model, decoder, xs, ys, optimizer,
     xs = np.array(xs, dtype=np.float32)
     ys = np.array(ys, dtype=np.float32)
 
-    with tf.GradientTape() as tape:
+    with tf.GradientTape(persistent=True) as tape:
         # Make prediction
         y_pred = model(xs)
 
         # Calculate loss
         l_fit = loss_model_fit(ys, y_pred, decoder=decoder)
-        l_rec = tf.reduce_mean(tf.abs(tf.linalg.pinv(decoder.weights[0])))
+        l_rec = tf.reduce_sum(tf.abs(tf.linalg.pinv(decoder.weights[0] + 
+                                                    tf.eye(decoder.weights[0].shape[0],
+                                                           num_columns=decoder.weights[0].shape[1]) * 1e-5))) # identity matrix
+                                                                       # so that D=0 counts as bad loss
         l_l1 = tf.norm(flatten_array_of_tensors([model.weights[1]]),
                        ord=1)
 
         # total loss
-        total_loss = l_fit + l_rec_coeff * l_rec + \
+        total_loss = l_fit + l_Dinv_coeff * l_rec + \
                      l1_coeff * l_l1
 
     # list of models
-    models = [model, reconstructor] # decoder weights are in the model
+    models = [model] # decoder weights are in the model
+
+    grad_d_md = tape.gradient(l_fit, decoder.trainable_variables)
+    grad_d_rd = tape.gradient(l_rec, decoder.trainable_variables)
+    
+    g1 = flatten_array_of_tensors(grad_d_md).numpy()
+    g2 = flatten_array_of_tensors(grad_d_rd).numpy()
+    cos = np.dot(g1, g2) / (np.linalg.norm(g1) * np.linalg.norm(g2) + 1e-20)
+
 
     apply_optimizer(loss=total_loss, optimizer=optimizer,
                     tape=tape, models=models)
@@ -476,7 +508,7 @@ def step_inv_reg(model, decoder, xs, ys, optimizer,
     l1 = projection_step(model.weights[1])
 
     return {'l_fit': l_fit.numpy(), 'l_rec': l_rec.numpy(),
-            'l_l1': l1, 'nnz': nnz}
+            'l_l1': l1, 'nnz': nnz, 'cos': cos}
 
 @gin.configurable
 def step(model, decoder, reconstructor, xs, ys, optimizer,
@@ -496,8 +528,13 @@ def step(model, decoder, reconstructor, xs, ys, optimizer,
 
         # Calculate loss
         l_fit = loss_model_fit(ys, y_pred, decoder=decoder)
-        l_rec = loss_reconstructor(reconstructor=reconstructor,
-                                   decoder=decoder, x=xs)
+        
+        l_rec = tf.reduce_sum(tf.abs(tf.linalg.pinv(decoder.weights[0] + 
+                                                    tf.eye(decoder.weights[0].shape[0],
+                                                           num_columns=decoder.weights[0].shape[1]) * 1e-5))) # identity matrix
+        
+        #l_rec = loss_reconstructor(reconstructor=reconstructor,
+        #                           decoder=decoder, x=xs)
                                                 # weight 0 is decoder
         l_l1 = tf.norm(flatten_array_of_tensors([model.weights[1]]),
                        ord=1)
@@ -507,7 +544,7 @@ def step(model, decoder, reconstructor, xs, ys, optimizer,
                      l1_coeff * l_l1
 
     # list of models
-    models = [model, reconstructor] # decoder weights are in the model
+    models = [model] # decoder weights are in the model
 
     apply_optimizer(loss=total_loss, optimizer=optimizer,
                     tape=tape, models=models)
@@ -527,7 +564,7 @@ def arr_of_dicts_to_dict_of_arrays(arr):
 def get_results(xs_e, ys_e, Q1, batch_size=16, epochs=1, step=None, l_rec_coeff=1):
     """Compute results."""
     # input for the decoder (features)
-    inp_dec = tf.keras.Input(shape=(2,))
+    inp_dec = tf.keras.Input(shape=(dim,))
 
     # defining models
     decoder = build_decoder_model(inp_dec)
@@ -617,7 +654,7 @@ def get_results(xs_e, ys_e, Q1, batch_size=16, epochs=1, step=None, l_rec_coeff=
 def fit_test_model(xs, ys, A):
     """Test the data."""
     # checking that data is correctly generated
-    m = tf.keras.Sequential([tf.keras.layers.Dense(2)])
+    m = tf.keras.Sequential([tf.keras.layers.Dense(dim)])
     m.compile('adam', 'mse')
     h = m.fit(xs, ys, epochs=100, verbose=0)
     plt.plot(h.history['loss'])
