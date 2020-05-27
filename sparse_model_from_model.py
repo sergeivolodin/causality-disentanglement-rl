@@ -92,10 +92,12 @@ def repr_quality(A):
 
 class SparseModelLearner(object):
     """Obtain a sparser model from a given one."""
-    def __init__(self, Wo, Wa, f, eps_dinv=.1, p_ord=1.,
+    def __init__(self, o, a, f, eps_dinv=.1, p_ord=1.,
                  optimizer=tf.keras.optimizers.Adam(lr=5e-3)):
 
         # obtaining the shape
+        Wo = np.zeros((o, o))
+        Wa = np.zeros((o, a))
         self.o, self.a = Wa.shape
         self.f = f
         assert Wo.shape == (self.o, self.o), "Wrong Wo [oxo] / Wa [oxa] shape"
