@@ -93,7 +93,8 @@ def repr_quality(A):
 class SparseModelLearner(object):
     """Obtain a sparser model from a given one."""
     def __init__(self, o, a, f, eps_dinv=.1, p_ord=1.,
-                 optimizer=tf.keras.optimizers.Adam(lr=5e-3)):
+                 optimizer=tf.keras.optimizers.Adam(lr=5e-3),
+                 d_init_randomness=1e-2):
 
         # obtaining the shape
         Wo = np.zeros((o, o))
@@ -106,7 +107,7 @@ class SparseModelLearner(object):
         self.p_ord = p_ord
 
         # decoder
-        self.D = tf.Variable(np.eye(self.N) + np.random.randn(self.N, self.N) * 1e-2)
+        self.D = tf.Variable(np.eye(self.N) + np.random.randn(self.N, self.N) * d_init_randomness)
         self.set_WoWa(Wo, Wa)
 
         # training history

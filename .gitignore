@@ -2,5 +2,7 @@ __pycache__
 .idea
 image*.png
 *.gif
+*.gv
+*.pdf
 output
 .ipynb_checkpoints
