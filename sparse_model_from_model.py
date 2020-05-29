@@ -17,6 +17,24 @@ from tqdm.notebook import tqdm
 from sklearn.decomposition import PCA
 from IPython.display import HTML
 
+class TQDMCallback(tf.keras.callbacks.Callback):
+    def __init__(self, desc, leave):
+        self.desc=desc
+        self.leave=leave
+    
+    def tqdm(self, total):
+        return tqdm(desc=self.desc, total=total, leave=self.leave)
+
+    def on_epoch_end(self, epoch, logs={}):
+        self.tqdm_outer.update(1)
+
+    def on_train_begin(self, logs={}):
+        epochs = (self.params['epochs'] if 'epochs' in self.params
+                  else self.params['nb_epoch'])
+        self.tqdm_outer = self.tqdm(total=epochs)
+
+    def on_train_end(self, logs={}):
+        self.tqdm_outer.close()
 
 class LinearStateTransitionModel(object):
     """State transition model with linear dynamics."""
@@ -43,7 +61,9 @@ class LinearStateTransitionModel(object):
         assert ys.shape[1] == self.o
 
         history = self.model.fit(xs, ys, epochs=epochs, verbose=0,
-                                 batch_size=batch_size)
+                                 batch_size=batch_size,
+                                 callbacks=[TQDMCallback(leave=False,
+                                                         desc="Obs W Fit")])
 
         self.losses += history.history['loss']
 
@@ -201,7 +221,7 @@ class SparseModelLearner(object):
 
     def fit(self, epochs=5000, **kwargs):
         """Fit the new matrix."""
-        with tqdm(total=epochs) as pbar:
+        with tqdm(total=epochs, desc="Feat M fit", leave=False) as pbar:
             for epoch in range(epochs):
                 self.Ds.append(self.D.numpy())
                 self.step(**kwargs)
