@@ -36,57 +36,16 @@ import seaborn as sns
 from tqdm.notebook import tqdm
 
 from sacred import Experiment
+from sacred.observers import MongoObserver
 
 import pickle
 import uuid
 
 ex = Experiment("sparse_causal_model_rl", interactive=True)
+ex.observers.append(MongoObserver(url='127.0.0.1:2222',
+                                  db_name='test'))
 
 @ex.config
-def exp_config():
-    """All configuration."""
-    ### Environment parameters
-    v_n = 5
-    v_k = 5
-    v_seed = 43
-    do_transform = True
-    time_limit = 20
-    
-    
-    ### Agent hyperparameters
-    num_iterations = 20 # @param {type:"integer"}
-    collect_episodes_per_iteration = 2 # @param {type:"integer"}
-    replay_buffer_capacity = 1000 # @param {type:"integer"}
-
-    fc_layer_params = ()
-
-    learning_rate = 1e-3 # @param {type:"number"}
-    log_interval = 25 # @param {type:"integer"}
-    num_eval_episodes = 1 # @param {type:"integer"}
-    eval_interval = 1 # @param {type:"integer"}
-
-    # p norm
-    p_ord = 1
-
-    # regularization for reconstruction
-    eps_dinv = 1.
-
-    d_init_randomness = 5.
-
-    # for training observation model
-    model_W_train_epochs = 5
-
-    # for training feature model
-    model_sml_train_epochs = 10
-
-    ### Curiosity parameters
-    # curiosity reward coefficient
-    alpha = 1.0
-
-    # how often to run curiosity/model training?
-    curiosity_interval = 2
-
-#@ex.config
 def exp_config():
     """All configuration."""
     ### Environment parameters
