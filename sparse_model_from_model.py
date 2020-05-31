@@ -16,6 +16,43 @@ from tqdm.notebook import tqdm
 
 from sklearn.decomposition import PCA
 from IPython.display import HTML
+from graphviz import Digraph
+
+
+def graph_for_matrices(Mf, Ma, threshold=0.2):
+    """Visualize matrices as a graph."""
+    # dimension
+    v_n = Ma.shape[0]
+
+    ps = Digraph(name='Causal model', engine='neato')#,
+                 #node_attr={'shape': 'plaintext'})
+
+    # adding features nodes
+    for f in range(v_n):
+        ps.node('f%02d' % f, color='green')
+        ps.node("f'%02d" % f, color='blue')
+
+    # adding action edges
+    for a in range(v_n):
+        ps.node('a%02d' % a, color='red')
+
+    # adding edges
+    edges = 0
+
+    for f1, a in zip(*np.where(np.abs(Ma) > threshold)):
+        ps.edge('a%02d' % a, "f'%02d" % f1)
+        edges += 1
+
+    for f1, f in zip(*np.where(np.abs(Mf) > threshold)):
+        ps.edge('f%02d' % f, "f'%02d" % f1)
+        edges += 1
+    
+    max_edges = v_n ** 2 * 2
+    print("Number of edges: %d out of %d, sparsity %.2f%%" % \
+          (edges, max_edges, 100 - 100. * edges / max_edges))
+        
+    return ps
+
 
 class TQDMCallback(tf.keras.callbacks.Callback):
     def __init__(self, desc, leave):
@@ -43,6 +80,14 @@ class LinearStateTransitionModel(object):
         self.a = a
         self.model = self.build_model()
         self.losses = []
+        
+    def __getstate__(self):
+        return [self.o, self.a, self.model.get_weights(), self.losses]
+    
+    def __setstate__(self, y):
+        self.o, self.a, w, self.losses = y
+        self.model = self.build_model()
+        self.model.set_weights(w)
 
     def build_model(self):
         """Build a model"""
@@ -67,7 +112,7 @@ class LinearStateTransitionModel(object):
 
         self.losses += history.history['loss']
 
-        return history.history['loss'][-1]
+        return history.history['loss']
 
     def get_Wo_Wa(self):
         """Return learned transition matrices."""
@@ -136,6 +181,19 @@ class SparseModelLearner(object):
         self.eps_dinv = eps_dinv
 
         self.optimizer = optimizer
+        
+    def __getstate__(self):
+        return [self.o, self.a, self.f, self.N, self.p_ord, self.D.numpy(),
+                self.Wo, self.Wa, self.losses, self.Ds, self.eps_dinv]
+    
+    def __setstate__(self, y):
+        [o, a, f, N, p_ord, D, Wo, Wa, losses, Ds, eps_dinv] = y
+        self.__init__(o=o, a=a, f=f, eps_dinv=eps_dinv, p_ord=p_ord)
+        self.D.assign(D)
+        self.Wo = Wo
+        self.Wa = Wa
+        self.losses = losses
+        self.Ds = Ds
 
     def set_WoWa(self, Wo, Wa):
         """Set the input -- source transition matrix."""
@@ -218,8 +276,9 @@ class SparseModelLearner(object):
                 'loss_dinv': loss_dinv.numpy(), 'loss_total': loss.numpy(),
                 'cos': cos, 'nnz': nnz}
         self.losses.append(result)
+        return result
 
-    def fit(self, epochs=5000, **kwargs):
+    def fit(self, epochs=5000, loss_callback=None, **kwargs):
         """Fit the new matrix."""
         with tqdm(total=epochs, desc="Feat M fit", leave=False) as pbar:
             for epoch in range(epochs):
@@ -228,6 +287,8 @@ class SparseModelLearner(object):
                 loss = self.losses[-1]
                 pbar.update(1)
                 pbar.set_postfix(**loss)
+                if loss_callback:
+                    loss_callback(loss)
 
     def animate_weights(self, skip=50):
         """Animate weight evolution."""
@@ -251,6 +312,19 @@ class SparseModelLearner(object):
         ani = animation.FuncAnimation(fig, animate, frames=len(self.Ds[::skip]))
 
         return HTML(ani.to_jshtml())
+    
+    def env_model(self, oa):
+        """Models next observation given o and a."""
+        oa = oa[0]
+        v_k = self.o
+        o = oa[:v_k]
+        a = oa[v_k:]
+        D = self.D.numpy()
+        Mf, Ma = self.get_MfMa(self.D)
+        Mf = Mf.numpy()
+        Ma = Ma.numpy()
+        result = np.linalg.inv(D) @ (Ma @ a + Mf @ D @ o)
+        return np.array([result])
 
     def weights_descent_pca_space(self, maxL=10000):
         """Plot descent curve in PCA space."""

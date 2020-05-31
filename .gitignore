@@ -4,5 +4,6 @@ image*.png
 *.gif
 *.gv
 *.pdf
+*.pkl
 output
 .ipynb_checkpoints
