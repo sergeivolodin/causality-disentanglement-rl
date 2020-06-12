@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"]="1"
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 os.environ["TF_FORCE_GPU_ALLOW_GROWTH"]="true"
 
 import numpy as np
@@ -42,11 +42,58 @@ import pickle
 import uuid
 
 ex = Experiment("sparse_causal_model_rl", interactive=True)
-ex.observers.append(MongoObserver(url='127.0.0.1:2222',
+ex.observers.append(MongoObserver(url='127.0.0.1:27017',
                                   db_name='test'))
 
+#@ex.config
+def exp_config_small():
+    """All configuration."""
+    ### Environment parameters
+    v_n = 5
+    v_k = 5
+    v_seed = 43
+    do_transform = True
+    time_limit = 20
+    
+    
+    ### Agent hyperparameters
+    num_iterations = 10 # @param {type:"integer"}
+    collect_episodes_per_iteration = 2 # @param {type:"integer"}
+    replay_buffer_capacity = 1000 # @param {type:"integer"}
+
+    fc_layer_params = ()
+
+    learning_rate = 1e-3 # @param {type:"number"}
+    log_interval = 1 # @param {type:"integer"}
+    num_eval_episodes = 10 # @param {type:"integer"}
+    eval_interval = 1 # @param {type:"integer"}
+
+    # p norm
+    p_ord = 1
+
+    # regularization for reconstruction
+    eps_dinv = 1.
+
+    d_init_randomness = 5.
+
+    # for training observation model
+    model_W_train_epochs = 50
+
+    # for training feature model
+    model_sml_train_epochs = 50
+
+    ### Curiosity parameters
+    # curiosity reward coefficient
+    alpha = 1.0
+
+    # how often to run curiosity/model training?
+    curiosity_interval = 1
+    
+    # maximal number of data points for W dataset
+    w_max_dataset_size = 1000
+
 @ex.config
-def exp_config():
+def exp_config_big():
     """All configuration."""
     ### Environment parameters
     v_n = 5
@@ -88,6 +135,9 @@ def exp_config():
 
     # how often to run curiosity/model training?
     curiosity_interval = 10
+    
+    # maximal number of data points for W dataset
+    w_max_dataset_size = 5000
 
 @ex.capture
 def get_env(sml, v_n, v_k, v_seed, do_transform, alpha, time_limit,
@@ -152,7 +202,7 @@ def get_reinforce_agent(train_env, fc_layer_params, v_n, v_k, learning_rate):
 @ex.capture
 def train_agent(tf_agent, train_env, eval_env, num_iterations, num_eval_episodes, collect_episodes_per_iteration,
                 v_n, model_W_train_epochs, model_sml_train_epochs, replay_buffer_capacity, optimizer,
-                eval_interval, curiosity_interval, W, sml, actor_net, _run):
+                eval_interval, curiosity_interval, W, sml, actor_net, _run, w_max_dataset_size):
     """Train a tf.agent with sparse model."""
     
     decoder_layer_agent = actor_net.layers[0].layers[0] # taking the copied layer with actual weights
@@ -217,7 +267,15 @@ def train_agent(tf_agent, train_env, eval_env, num_iterations, num_eval_episodes
             #clear_output()
             xs, ys = buffer_to_dataset(curiosity_replay_buffer, v_n)
             
-            _run.log_scalar("causal.dataset_size", len(xs), iteration)
+            _run.log_scalar("causal.total_dataset_size", len(xs), iteration)
+            
+            # prevent the dataset from growing in an unbounded way
+            if len(xs) > w_max_dataset_size:
+                idxes = np.random.choice(range(len(xs)), w_max_dataset_size, replace=False)
+                xs = np.array(xs)[idxes]
+                ys = np.array(ys)[idxes]
+            
+            _run.log_scalar("causal.used_dataset_size", len(xs), iteration)
 
             # fitting on observational data...
             losses = W.fit(xs=xs, ys=ys, epochs=model_W_train_epochs)
