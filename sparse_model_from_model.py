@@ -290,7 +290,7 @@ class SparseModelLearner(object):
                 if loss_callback:
                     loss_callback(loss)
 
-    def animate_weights(self, skip=50):
+    def animate_weights(self, points=50):
         """Animate weight evolution."""
         ims = []
         fig, ax = plt.subplots()
@@ -299,6 +299,7 @@ class SparseModelLearner(object):
         ax_global = ax
 
         def animate(i):
+            skip = len(self.Ds) // points
             #for i, d in enumerate(tqdm(Ds[::50])):
             d = self.Ds[::skip][i]
             Mf = d @ self.Wo @ np.linalg.pinv(d)
@@ -326,7 +327,7 @@ class SparseModelLearner(object):
         result = np.linalg.inv(D) @ (Ma @ a + Mf @ D @ o)
         return np.array([result])
 
-    def weights_descent_pca_space(self, maxL=10000):
+    def weights_descent_pca_space(self, maxL=10000, points=1000):
         """Plot descent curve in PCA space."""
         Dflats = []
         losses_ = []
@@ -347,7 +348,8 @@ class SparseModelLearner(object):
             return loss
 
         # computing the descent curve
-        for i, d in enumerate((self.Ds)):
+        skip = len(self.Ds) // points
+        for i, d in enumerate((self.Ds[::skip])):
             Dflats.append(d.flatten())
             losses_.append(loss_for_d(d))
 

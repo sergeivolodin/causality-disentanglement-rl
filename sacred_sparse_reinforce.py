@@ -1,5 +1,10 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"]="0"
+import numpy as np
+
+# randomly selecting a GPU
+os.environ["CUDA_VISIBLE_DEVICES"] = "%d" % np.random.randint(0, 2)
+
+# always only using the memory we need, and not more
 os.environ["TF_FORCE_GPU_ALLOW_GROWTH"]="true"
 
 import numpy as np
