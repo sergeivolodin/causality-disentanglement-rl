@@ -247,8 +247,6 @@ class SparseModelLearner(object):
         plt.subplot(1, N_plots, N_plots)
         self.plot_heatmap(self.D)
 
-        plt.show()
-
     def step(self):
         """One optimizer step."""
         # computing gradient
@@ -406,4 +404,4 @@ class SparseModelLearner(object):
 
 
         # Render the plot.
-        return plotly.offline.iplot(plot_figure)
+        return plot_figure
