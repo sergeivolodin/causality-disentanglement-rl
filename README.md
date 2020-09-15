@@ -70,3 +70,6 @@ The code is roughly separated into three tasks.
 1. `permutation_matrix_test.ipynb` -- which matrices are invariant under our basis change (only identity)
 
 
+
+# Disentanglement in KeyChest environment
+Another idea: Physics simulator with mechanics (blocks) from images and rotating bodies (&their images)

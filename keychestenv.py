@@ -4,7 +4,6 @@ import math
 from webcolors import name_to_rgb
 from matplotlib import pyplot as plt
 import cv2
-from IPython.display import clear_output
 import gym
 from time import time
 import pytest
@@ -175,7 +174,7 @@ class KeyChestEnvironment(object):
         # format: H x W x C
         result = np.swapaxes(result, 0, 1)
         
-        return result
+        return np.array(result, dtype=np.float32)
         
     def move_object(self, obj, old_pos, new_pos):
         self.delete_object(obj, old_pos)
@@ -428,7 +427,7 @@ class KeyChestGymEnv(gym.Env):
         self.engine_constructor = engine_constructor
         self.engine = None
         self.reset()
-        self.observation_space = gym.spaces.Box(high=1.0, low=0.0, shape=self.engine.observation.shape)
+        self.observation_space = gym.spaces.Box(high=1.0, low=0.0, dtype=np.float32, shape=self.engine.observation.shape)
         self.action_space = gym.spaces.Discrete(len(self.engine.ACTIONS))
         
     def reset(self):
