@@ -53,6 +53,7 @@ def jupyter_gui(env):
     env.reset()
     plt.imshow(env.render('rgb_array'))
     plt.show()
+    R = 0
 
     while True:
         key = input()
@@ -63,6 +64,7 @@ def jupyter_gui(env):
             clear_output()
             plt.imshow(env.render('rgb_array'))
             plt.show()
+            R = 0
             continue
         clear_output()
         mapping = {'w': 'up', 'a': 'left', 's': 'down', 'd': 'right'}
@@ -73,11 +75,13 @@ def jupyter_gui(env):
         except:
             print("Wrong action")
         obs, rew, done, info = env.step(act)
+        R += rew
         plt.show()
         plt.imshow(env.render('rgb_array'))
         plt.show()
-        print(key, dxdy, act, rew, done, info)
+        print(key, dxdy, act, rew, done, info, R)
         if done:
+            print("TOTAL REWARD", R)
             env.reset()
 
 if __name__ == '__main__':
