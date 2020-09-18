@@ -4,14 +4,17 @@ from keychestenv import KeyChestEnvironmentRandom, KeyChestGymEnv, KeyChestEnvir
 import numpy as np
 
 from stable_baselines.common.vec_env import DummyVecEnv
-from stable_baselines.deepq.policies import MlpPolicy
+from stable_baselines.common.policies import MlpPolicy
+#from stable_baselines.deepq.policies import MlpPolicy
 from stable_baselines import DQN
+from stable_baselines import PPO2
 from stable_baselines.common.vec_env import VecEnv
 import argparse
 from gym.wrappers import Monitor
 from uuid import uuid1
 from tqdm import tqdm
 import os
+from functools import partial
 
 parser = argparse.ArgumentParser(description="Train/evaluate the model")
 parser.add_argument('--train_steps', type=int, default=250000)
@@ -20,7 +23,7 @@ parser.add_argument('--train', required=False, action='store_true')
 parser.add_argument('--variable_seed', required=False, action='store_true')
 parser.add_argument('--evaluate', required=False, action='store_true')
 
-reward = {'step': -.1, 'food_collected': 3, 'key_collected': 4, 'chest_opened': 5}
+reward = {'step': -.01, 'food_collected': 0.1, 'key_collected': 0.3, 'chest_opened': 0.5}
 
 def fixed_seed_constructor(seed=42, **kwargs):
     np.random.seed(seed)
@@ -38,7 +41,7 @@ def make_env(variable_seed=False):
 
 
     env = KeyChestGymEnv(engine_constructor=constructor,#KeyChestEnvironmentRandom,
-                         width=10, height=10, initial_health=15, food_efficiency=15,
+                         width=5, height=5, initial_health=8, food_efficiency=8,
                          reward_dict=reward, flatten_observation=True)
     return env
 
@@ -48,16 +51,16 @@ if __name__ == '__main__':
     checkpoint_fn = "keychest"
     if args.variable_seed:
         checkpoint_fn += "-variable-seed"
-    env = make_env(variable_seed=args.variable_seed)
-    #env = DummyVecEnv([make_env for _ in range(8)])
+    #env = make_env(variable_seed=args.variable_seed)
+    env = DummyVecEnv([partial(make_env, variable_seed=args.variable_seed) for _ in range(8)])
 
     #env = gym.make('CartPole-v1')
 
     print("Checkpoint path", checkpoint_fn)
 
-    model = DQN(MlpPolicy, env, verbose=1, tensorboard_log=f"./tb_{checkpoint_fn}/")
+    model = PPO2(MlpPolicy, env, verbose=1, tensorboard_log=f"./tb_{checkpoint_fn}/")
     try:
-        model = DQN.load(checkpoint_fn)
+        model = PPO2.load(checkpoint_fn)
     except Exception as e:
         print(f"Loading failed {e}")
     model.set_env(env)
