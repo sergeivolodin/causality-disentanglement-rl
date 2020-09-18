@@ -1,8 +1,6 @@
 import gym
-
-from keychestenv import KeyChestEnvironmentRandom, KeyChestGymEnv, KeyChestEnvironment
+import keychest
 import numpy as np
-
 from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines.common.policies import MlpPolicy
 #from stable_baselines.deepq.policies import MlpPolicy
@@ -15,46 +13,26 @@ from uuid import uuid1
 from tqdm import tqdm
 import os
 from functools import partial
+import gin
 
 parser = argparse.ArgumentParser(description="Train/evaluate the model")
 parser.add_argument('--train_steps', type=int, default=250000)
 parser.add_argument('--eval_episodes', type=int, default=100)
 parser.add_argument('--train', required=False, action='store_true')
-parser.add_argument('--variable_seed', required=False, action='store_true')
 parser.add_argument('--evaluate', required=False, action='store_true')
-
-reward = {'step': -.01, 'food_collected': 0.1, 'key_collected': 0.3, 'chest_opened': 0.5}
-
-def fixed_seed_constructor(seed=42, **kwargs):
-    np.random.seed(seed)
-    return KeyChestEnvironmentRandom(**kwargs)
-
-def variable_seed_constructor(**kwargs):
-    return KeyChestEnvironmentRandom(**kwargs)
-
-def make_env(variable_seed=False):
-
-    if variable_seed:
-        constructor = variable_seed_constructor
-    else:
-        constructor = fixed_seed_constructor
-
-
-    env = KeyChestGymEnv(engine_constructor=constructor,#KeyChestEnvironmentRandom,
-                         width=5, height=5, initial_health=8, food_efficiency=8,
-                         reward_dict=reward, flatten_observation=True)
-    return env
+parser.add_argument('--config', type=str, default="config/5x5.gin")
+parser.add_argument('--env', type=str, default="KeyChest-v0")
+parser.add_argument('--n_env', type=int, default=8)
 
 if __name__ == '__main__':
     args = parser.parse_args()
+    gin.parse_config_file(args.config)
 
-    checkpoint_fn = "keychest"
-    if args.variable_seed:
-        checkpoint_fn += "-variable-seed"
-    #env = make_env(variable_seed=args.variable_seed)
-    env = DummyVecEnv([partial(make_env, variable_seed=args.variable_seed) for _ in range(8)])
+    def make_env():
+        return gym.make(args.env)
 
-    #env = gym.make('CartPole-v1')
+    checkpoint_fn = args.env
+    env = DummyVecEnv([make_env for _ in range(args.n_env)])
 
     print("Checkpoint path", checkpoint_fn)
 
@@ -71,7 +49,7 @@ if __name__ == '__main__':
 
     if args.evaluate:
         directory = "video-" + checkpoint_fn + '-' + str(uuid1())
-        env = make_env(variable_seed=args.variable_seed)
+        env = make_env()
         env = Monitor(env, directory=directory, force=True, video_callable=lambda v: True,
                       resume=True, write_upon_reset=False)
         for i in tqdm(range(args.eval_episodes)):

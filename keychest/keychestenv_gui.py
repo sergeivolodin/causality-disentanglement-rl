@@ -4,6 +4,12 @@ from time import sleep
 from matplotlib import pyplot as plt
 import cv2
 import numpy as np
+import gin
+import argparse
+
+parser = argparse.ArgumentParser("Play the KeyChest environment in a GUI manually")
+parser.add_argument("--config", type=str, default="config/5x5.gin")
+
 
 def gui_for_env(env):
     """cv2 GUI for the KeyChest environment."""
@@ -85,8 +91,7 @@ def jupyter_gui(env):
             env.reset()
 
 if __name__ == '__main__':
-    reward = {'step': -1, 'food_collected': 3, 'key_collected': 4, 'chest_opened': 5}
-    env = KeyChestGymEnv(engine_constructor=KeyChestEnvironmentRandom,
-                         width=10, height=10, initial_health=10, food_efficiency=10,
-                         reward_dict=reward)
+    args = parser.parse_args()
+    gin.parse_config_file(args.config)
+    env = KeyChestGymEnv()
     gui_for_env(env)

@@ -1,4 +1,4 @@
-from keychestenv import DelayedExecutor
+from keychest.keychestenv import DelayedExecutor
 
 
 class ProbeFunction(object):

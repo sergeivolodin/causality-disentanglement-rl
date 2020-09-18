@@ -4,10 +4,12 @@ import argparse
 from tqdm import tqdm
 from uuid import uuid1
 import pickle
+import gin
 
 
 parser = argparse.ArgumentParser("Collect data from the environment and save it")
 parser.add_argument('--n_episodes', type=int, default=1000)
+parser.add_argument('--config', type=str, default="config/5x5.gin")
 
 class EnvDataCollector(Wrapper):
     """Collects data from the environment."""
@@ -45,12 +47,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     fn_out = f"episodes-{args.n_episodes}-{str(uuid1())}.pkl"
 
-    reward = {'step': -.1, 'food_collected': 1, 'key_collected': 1.5, 'chest_opened': 2}
-
-    env = KeyChestGymEnv(engine_constructor=KeyChestEnvironmentRandom,
-                         width=5, height=5, initial_health=8, food_efficiency=5,
-                         reward_dict=reward, n_keys=5, n_chests=5, n_food=5)
-
+    gin.parse_config_file(args.config)
+    env = KeyChestGymEnv()
     env = EnvDataCollector(env)
 
     for i in tqdm(range(args.n_episodes)):

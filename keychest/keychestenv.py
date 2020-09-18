@@ -450,7 +450,8 @@ class KeyChestGymEnv(gym.Env):
         self.engine_constructor = engine_constructor
         self.engine = None
         self.reset()
-        self.observation_space = gym.spaces.Box(high=1.0, low=0.0, dtype=np.float32, shape=self.engine.observation.shape)
+        self.observation_space = gym.spaces.Box(high=np.float32(1.0), low=np.float32(0.0), dtype=np.float32,
+                                                shape=self.engine.observation.shape)
         self.action_space = gym.spaces.Discrete(len(self.engine.ACTIONS))
         #self.spec =
         

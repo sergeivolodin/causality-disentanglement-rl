@@ -1,4 +1,4 @@
-from keychestenv import KeyChestGymEnv, KeyChestEnvironmentRandom, KeyChestEnvironmentFixedMap
+from keychest.keychestenv import KeyChestGymEnv, KeyChestEnvironmentRandom, KeyChestEnvironmentFixedMap
 from time import time
 import pytest
 import numpy as np
