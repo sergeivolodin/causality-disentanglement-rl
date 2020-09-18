@@ -6,6 +6,8 @@ import cv2
 import gym
 from time import time
 import pytest
+import gin
+
 
 class DelayedExecutor(object):
     """Execute stored commands after a pre-defined number of steps."""
@@ -41,6 +43,8 @@ def inrange(x, m, M):
     """x in [m, M]?"""
     return m <= x <= M
 
+
+@gin.configurable
 class KeyChestEnvironment(object):
     # class constants
     OBJECTS = ['empty', 'keys_collected', 'health', 'wall', 'key', 'chest', 'food', 'lamp_on', 'lamp_off', 'player']
@@ -310,7 +314,7 @@ class KeyChestEnvironment(object):
 
             out_arr = np.repeat(out_arr, scale, axis=1)
             out_arr = np.swapaxes(np.repeat(np.swapaxes(out_arr, 0, 1), scale, axis=1), 0, 1)
-            return out_arr
+            return np.array(out_arr * 255, dtype=np.uint8)
         
         return obs
         
@@ -354,6 +358,8 @@ def compute_attrs(cls=KeyChestEnvironment):
     
 compute_attrs(KeyChestEnvironment)
 
+
+@gin.configurable
 class KeyChestEnvironmentRandom(KeyChestEnvironment):
     """Generate a random map for the KeyChest environment."""
     def __init__(self, width=10, height=10, n_keys=2, n_chests=2, n_food=2, **kwargs):
@@ -382,6 +388,7 @@ class KeyChestEnvironmentRandom(KeyChestEnvironment):
         
         super(KeyChestEnvironmentRandom, self).__init__(labyrinth_maps=maps, **kwargs)
         
+@gin.configurable
 class KeyChestEnvironmentFixedMap(KeyChestEnvironment):
     """Create an environment from a fixed map."""
     def __init__(self, map_array, **kwargs):
@@ -424,6 +431,8 @@ class KeyChestEnvironmentFixedMap(KeyChestEnvironment):
         
         super(KeyChestEnvironmentFixedMap, self).__init__(labyrinth_maps=maps, **kwargs)
 
+
+@gin.configurable
 class KeyChestGymEnv(gym.Env):
     metadata = {'render.modes': ['rgb_array']}
 
@@ -481,5 +490,4 @@ class KeyChestGymEnv(gym.Env):
 
     def render(self, mode='rgb_array'):
         frame = self.engine.render(mode)
-        #print(frame.dtype, np.min(frame), np.max(frame))
-        return np.array(frame * 255., dtype=np.uint8)
+        return frame

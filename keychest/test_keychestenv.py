@@ -169,7 +169,7 @@ def test_env_create():
     assert isinstance(env.action_space, gym.spaces.Discrete)
     assert env
 
-def test_rollouts(do_print=False, time_for_test=10):
+def test_rollouts(do_print=False, time_for_test=3):
     """Do rollouts and see if the environment crashes."""
     time_start = time()
     

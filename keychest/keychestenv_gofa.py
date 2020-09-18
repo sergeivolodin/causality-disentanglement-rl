@@ -1,5 +1,5 @@
-from keychestenv import KeyChestEnvironmentRandom, KeyChestGymEnv, KeyChestEnvironment
-from keychestenv_gui import jupyter_gui
+from keychest.keychestenv import KeyChestEnvironmentRandom, KeyChestGymEnv, KeyChestEnvironment
+from keychest.keychestenv_gui import jupyter_gui
 from matplotlib import pyplot as plt
 import numpy as np
 

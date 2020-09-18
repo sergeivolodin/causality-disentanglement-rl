@@ -1,4 +1,4 @@
-from keychestenv import KeyChestEnvironmentRandom, KeyChestGymEnv
+from keychest.keychestenv import KeyChestEnvironmentRandom, KeyChestGymEnv
 from IPython.display import clear_output
 from time import sleep
 from matplotlib import pyplot as plt

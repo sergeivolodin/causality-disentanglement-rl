@@ -71,6 +71,7 @@ if __name__ == '__main__':
 
     if args.evaluate:
         directory = "video-" + checkpoint_fn + '-' + str(uuid1())
+        env = make_env(variable_seed=args.variable_seed)
         env = Monitor(env, directory=directory, force=True, video_callable=lambda v: True,
                       resume=True, write_upon_reset=False)
         for i in tqdm(range(args.eval_episodes)):
@@ -88,3 +89,4 @@ if __name__ == '__main__':
                 f.write(f"file {directory}/{video}\n")
         os.system(f"ffmpeg -f concat -safe 0 -i {list_fn} -c copy {directory}.mp4")
         os.unlink(list_fn)
+        print(f"Video is in {directory}.mp4")
