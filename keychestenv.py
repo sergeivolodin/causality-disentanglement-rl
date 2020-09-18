@@ -301,7 +301,7 @@ class KeyChestEnvironment(object):
         elif mode == 'str':
             return '\n'.join([''.join(x) for x in obs])
         elif mode == 'rgb_array':
-            scale = 5
+            scale = 15
             out_arr = np.zeros((obs.shape[0], obs.shape[1], 3))
             for symbol in self.SYMBOL_LIST:
                 mask = obs == symbol
@@ -425,6 +425,8 @@ class KeyChestEnvironmentFixedMap(KeyChestEnvironment):
         super(KeyChestEnvironmentFixedMap, self).__init__(labyrinth_maps=maps, **kwargs)
 
 class KeyChestGymEnv(gym.Env):
+    metadata = {'render.modes': ['rgb_array']}
+
     """Exporting KeyChest envrironment to Gym."""
     def __init__(self, engine_constructor, reward_dict=None, **kwargs):
         kwargs['callback'] = self.callback
@@ -441,6 +443,7 @@ class KeyChestGymEnv(gym.Env):
         self.reset()
         self.observation_space = gym.spaces.Box(high=1.0, low=0.0, dtype=np.float32, shape=self.engine.observation.shape)
         self.action_space = gym.spaces.Discrete(len(self.engine.ACTIONS))
+        #self.spec =
         
     def reset(self):
         """Create a new engine and return the observation."""
@@ -477,4 +480,6 @@ class KeyChestGymEnv(gym.Env):
         return self.step(act)
 
     def render(self, mode='rgb_array'):
-        return self.engine.render(mode)
+        frame = self.engine.render(mode)
+        #print(frame.dtype, np.min(frame), np.max(frame))
+        return np.array(frame * 255., dtype=np.uint8)
