@@ -1,7 +1,6 @@
 from copy import deepcopy
 import numpy as np
 import math
-from webcolors import name_to_rgb
 from matplotlib import pyplot as plt
 import cv2
 import gym
@@ -54,7 +53,8 @@ class KeyChestEnvironment(object):
     ACTION_NAMES = {(1, 0): "down", (-1, 0): "up", (0, 1): "right", (0, -1): "left"}
     
     def __init__(self, labyrinth_maps, initial_health, food_efficiency,
-                 food_rows=None, keys_rows=None, callback=None):
+                 food_rows=None, keys_rows=None, callback=None,
+                 flatten_observation=False):
         """Environment with keys and chests."""
         self.initial_maps = deepcopy(labyrinth_maps)
         self.maps = deepcopy(labyrinth_maps)
@@ -73,6 +73,7 @@ class KeyChestEnvironment(object):
         self.first_render = True
         self.callback_ = callback
         self.enabled = True
+        self.flatten_observation = flatten_observation
         
         # to see if everything fits
         self.render()
@@ -110,7 +111,7 @@ class KeyChestEnvironment(object):
         return items[0]
     
     @property
-    def observation(self):
+    def _observation(self):
         sx, sy = self.shape
         
         if self.first_render:
@@ -174,7 +175,18 @@ class KeyChestEnvironment(object):
         # format: H x W x C
         result = np.swapaxes(result, 0, 1)
         
-        return np.array(result, dtype=np.float32)
+        result = np.array(result, dtype=np.float32)
+
+        return result
+
+    @property
+    def observation(self):
+        result = self._observation
+
+        if self.flatten_observation:
+            result = result.flatten()
+
+        return result
         
     def move_object(self, obj, old_pos, new_pos):
         self.delete_object(obj, old_pos)
@@ -194,7 +206,7 @@ class KeyChestEnvironment(object):
         if not self.enabled:
             info['event'] = 'already_dead'
             self.callback(info)
-            return
+            return self.observation
                 
         next_position = np.array(self.player_position) + np.array(self.ACTIONS[action])
         if not inrange(next_position[0], 0, self.height - 1):
@@ -267,7 +279,7 @@ class KeyChestEnvironment(object):
     @property
     def obs_2d(self):
         """Get 2d observation with stmbols."""
-        obs_3d = self.observation
+        obs_3d = self._observation
         assert isinstance(obs_3d, np.ndarray)
         assert len(obs_3d.shape) == 3 and obs_3d.shape[-1] == len(self.SYMBOLS)
         shape = obs_3d.shape[:2]
@@ -310,7 +322,7 @@ class KeyChestEnvironment(object):
     
     @property
     def lamp_state(self):
-        obs = self.observation
+        obs = self._observation
         lamp_on = np.sum(self.maps['lamp_on'])
         lamp_off = np.sum(self.maps['lamp_off'])
         if lamp_on: return 1
