@@ -1,10 +1,11 @@
-from keychestenv import KeyChestGymEnv, KeyChestEnvironmentRandom
+from keychestenv import KeyChestGymEnv
 from gym import Wrapper
 import argparse
 from tqdm import tqdm
 from uuid import uuid1
 import pickle
 import gin
+import os
 
 
 parser = argparse.ArgumentParser("Collect data from the environment and save it")
@@ -45,7 +46,7 @@ class EnvDataCollector(Wrapper):
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    fn_out = f"episodes-{args.n_episodes}-{str(uuid1())}.pkl"
+    fn_out = f"episodes-{args.n_episodes}-config-{os.path.basename(args.config)}-{str(uuid1())}.pkl"
 
     gin.parse_config_file(args.config)
     env = KeyChestGymEnv()

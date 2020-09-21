@@ -152,14 +152,6 @@ l@
         assert env.engine.player_position == (2, 2)
         assert rew == -1
         assert env.engine.lamp_state == 1
-        assert done == False
-
-        obs, rew, done, info = env.step_string('right')
-        assert env.engine.health == 0
-        assert env.engine.keys == 0
-        assert env.engine.player_position == (2, 2)
-        assert rew == -1
-        assert env.engine.lamp_state == 1
         assert done == True
 
 def test_env_create():

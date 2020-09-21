@@ -207,61 +207,58 @@ class KeyChestEnvironment(object):
     def step(self, action):
         info = {'action': action, 'event': 'regular_move'}
         
-        if not self.enabled:
-            info['event'] = 'already_dead'
-            self.callback(info)
-            return self.observation
-                
         next_position = np.array(self.player_position) + np.array(self.ACTIONS[action])
+
+        def clip(x, m, M):
+            if x < m:
+                return m
+            elif x > M:
+                return M
+            return x
+
         if not inrange(next_position[0], 0, self.height - 1):
-            def change_callback(info=info):
-                info['event'] = 'bump_top_or_bottom'
-                return info
+            next_position[0] = clip(next_position[0], 0, self.height - 1)
         elif not inrange(next_position[1], 0, self.width - 1):
-            def change_callback(info=info):
-                info['event'] = 'bump_left_or_right'
-                return info
-        else:
+            next_position[1] = clip(next_position[1], 0, self.width - 1)
+
+        if self.enabled:
             self.move_object('player', self.player_position, next_position)
-            
-            def change_callback(self=self, next_position=next_position, info=info):
-                # otherwise we are moving
-                item = self.item_at_position(next_position)
+        
+        def change_callback(self=self, next_position=next_position, info=info):
+            # otherwise we are moving
+            item = self.item_at_position(next_position)
 
-                if item == 'wall':
-                    info['event'] = 'bump_wall'
+            if item == 'lamp_on':
+                self.delete_object('lamp_on', next_position)
+                self.add_object('lamp_off', next_position)
 
-                if item == 'lamp_on':
-                    self.delete_object('lamp_on', next_position)
-                    self.add_object('lamp_off', next_position)
+                info['event'] = 'lamp_turned_off'
+            elif item == 'lamp_off':
+                self.delete_object('lamp_off', next_position)
+                self.add_object('lamp_on', next_position)
 
-                    info['event'] = 'lamp_turned_off'
-                elif item == 'lamp_off':
-                    self.delete_object('lamp_off', next_position)
-                    self.add_object('lamp_on', next_position)
+                info['event'] = 'lamp_turned_on'
+            elif item == 'food':
+                self.delete_object('food', next_position)
+                self.health += self.food_efficiency
 
-                    info['event'] = 'lamp_turned_on'
-                elif item == 'food':
-                    self.delete_object('food', next_position)
-                    self.health += self.food_efficiency
+                info['event'] = 'food_collected'
+            elif item == 'key':
+                self.delete_object('key', next_position)
+                self.keys += 1
 
-                    info['event'] = 'food_collected'
-                elif item == 'key':
-                    self.delete_object('key', next_position)
-                    self.keys += 1
-
-                    info['event'] = 'key_collected'
-                elif item == 'chest':
-                    if self.keys > 0:
-                        self.keys -= 1
-                        self.delete_object('chest', next_position)
-                        info['event'] = 'chest_opened'
-                    else:
-                        info['event'] = 'not_enough_keys'
+                info['event'] = 'key_collected'
+            elif item == 'chest':
+                if self.keys > 0:
+                    self.keys -= 1
+                    self.delete_object('chest', next_position)
+                    info['event'] = 'chest_opened'
                 else:
-                    info['event'] = 'regular_move'
+                    info['event'] = 'not_enough_keys'
+            else:
+                info['event'] = 'regular_move'
 
-                return info
+            return info
             
         
         def move_effect(self=self, change_callback=change_callback, action=action):
@@ -270,6 +267,8 @@ class KeyChestEnvironment(object):
             
             if self.health <= 0:
                 info = {'action': action, 'event': 'dead'}
+                if not self.enabled:
+                    info['event'] = 'already_dead'
                 self.enabled = False
                 self.callback(info)
         
@@ -469,7 +468,7 @@ class KeyChestGymEnv(gym.Env):
         ev = event['event']
         event['moves'] = moves
         self.info = event
-        if ev == 'already_dead':
+        if ev == 'dead':
             self.done = True
         if ev in self.reward_dict:
             self.reward += self.reward_dict[ev]
