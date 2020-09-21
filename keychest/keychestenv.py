@@ -43,6 +43,35 @@ def inrange(x, m, M):
     """x in [m, M]?"""
     return m <= x <= M
 
+def keychest_obs3d_to_obs2d(obs):
+    """Convert 3d observation into a 2d text observation."""
+    obs_3d = obs
+    assert isinstance(obs_3d, np.ndarray)
+    assert len(obs_3d.shape) == 3 and obs_3d.shape[-1] == len(KeyChestEnvironment.SYMBOLS)
+    shape = obs_3d.shape[:2]
+        
+    obs = np.full(fill_value=KeyChestEnvironment.SYMBOLS['empty'], shape=shape, dtype='<U1')
+        
+    for i, obj in enumerate(KeyChestEnvironment.OBJECTS):
+        mask = obs_3d[:, :, i] > 0
+        symbol = KeyChestEnvironment.SYMBOLS[obj]
+        obs[mask] = symbol
+    
+    return obs
+
+def keychest_obs2d_to_image(obs, scale=15):
+    """Convert 2d observation given by KeyChest environment into a 2D image."""
+    assert len(obs.shape) == 2
+    out_arr = np.zeros((obs.shape[0], obs.shape[1], 3))
+    for symbol in KeyChestEnvironment.SYMBOL_LIST:
+        mask = obs == symbol
+        out_arr[mask] = KeyChestEnvironment.SYMBOLS_TO_COLORS[symbol]
+    out_arr /= 255.
+
+    out_arr = np.repeat(out_arr, scale, axis=1)
+    out_arr = np.swapaxes(np.repeat(np.swapaxes(out_arr, 0, 1), scale, axis=1), 0, 1)
+    return np.array(out_arr * 255, dtype=np.uint8)
+
 
 @gin.configurable
 class KeyChestEnvironment(object):
@@ -282,19 +311,7 @@ class KeyChestEnvironment(object):
     @property
     def obs_2d(self):
         """Get 2d observation with stmbols."""
-        obs_3d = self._observation
-        assert isinstance(obs_3d, np.ndarray)
-        assert len(obs_3d.shape) == 3 and obs_3d.shape[-1] == len(self.SYMBOLS)
-        shape = obs_3d.shape[:2]
-            
-        obs = np.full(fill_value=self.SYMBOLS['empty'], shape=shape, dtype='<U1')
-            
-        for i, obj in enumerate(self.OBJECTS):
-            mask = obs_3d[:, :, i] > 0
-            symbol = self.SYMBOLS[obj]
-            obs[mask] = symbol
-        
-        return obs
+        return keychest_obs3d_to_obs2d(self._observation)
             
     def render(self, mode='np_array'):
         obs = self.obs_2d    
@@ -304,16 +321,7 @@ class KeyChestEnvironment(object):
         elif mode == 'str':
             return '\n'.join([''.join(x) for x in obs])
         elif mode == 'rgb_array':
-            scale = 15
-            out_arr = np.zeros((obs.shape[0], obs.shape[1], 3))
-            for symbol in self.SYMBOL_LIST:
-                mask = obs == symbol
-                out_arr[mask] = self.SYMBOLS_TO_COLORS[symbol]
-            out_arr /= 255.
-
-            out_arr = np.repeat(out_arr, scale, axis=1)
-            out_arr = np.swapaxes(np.repeat(np.swapaxes(out_arr, 0, 1), scale, axis=1), 0, 1)
-            return np.array(out_arr * 255, dtype=np.uint8)
+            return keychest_obs2d_to_image(obs)
         
         return obs
         

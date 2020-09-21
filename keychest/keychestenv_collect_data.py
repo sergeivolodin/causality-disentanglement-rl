@@ -28,7 +28,7 @@ class EnvDataCollector(Wrapper):
     def step(self, action):
         obs, rew, done, info = self.env.step(action)
         self.current_rollout.append({'observation': obs, 'reward': rew, 'done': done,
-                                     'info': info})
+                                     'info': info, 'action': action})
         return (obs, rew, done, info)
 
     def reset(self, **kwargs):
