@@ -1,7 +1,6 @@
-import numpy as np
-import tensorflow as tf
-import gym
 import gin
+import gym
+import numpy as np
 
 
 @gin.configurable
@@ -63,4 +62,3 @@ class VectorIncrementEnvironment(gym.Env):
 
     def __repr__(self):
         return f"VectorIncrement(n={self.n}, s={self.s})"
-

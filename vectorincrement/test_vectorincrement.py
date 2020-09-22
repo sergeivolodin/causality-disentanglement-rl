@@ -1,9 +1,11 @@
 import tensorflow as tf
+
 tf.compat.v1.enable_v2_behavior()
 from tf_agents.environments import tf_py_environment
 from tf_agents.environments import utils, wrappers
 from vectorincrement import VectorIncrementEnvironment
 import numpy as np
+
 
 def test_vectorincrement_steps():
     env = VectorIncrementEnvironment(n=5)
