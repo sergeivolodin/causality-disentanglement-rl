@@ -1,10 +1,13 @@
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = "-1"
 import tensorflow as tf
 
 tf.compat.v1.enable_v2_behavior()
-from tf_agents.environments import tf_py_environment
-from tf_agents.environments import utils, wrappers
 from vectorincrement import VectorIncrementEnvironment
+from observation_encoder import KerasEncoder, linear_encoder_unbiased_normal, KerasEncoderWrapper
 import numpy as np
+import gym
+import gin
 
 
 def test_vectorincrement_steps():
@@ -31,32 +34,25 @@ def test_vectorincrement_steps():
     step_verify(env.step(2), (np.array([2., 2., 1., 0., 0.], dtype=np.float32), np.float32(1.0), False, {}))
 
 
-# checking that the environment works
-def test_env_transform():
-    env = VectorIncrementEnvironmentTFAgents(v_n=10, v_k=50, v_seed=43, do_transform=True)
-    env = wrappers.TimeLimit(env, 20)
-    utils.validate_py_environment(env, episodes=5)
+def test_keras_encoder():
+    env = gym.make('CartPole-v0')
+    gin.enter_interactive_mode()
 
+    def times_two_model(inp_shape, out_shape):
+        """Multiply each component by 2."""
+        assert inp_shape == out_shape
+        assert len(inp_shape) == 1
+        model = linear_encoder_unbiased_normal(inp_shape=inp_shape, out_shape=out_shape)
+        model.set_weights([np.diag(np.ones(inp_shape[0]) * 2)])
+        return model
 
-def hardcoded_agent_reward(v_n, v_k, time_limit=20):
-    env = VectorIncrementEnvironmentTFAgents(v_n=v_n, v_k=v_k, do_transform=False)
-    env = wrappers.TimeLimit(env, 20)
-    train_env = tf_py_environment.TFPyEnvironment(env)
+    gin.bind_parameter("KerasEncoder.model_callable", times_two_model)
+    gin.bind_parameter("KerasEncoder.out_shape", env.observation_space.shape)
+    gin.bind_parameter("KerasEncoderWrapper.env", env)
 
-    # running a hardcoded agent to test if the environment works correctly
-    o = train_env.reset().observation.numpy()[0]
-    total_reward = 0
-    while True:
-        act = np.argmin(o)
-        step = train_env.step(act)
-        o = step.observation.numpy()[0]
-        r = np.array(step.reward[0])
-        total_reward += r
-        if step.step_type == 2:
-            return total_reward
+    env1 = KerasEncoderWrapper()
 
+    obs_transformed = env1.reset()
+    obs_raw = env1.f.raw_observation
 
-# checking that the environment works
-def test_env_hardcoded_agent():
-    total_reward = hardcoded_agent_reward(2, 2)
-    assert total_reward == 10
+    assert np.allclose(obs_raw * 2, obs_transformed)
