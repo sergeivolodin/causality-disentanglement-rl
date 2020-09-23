@@ -1,6 +1,7 @@
 import gym
-import vectorincrement
+from vectorincrement import load_env
 import numpy as np
+from observation_encoder_sb import KerasEncoderVecWrapper
 from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines.common.policies import MlpPolicy
 #from stable_baselines.deepq.policies import MlpPolicy
@@ -20,19 +21,25 @@ parser.add_argument('--train_steps', type=int, default=250000)
 parser.add_argument('--eval_episodes', type=int, default=100)
 parser.add_argument('--train', required=False, action='store_true')
 parser.add_argument('--evaluate', required=False, action='store_true')
-parser.add_argument('--config', type=str, default="config/5x5.gin")
-parser.add_argument('--env', type=str, default="KeyChest-v0")
+parser.add_argument('--config', type=str, default=None)
+parser.add_argument('--env', type=str, default="VectorIncrement-v0")
 parser.add_argument('--n_env', type=int, default=8)
+parser.add_argument('--wrap_keras_encoder', action='store_true')
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    gin.parse_config_file(args.config)
+    config_basename = "none"
+    if args.config:
+        gin.parse_config_file(args.config)
+        config_basename = os.path.basename(args.config)[:-4]
 
     def make_env():
-        return gym.make(args.env)
+        return load_env(args.env)
 
-    checkpoint_fn = args.env
+    checkpoint_fn = f"env-{args.env}-config-{config_basename}"
     env = DummyVecEnv([make_env for _ in range(args.n_env)])
+    if args.wrap_keras_encoder:
+        env = KerasEncoderVecWrapper(env)
 
     print("Checkpoint path", checkpoint_fn)
 

@@ -1,0 +1,12 @@
+import vectorincrement
+import vectorincrement.observation_encoder
+
+load_env.env_name = "CartPole-v0"
+
+observation_encoder.KerasEncoder.model_callable = @observation_encoder.non_linear_encoder
+observation_encoder.KerasEncoder.seed = 42
+
+observation_encoder.non_linear_encoder.hidden_layers = [100, 100, 100]
+observation_encoder.non_linear_encoder.activation = 'sigmoid'
+observation_encoder.non_linear_encoder.use_bias = True
+observation_encoder.non_linear_encoder.out_shape = (100,)
