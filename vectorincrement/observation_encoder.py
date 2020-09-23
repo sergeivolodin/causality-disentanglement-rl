@@ -75,9 +75,18 @@ class KerasEncoderWrapper(TransformObservation):
             env = gym.make(env)
         fcn = KerasEncoder(inp_shape=env.observation_space.shape)
         super(KerasEncoderWrapper, self).__init__(env, fcn)
-        self.observation_space = gym.spaces.Box(low=np.float32(-np.inf),
+        self.observation_space = gym.spaces.Box(low=np.float32(0.0),
                                                 high=np.float32(np.inf),
                                                 shape=fcn.out_shape)
+
+@gin.configurable
+class ObservationScaleWrapper(TransformObservation):
+    """Use a keras model to transform observations."""
+    def __init__(self, env, scale_coeff=1.0):
+        self.scale_coeff = scale_coeff
+        def scale_array(x):
+            return x * self.scale_coeff
+        super(ObservationScaleWrapper, self).__init__(env, scale_array)
 
 
 def get_obss_states(env, episodes=10):

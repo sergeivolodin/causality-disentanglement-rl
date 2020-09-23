@@ -1,0 +1,17 @@
+import vectorincrement
+import vectorincrement.observation_encoder
+
+load_env.env_name = "VectorIncrement-v0"
+load_env.time_limit = 50
+load_env.obs_scaler = 0.2
+
+vectorincrementenv.VectorIncrementEnvironment.n = 5
+
+
+observation_encoder.KerasEncoder.model_callable = @observation_encoder.non_linear_encoder
+observation_encoder.KerasEncoder.model_filename = "encoders/encoder-config-ve5_linear-2c77a48c-fde6-11ea-96a3-00155d22e64a.pb"
+
+observation_encoder.non_linear_encoder.hidden_layers = []
+observation_encoder.non_linear_encoder.activation = None
+observation_encoder.non_linear_encoder.use_bias = False
+observation_encoder.non_linear_encoder.out_shape = (100,)

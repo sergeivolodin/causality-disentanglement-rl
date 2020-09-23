@@ -1,0 +1,7 @@
+import vectorincrement
+
+load_env.env_name = "VectorIncrement-v0"
+load_env.time_limit = 50
+load_env.obs_scaler = 0.2
+
+vectorincrementenv.VectorIncrementEnvironment.n = 5

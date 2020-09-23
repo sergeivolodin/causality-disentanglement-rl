@@ -14,7 +14,7 @@ class VectorIncrementEnvironment(gym.Env):
             n: state dimensionality
         """
         self.n = n
-        self.observation_space = gym.spaces.Box(low=-np.float32(np.inf),
+        self.observation_space = gym.spaces.Box(low=np.float32(0),
                                                 high=np.float32(np.inf), shape=(self.n,))
         self.action_space = gym.spaces.Discrete(self.n)
 
