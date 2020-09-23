@@ -14,21 +14,27 @@ def reward_as_dict(**kwargs):
     return args_to_dict(**kwargs)
 
 @gin.configurable
+class np_random_seed(object):
+    """Run stuff with a fixed random seed."""
+    # https://stackoverflow.com/questions/32172054/how-can-i-retrieve-the-current-seed-of-numpys-random-number-generator
+    def __init__(self, seed=42):
+        self.seed = seed
+        self.st0 = None
+
+    def __enter__(self):
+        self.st0 = np.random.get_state()
+        np.random.seed(self.seed)
+
+    def __exit__(self, type_, value, traceback):
+        np.random.set_state(self.st0)
+
+@gin.configurable
 def with_fixed_seed(fcn, seed=42, **kwargs):
     """Call function with np.random.seed fixed."""
-    # https://stackoverflow.com/questions/32172054/how-can-i-retrieve-the-current-seed-of-numpys-random-number-generator
 
-    # get the initial state of the RNG
-    st0 = np.random.get_state()
-
-    # setting the seed
-    np.random.seed(seed)
-
-    # computing the function
-    result = fcn(**kwargs)
-
-    # set the state back to what it was originally
-    np.random.set_state(st0)
+    with np_fixed_seed(seed=seed):
+        # computing the function
+        result = fcn(**kwargs)
 
     return result
 

@@ -2,6 +2,7 @@ import gym
 from vectorincrement import load_env
 import numpy as np
 from observation_encoder_sb import KerasEncoderVecWrapper
+from observation_encoder import KerasEncoderWrapper
 from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines.common.policies import MlpPolicy
 #from stable_baselines.deepq.policies import MlpPolicy
@@ -31,6 +32,7 @@ if __name__ == '__main__':
     config_basename = "none"
     if args.config:
         gin.parse_config_file(args.config)
+        gin.bind_parameter("observation_encoder.KerasEncoder.model_callable", None)
         config_basename = os.path.basename(args.config)[:-4]
 
     def make_env():
@@ -57,15 +59,22 @@ if __name__ == '__main__':
     if args.evaluate:
         directory = "video-" + checkpoint_fn + '-' + str(uuid1())
         env = make_env()
+        if args.wrap_keras_encoder:
+            env = KerasEncoderWrapper(env)
         env = Monitor(env, directory=directory, force=True, video_callable=lambda v: True,
                       resume=True, write_upon_reset=False)
-        for i in tqdm(range(args.eval_episodes)):
-            obs = env.reset()
-            done = False
-            while not done:
-                action, _states = model.predict(obs)
-                obs, rewards, done, info = env.step(action)
-                env.render(mode='rgb_array')
+        with tqdm(total=args.eval_episodes) as pbar:
+            for i in range(args.eval_episodes):
+                R = 0
+                obs = env.reset()
+                done = False
+                while not done:
+                    action, _states = model.predict(obs)
+                    obs, rewards, done, info = env.step(action)
+                    env.render(mode='rgb_array')
+                    R += rewards
+                pbar.update(1)
+                pbar.set_postfix(reward=R)
         print(f"Your videos are in {directory}")
         videos = sorted([x for x in os.listdir(directory) if x.endswith('.mp4')])
         list_fn = f"list_file_{directory}.txt"

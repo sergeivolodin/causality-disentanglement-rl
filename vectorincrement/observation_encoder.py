@@ -1,4 +1,5 @@
 import numpy as np
+from helpers import np_random_seed
 from gym.wrappers import TransformObservation
 import tensorflow as tf
 import gin
@@ -9,16 +10,35 @@ import gym
 class KerasEncoder(object):
     """Applies a keras model to observations."""
 
-    def __init__(self, model_callable, seed=None, **kwargs):
-        if hasattr(tf.random, 'set_seed'):
-            tf.random.set_seed(seed)
-        else:
-            tf.set_random_seed(seed)
-        self.model = model_callable(**kwargs)
+    def __init__(self, model_callable=None, model_filename=None, seed=None, **kwargs):
+        if model_filename is not None:
+            self.model = tf.keras.models.load_model(model_filename)
+        if model_callable is not None:
+            self.model = None
+            if hasattr(tf.random, 'set_seed'):
+                tf.random.set_seed(seed)
+            else:
+                with np_random_seed(seed):
+                    import random as rn
+                    import os
+                    os.environ['PYTHONHASHSEED'] = '0'
+                    rn.seed(seed)
+                    session_conf = tf.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=1)
+                    from tensorflow.keras import backend as K
+                    tf.set_random_seed(seed)
+                    sess = tf.Session(graph=tf.get_default_graph(), config=session_conf)
+                    K.set_session(sess)
+                    self.model = model_callable(**kwargs)
+                    self.model.compile('adam', 'mse')
+            if self.model is None:
+                self.model = model_callable(**kwargs)
         self.kwargs = kwargs
         self.seed = seed
         self.last_raw_observation = None
         self.out_shape = self(np.zeros(kwargs['inp_shape'])).shape
+
+    def save(self, fn):
+        self.model.save(fn)
 
     def __call__(self, x):
         self.last_raw_observation = x
@@ -36,7 +56,8 @@ class KerasEncoder(object):
 
 @gin.configurable
 def non_linear_encoder(inp_shape, out_shape, hidden_layers=None,
-                       activation='sigmoid', use_bias=True):
+                       activation='sigmoid', use_bias=True,
+                       kernel_initializer='glorot_uniform'):
     """Create a linear keras model."""
     assert len(out_shape) == 1
     if hidden_layers is None:
@@ -48,7 +69,7 @@ def non_linear_encoder(inp_shape, out_shape, hidden_layers=None,
 
     for h in hidden_out_layers:
         layers.append(tf.keras.layers.Dense(h, use_bias=use_bias, activation=activation,
-                                            kernel_initializer='random_normal'))
+                                            kernel_initializer=kernel_initializer))
 
     model = tf.keras.Sequential(layers)
     return model

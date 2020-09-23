@@ -4,7 +4,7 @@ import vectorincrement.observation_encoder
 load_env.env_name = "CartPole-v0"
 
 observation_encoder.KerasEncoder.model_callable = @observation_encoder.non_linear_encoder
-observation_encoder.KerasEncoder.seed = 42
+observation_encoder.KerasEncoder.model_filename = "encoders/encoders/encoder-config-cartpole_linear-c497dbec-fddc-11ea-bbef-00155d22e64a"
 
 observation_encoder.non_linear_encoder.hidden_layers = []
 observation_encoder.non_linear_encoder.activation = None
