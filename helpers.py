@@ -2,6 +2,39 @@ from time import time
 import gym
 import gin
 import numpy as np
+from gym import Wrapper
+
+
+class EnvDataCollector(Wrapper):
+    """Collects data from the environment."""
+
+    def __init__(self, env):
+        self.env = env
+        self.action_space = self.env.action_space
+        self.observation_space = self.env.observation_space
+        self.reward_range = self.env.reward_range
+        self.metadata = self.env.metadata
+        self.rollouts = []
+        self.current_rollout = []
+        super(EnvDataCollector, self).__init__(env)
+
+    def step(self, action):
+        obs, rew, done, info = self.env.step(action)
+        self.current_rollout.append({'observation': obs, 'reward': rew, 'done': done,
+                                     'info': info, 'action': action})
+        return (obs, rew, done, info)
+
+    def reset(self, **kwargs):
+        if self.current_rollout:
+            self.rollouts.append(self.current_rollout)
+            self.current_rollout = []
+        obs = self.env.reset(**kwargs)
+        self.current_rollout.append({'observation': obs})
+        return obs
+
+    @property
+    def raw_data(self):
+        return self.rollouts
 
 
 def args_to_dict(**kwargs):

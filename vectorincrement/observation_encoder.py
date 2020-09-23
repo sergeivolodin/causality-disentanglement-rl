@@ -10,30 +10,13 @@ import gym
 class KerasEncoder(object):
     """Applies a keras model to observations."""
 
-    def __init__(self, model_callable=None, model_filename=None, seed=None, **kwargs):
+    def __init__(self, model_callable=None, model_filename=None, **kwargs):
         if model_filename is not None:
             self.model = tf.keras.models.load_model(model_filename)
         if model_callable is not None:
-            self.model = None
-            if hasattr(tf.random, 'set_seed'):
-                tf.random.set_seed(seed)
-            else:
-                with np_random_seed(seed):
-                    import random as rn
-                    import os
-                    os.environ['PYTHONHASHSEED'] = '0'
-                    rn.seed(seed)
-                    session_conf = tf.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=1)
-                    from tensorflow.keras import backend as K
-                    tf.set_random_seed(seed)
-                    sess = tf.Session(graph=tf.get_default_graph(), config=session_conf)
-                    K.set_session(sess)
-                    self.model = model_callable(**kwargs)
-                    self.model.compile('adam', 'mse')
-            if self.model is None:
-                self.model = model_callable(**kwargs)
+            print("Warning: creating a new encoder")
+            self.model = model_callable(**kwargs)
         self.kwargs = kwargs
-        self.seed = seed
         self.last_raw_observation = None
         self.out_shape = self(np.zeros(kwargs['inp_shape'])).shape
 
@@ -95,6 +78,34 @@ class KerasEncoderWrapper(TransformObservation):
         self.observation_space = gym.spaces.Box(low=np.float32(-np.inf),
                                                 high=np.float32(np.inf),
                                                 shape=fcn.out_shape)
+
+
+def get_obss_states(env, episodes=10):
+    """Get observations and original states."""
+    assert isinstance(env, KerasEncoderWrapper)
+    assert isinstance(episodes, int)
+    obss = []
+    states = []
+
+    for episode in range(episodes):
+
+        obs = env.reset()
+        state = env.f.last_raw_observation
+
+        obss.append(obs)
+        states.append(state)
+
+        done = False
+        while not done:
+            obs, rew, done, info = env.step(env.action_space.sample())
+            state = env.f.last_raw_observation
+
+            obss.append(obs)
+            states.append(state)
+
+    assert len(obss) == len(states)
+
+    return np.array(obss), np.array(states)
 
 # class RandomSophisticatedFunction(object):
 #     """A function converting an input into a high-dimensional object."""
