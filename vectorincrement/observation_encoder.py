@@ -13,9 +13,11 @@ class KerasEncoder(object):
     def __init__(self, model_callable=None, model_filename=None, **kwargs):
         if model_filename is not None:
             self.model = tf.keras.models.load_model(model_filename)
-        if model_callable is not None:
+        elif model_callable is not None:
             print("Warning: creating a new encoder")
             self.model = model_callable(**kwargs)
+        else:
+            raise ValueError("Both callable and filename cannot be none")
         self.kwargs = kwargs
         self.last_raw_observation = None
         self.out_shape = self(np.zeros(kwargs['inp_shape'])).shape
@@ -70,10 +72,10 @@ def linear_encoder_unbiased_normal(inp_shape, out_shape):
 @gin.configurable
 class KerasEncoderWrapper(TransformObservation):
     """Use a keras model to transform observations."""
-    def __init__(self, env):
+    def __init__(self, env, **kwargs):
         if isinstance(env, str):
             env = gym.make(env)
-        fcn = KerasEncoder(inp_shape=env.observation_space.shape)
+        fcn = KerasEncoder(inp_shape=env.observation_space.shape, **kwargs)
         super(KerasEncoderWrapper, self).__init__(env, fcn)
         self.observation_space = gym.spaces.Box(low=np.float32(0.0),
                                                 high=np.float32(np.inf),
