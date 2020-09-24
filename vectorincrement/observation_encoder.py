@@ -1,5 +1,4 @@
 import numpy as np
-from helpers import np_random_seed
 from gym.wrappers import TransformObservation
 import tensorflow as tf
 import gin
@@ -12,6 +11,7 @@ class KerasEncoder(object):
 
     def __init__(self, model_callable=None, model_filename=None, **kwargs):
         if model_filename is not None:
+            print("Loading model", model_filename)
             self.model = tf.keras.models.load_model(model_filename)
         elif model_callable is not None:
             print("Warning: creating a new encoder")
@@ -77,7 +77,7 @@ class KerasEncoderWrapper(TransformObservation):
             env = gym.make(env)
         fcn = KerasEncoder(inp_shape=env.observation_space.shape, **kwargs)
         super(KerasEncoderWrapper, self).__init__(env, fcn)
-        self.observation_space = gym.spaces.Box(low=np.float32(0.0),
+        self.observation_space = gym.spaces.Box(low=np.float32(-np.inf),
                                                 high=np.float32(np.inf),
                                                 shape=fcn.out_shape)
 

@@ -1,6 +1,8 @@
 import keychest
 import helpers
 
+load_env.env_name = "KeyChest-v0"
+
 #KeyChestGymEnv.engine_constructor = @with_fixed_seed
 keychestenv.KeyChestGymEnv.engine_constructor = @keychestenv.KeyChestEnvironmentRandom
 

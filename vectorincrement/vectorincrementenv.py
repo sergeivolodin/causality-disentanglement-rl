@@ -2,6 +2,11 @@ import gin
 import gym
 import numpy as np
 
+@gin.configurable
+class SparseMatrixEnvironment(gym.Env):
+    """State is multiplied by a fixed sparse matrix at each time-step."""
+    def __init__(self, n=10):
+        
 
 @gin.configurable
 class VectorIncrementEnvironment(gym.Env):

@@ -1,4 +1,5 @@
 import vectorincrement
+import helpers
 
 load_env.env_name = "VectorIncrement-v0"
 load_env.time_limit = 50
