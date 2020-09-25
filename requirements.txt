@@ -120,7 +120,7 @@ six==1.14.0
 smmap==3.0.4
 tensorboard==2.2.1
 tensorboard-plugin-wit==1.6.0
-tensorflow==2.2.0
+tensorflow==2.2.1
 tensorflow-estimator==2.2.0
 tensorflow-model-optimization==0.3.0
 tensorflow-probability==0.10.0
