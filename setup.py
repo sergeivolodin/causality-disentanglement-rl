@@ -9,15 +9,15 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(
-    name = "keychest",
+    name = "causality_disentanglement_rl",
     version = "0.0.1",
     author = "Sergei Volodin",
     author_email = "etoestja1@gmail.com",
-    description = ("Keys and Chests environment for causal reinforcement learning research"),
+    description = ("Keys and Chests environment, Vector Increment env, causal reinforcement learning research code"),
     license = "BSD",
     keywords = "reinforcement learning causality gridworld gym",
     url = "https://causalrlworkshop.github.io/program/cldm_8.html",
-    packages=['keychest', 'vectorincrement'],
+    packages=['keychest', 'vectorincrement', 'sparse_causal_model_learner_rl'],
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Topic :: Utilities",
