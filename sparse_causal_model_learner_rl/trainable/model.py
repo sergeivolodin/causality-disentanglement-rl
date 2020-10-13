@@ -14,8 +14,8 @@ class Model(nn.Module):
 
 @gin.configurable
 class LinearModel(Model):
-    def __init__(self, use_bias=True):
-        super(LinearModel, self).__init__()
+    def __init__(self, use_bias=True, **kwargs):
+        super(LinearModel, self).__init__(**kwargs)
         self.use_bias = use_bias
         assert len(self.feature_shape) == 1
         assert len(self.action_shape) == 1
