@@ -1,9 +1,11 @@
 from gym.wrappers import TimeLimit
 import gin
 import gym
-import vectorincrement
+# noinspection PyUnresolvedReferences
+import vectorincrement  # noqa # pylint: disable=unused-import
 from vectorincrement.observation_encoder import ObservationScaleWrapper
-import keychest
+# noinspection PyUnresolvedReferences
+import keychest  # noqa # pylint: disable=unused-import
 
 
 @gin.configurable

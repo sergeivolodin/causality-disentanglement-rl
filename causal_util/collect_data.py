@@ -1,13 +1,14 @@
 import tensorflow as tf
 
 tf.compat.v1.disable_eager_execution()
-from causal_util.helpers import load_env
+from causal_util import load_env
 from vectorincrement.observation_encoder import KerasEncoderWrapper
 import argparse
 from tqdm import tqdm
 from uuid import uuid1
 import pickle
 import gin
+from gym import Wrapper
 
 
 class EnvDataCollector(Wrapper):
