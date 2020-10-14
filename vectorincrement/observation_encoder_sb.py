@@ -1,7 +1,7 @@
-from observation_encoder import KerasEncoder
-import numpy as np
 import gin
 import gym
+import numpy as np
+from observation_encoder import KerasEncoder
 from stable_baselines.common.vec_env.base_vec_env import VecEnvWrapper
 
 
@@ -16,11 +16,11 @@ class KerasEncoderVecWrapper(VecEnvWrapper):
                                            shape=self._fcn.out_shape)
         super(KerasEncoderVecWrapper, self).__init__(venv, observation_space=observation_space,
                                                      action_space=action_space)
-        
+
     def reset(self):
         obs = self.venv.reset()
         return self._fcn.call_list(obs)
-    
+
     def step_wait(self):
         obs_, rew, done, info = self.venv.step_wait()
         obs = self._fcn.call_list(obs_)

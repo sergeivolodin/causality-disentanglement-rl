@@ -1,12 +1,52 @@
 import tensorflow as tf
+
 tf.compat.v1.disable_eager_execution()
-from util.helpers import EnvDataCollector, load_env
+from causal_util.helpers import load_env
 from vectorincrement.observation_encoder import KerasEncoderWrapper
 import argparse
 from tqdm import tqdm
 from uuid import uuid1
 import pickle
 import gin
+
+
+class EnvDataCollector(Wrapper):
+    """Collects data from the environment."""
+
+    def __init__(self, env):
+        self.env = env
+        self.action_space = self.env.action_space
+        self.observation_space = self.env.observation_space
+        self.reward_range = self.env.reward_range
+        self.metadata = self.env.metadata
+        self.rollouts = []
+        self.current_rollout = []
+        self.steps = 0
+        super(EnvDataCollector, self).__init__(env)
+
+    def step(self, action):
+        obs, rew, done, info = self.env.step(action)
+        self.steps += 1
+        self.current_rollout.append({'observation': obs, 'reward': rew, 'done': done,
+                                     'info': info, 'action': action})
+        return (obs, rew, done, info)
+
+    def flush(self):
+        if self.current_rollout:
+            self.rollouts.append(self.current_rollout)
+            self.current_rollout = []
+
+    def reset(self, **kwargs):
+        self.steps += 1
+        self.flush()
+        obs = self.env.reset(**kwargs)
+        self.current_rollout.append({'observation': obs})
+        return obs
+
+    @property
+    def raw_data(self):
+        return self.rollouts
+
 
 parser = argparse.ArgumentParser("Collect data from the environment and save it")
 parser.add_argument('--n_episodes', type=int, default=1000)

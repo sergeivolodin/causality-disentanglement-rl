@@ -1,21 +1,18 @@
-import gym
-from vectorincrement import load_env
-import numpy as np
-from vectorincrement.observation_encoder_sb import KerasEncoderVecWrapper
-from vectorincrement.observation_encoder import KerasEncoderWrapper
-from stable_baselines.common.vec_env import DummyVecEnv
-from stable_baselines.common.policies import MlpPolicy
-#from stable_baselines.deepq.policies import MlpPolicy
-from stable_baselines import DQN
-from stable_baselines import PPO2
-from stable_baselines.common.vec_env import VecEnv
 import argparse
-from gym.wrappers import Monitor
-from uuid import uuid1
-from tqdm import tqdm
 import os
-from functools import partial
+from uuid import uuid1
+
 import gin
+from gym.wrappers import Monitor
+# from stable_baselines.deepq.policies import MlpPolicy
+from stable_baselines import PPO2
+from stable_baselines.common.policies import MlpPolicy
+from stable_baselines.common.vec_env import DummyVecEnv
+from tqdm import tqdm
+
+from vectorincrement import load_env
+from vectorincrement.observation_encoder import KerasEncoderWrapper
+from vectorincrement.observation_encoder_sb import KerasEncoderVecWrapper
 
 parser = argparse.ArgumentParser(description="Train/evaluate the model")
 parser.add_argument('--train_steps', type=int, default=250000)
@@ -35,8 +32,10 @@ if __name__ == '__main__':
         gin.bind_parameter("observation_encoder.KerasEncoder.model_callable", None)
         config_basename = os.path.basename(args.config)[:-4]
 
+
     def make_env():
         return load_env(args.env)
+
 
     checkpoint_fn = f"env-{args.env}-config-{config_basename}"
     env = DummyVecEnv([make_env for _ in range(args.n_env)])

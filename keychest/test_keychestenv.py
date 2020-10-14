@@ -1,8 +1,11 @@
-from keychest.keychestenv import KeyChestGymEnv, KeyChestEnvironmentRandom, KeyChestEnvironmentFixedMap
 from time import time
-import pytest
-import numpy as np
+
 import gym
+import numpy as np
+import pytest
+
+from keychest.keychestenv import KeyChestGymEnv, KeyChestEnvironmentRandom, KeyChestEnvironmentFixedMap
+
 
 def test_hardcoded_env_behavior():
     def random_reward():
@@ -23,13 +26,13 @@ l@
     mymap3 = np.array([['P', '<', '>'],
                        ['l', '@', ' '],
                        [' ', ' ', ' ']],
-             dtype='<U1')
+                      dtype='<U1')
 
     maps = [mymap, mymap2, mymap3]
 
     for map_ in maps:
-
-        reward = {'step': -1, 'food_collected': random_reward(), 'key_collected': random_reward(), 'chest_opened': random_reward()}
+        reward = {'step': -1, 'food_collected': random_reward(), 'key_collected': random_reward(),
+                  'chest_opened': random_reward()}
 
         env = KeyChestGymEnv(engine_constructor=KeyChestEnvironmentFixedMap,
                              map_array=map_, initial_health=9, food_efficiency=3,
@@ -37,14 +40,14 @@ l@
         obs = env.reset()
 
         obs_hardcoded_match = np.array([['@', '@', '@', '@', '@'],
-               ['@', '@', '@', '@', ' '],
-               [' ', ' ', ' ', ' ', ' '],
-               [' ', ' ', ' ', ' ', ' '],
-               ['#', '#', '#', '#', '#'],
-               ['#', 'P', '<', '>', '#'],
-               ['#', 'l', '@', ' ', '#'],
-               ['#', ' ', ' ', ' ', '#'],
-               ['#', '#', '#', '#', '#']], dtype='<U1')
+                                        ['@', '@', '@', '@', ' '],
+                                        [' ', ' ', ' ', ' ', ' '],
+                                        [' ', ' ', ' ', ' ', ' '],
+                                        ['#', '#', '#', '#', '#'],
+                                        ['#', 'P', '<', '>', '#'],
+                                        ['#', 'l', '@', ' ', '#'],
+                                        ['#', ' ', ' ', ' ', '#'],
+                                        ['#', '#', '#', '#', '#']], dtype='<U1')
 
         def assert_obs_equals(env, obs):
             print(env.render(mode='np_array').shape, obs.shape)
@@ -154,6 +157,7 @@ l@
         assert env.engine.lamp_state == 1
         assert done == True
 
+
 def test_env_create():
     env = KeyChestGymEnv(engine_constructor=KeyChestEnvironmentRandom,
                          initial_health=15, food_efficiency=10)
@@ -161,10 +165,10 @@ def test_env_create():
     assert isinstance(env.action_space, gym.spaces.Discrete)
     assert env
 
+
 def test_rollouts(do_print=False, time_for_test=3):
     """Do rollouts and see if the environment crashes."""
     time_start = time()
-    
 
     while True:
         if time() - time_start > time_for_test:
@@ -198,7 +202,7 @@ def test_rollouts(do_print=False, time_for_test=3):
         else:
             env = KeyChestGymEnv(engine_constructor=KeyChestEnvironmentRandom,
                                  **params)
-            
+
         assert isinstance(env, KeyChestGymEnv)
 
         # doing episodes
@@ -216,10 +220,10 @@ def test_rollouts(do_print=False, time_for_test=3):
                 assert img.shape[2] == 3
                 steps += 1
 
+
 def test_wrong_action():
     env = KeyChestGymEnv(engine_constructor=KeyChestEnvironmentRandom,
-                     initial_health=15, food_efficiency=10)
+                         initial_health=15, food_efficiency=10)
     with pytest.raises(KeyError) as excinfo:
         env.step(222)
     assert str(excinfo.value) == '222'
-

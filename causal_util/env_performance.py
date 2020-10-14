@@ -1,13 +1,14 @@
-from util.helpers import get_env_performance
 import argparse
+
 import gin
 import gym
+
+from causal_util.helpers import get_env_performance
 
 parser = argparse.ArgumentParser("Measure performance in steps per second")
 parser.add_argument("--time_seconds", type=float, default=3.0)
 parser.add_argument("--config", type=str, default="keychest/config/5x5.gin")
 parser.add_argument("--env", type=str, default="KeyChest-v0")
-
 
 if __name__ == "__main__":
     args = parser.parse_args()

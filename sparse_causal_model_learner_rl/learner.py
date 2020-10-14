@@ -1,8 +1,9 @@
+import gin
+
 from sparse_causal_model_learner_rl.trainable.decoder import Decoder
 from sparse_causal_model_learner_rl.trainable.model import Model
 from sparse_causal_model_learner_rl.trainable.reconstructor import Reconstructor
 
-import gin
 
 @gin.configurable
 class Learner(object):
@@ -12,7 +13,6 @@ class Learner(object):
         self.feature_shape = self.config.get('feature_shape')
         self.action_shape = self.config.get('action_shape')
         self.observation_shape = self.config.get('observation_shape')
-
 
         self.model_cls = config.get('model')
         assert issubclass(self.model_cls, Model)

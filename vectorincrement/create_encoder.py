@@ -1,11 +1,11 @@
-import gym
-from vectorincrement import load_env
 import argparse
 import os
-import numpy as np
 import uuid
-from observation_encoder import KerasEncoderWrapper
+
 import gin
+from observation_encoder import KerasEncoderWrapper
+
+from vectorincrement import load_env
 
 parser = argparse.ArgumentParser(description="Create a KerasEncoder, save weights")
 parser.add_argument('--config', type=str, required=True)

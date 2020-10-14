@@ -1,9 +1,11 @@
 import gin
 from torch import nn
 
+
 @gin.configurable
 class Reconstructor(nn.Module):
     """"""
+
     def __init__(self, observation_shape, feature_shape):
         self.observation_shape = observation_shape
         self.feature_shape = feature_shape
@@ -11,6 +13,7 @@ class Reconstructor(nn.Module):
 
     def forward(self, x):
         return NotImplementedError
+
 
 @gin.configurable
 class LinearReconstructor(Reconstructor):

@@ -1,10 +1,11 @@
 import os
+
 os.environ['CUDA_VISIBLE_DEVICES'] = "-1"
 import tensorflow as tf
 
 tf.compat.v1.enable_v2_behavior()
 from vectorincrement.vectorincrementenv import VectorIncrementEnvironment
-from vectorincrement.observation_encoder import KerasEncoder, linear_encoder_unbiased_normal, KerasEncoderWrapper
+from vectorincrement.observation_encoder import linear_encoder_unbiased_normal, KerasEncoderWrapper
 import numpy as np
 import gym
 import gin

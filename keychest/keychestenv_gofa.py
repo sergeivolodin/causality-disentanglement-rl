@@ -1,32 +1,32 @@
-from keychest.keychestenv import KeyChestEnvironmentRandom, KeyChestGymEnv, KeyChestEnvironment
-from keychest.keychestenv_gui import jupyter_gui
-from matplotlib import pyplot as plt
 import numpy as np
+
+from keychest.keychestenv import KeyChestEnvironment
+
 
 def features_for_obs(obs):
     """Features for an observation."""
-    
+
     objects = KeyChestEnvironment.OBJECTS
-    
+
     def get_map(obj):
         idx = objects.index(obj)
         return obs[:, :, idx]
-    
+
     def get_where(obj):
         m = get_map(obj)
         return list(zip(*np.where(m)))
-    
+
     def get_where1(obj):
         r = get_where(obj)
         assert len(r) == 1
         return r[0]
-    
+
     ppos = get_where1('player')
-    
+
     def is_present(obj):
         r = get_where(obj)
         return len(r) > 0
-    
+
     def items_at_player():
         player_location = ppos
         result = []
@@ -34,12 +34,10 @@ def features_for_obs(obs):
             if obs[player_location[0], player_location[1], i]:
                 result.append(obj)
         return result
-    
+
     assert obs.shape[2] == len(objects)
     result = {}
-    
-    
-    
+
     result['player_position_x'] = ppos[0]
     result['player_position_y'] = ppos[1]
     if is_present('lamp_on'):
@@ -48,28 +46,28 @@ def features_for_obs(obs):
         result['lamp_state'] = 0
     else:
         result['lamp_state'] = -1
-    
+
     items = items_at_player()
-    
+
     result['at_food'] = 'food' in items
     result['at_key'] = 'key' in items
     result['at_chest'] = 'chest' in items
     result['at_button'] = 'lamp_on' in items or 'lamp_off' in items
     result['health'] = np.sum(get_map('health'))
     result['keys_collected'] = np.sum(get_map('keys_collected'))
-        
+
     return result
 
 
 def max_reward(env):
     """Return reward upper bound."""
     obs = env.reset()
-    
+
     objects = KeyChestEnvironment.OBJECTS
-    
+
     def get_map(obs, obj):
         return obs[:, :, objects.index(obj)]
-    
+
     max_reward_ = 0
     rd = env.reward_dict
 
@@ -85,14 +83,15 @@ def max_reward(env):
         max_reward_ += min(n_keys, n_chests) * rd['chest_opened']
 
     max_reward_ += (n_food * env.engine.food_efficiency + env.engine.initial_health) * rd['step']
-        
+
     return max_reward_
+
 
 def hardcoded_policy_step(env, do_print=False):
     """Get a step by a hardcoded policy."""
     obs = env.engine.observation
     objects = env.engine.OBJECTS
-    
+
     def get_map(obs, obj):
         return obs[:, :, objects.index(obj)]
 
@@ -108,16 +107,15 @@ def hardcoded_policy_step(env, do_print=False):
         else:
             distances = []
             closest_idx = -1
-        
+
         result = {'distances': distances, 'ppos': ppos, 'objects': objects,
                   'closest_idx': closest_idx,
                   'n': len(objects)}
-        
+
         if closest_idx >= 0:
             result['smallest_distance'] = distances[closest_idx]
             result['closest_object'] = objects[closest_idx]
         return result
-
 
     health = features_for_obs(obs)['health']
     keys = features_for_obs(obs)['keys_collected']
@@ -128,7 +126,7 @@ def hardcoded_policy_step(env, do_print=False):
     chest_info = closest_object(obs, 'chest')
     food_info = closest_object(obs, 'food')
     ppos = key_info['ppos']
-    
+
     if do_print:
         print("Health", health, "Keys", keys)
 
@@ -151,16 +149,16 @@ def hardcoded_policy_step(env, do_print=False):
 
     if do_print:
         print("Dist", dist_to(target))
-        
+
     # overriding target if there is food
-    
+
     def health_alert():
         if health < 3:
             return True
         if health < dist_to(target) * 2:
             return True
         return False
-    
+
     if health_alert() and food_info['n']:
         target = food_info['closest_object']
         if do_print:

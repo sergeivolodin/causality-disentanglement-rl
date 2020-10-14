@@ -1,7 +1,8 @@
 import gin
 import gym
 import numpy as np
-from util.helpers import vec_heatmap
+
+from causal_util.helpers import vec_heatmap
 
 
 @gin.configurable
@@ -48,7 +49,7 @@ class SparseMatrixEnvironment(gym.Env):
         info = {}
 
         return obs, rew, done, info
-        
+
 
 @gin.configurable
 class VectorIncrementEnvironment(gym.Env):

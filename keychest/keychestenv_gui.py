@@ -1,11 +1,13 @@
-from keychest.keychestenv import KeyChestEnvironmentRandom, KeyChestGymEnv
-from IPython.display import clear_output
-from time import sleep
-from matplotlib import pyplot as plt
-import cv2
-import numpy as np
-import gin
 import argparse
+from time import sleep
+
+import cv2
+import gin
+import numpy as np
+from IPython.display import clear_output
+from matplotlib import pyplot as plt
+
+from keychest.keychestenv import KeyChestGymEnv
 
 parser = argparse.ArgumentParser("Play the KeyChest environment in a GUI manually")
 parser.add_argument("--config", type=str, default="config/5x5.gin")
@@ -18,10 +20,10 @@ def gui_for_env(env):
     def show_rendered(scale=3, text=''):
         image = np.array(env.render(mode='rgb_array'), dtype=np.float32)
         new_shape = tuple([int(x) for x in np.array(image.shape) * scale][:2])
-        image = cv2.resize(image, new_shape, interpolation = cv2.INTER_NEAREST)
+        image = cv2.resize(image, new_shape, interpolation=cv2.INTER_NEAREST)
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
-        cv2.putText(image, text, (0, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255,255,255), 2)
+        cv2.putText(image, text, (0, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
         cv2.imshow("Key Chest Environment", image)
 
     show_rendered()
@@ -42,7 +44,7 @@ def gui_for_env(env):
             show_rendered()
             continue
 
-        if k not in key_map: continue   
+        if k not in key_map: continue
 
         obs, rew, done, info = env.step_string(key_map[k])
         text = f"reward={rew}"
@@ -89,6 +91,7 @@ def jupyter_gui(env):
         if done:
             print("TOTAL REWARD", R)
             env.reset()
+
 
 if __name__ == '__main__':
     args = parser.parse_args()

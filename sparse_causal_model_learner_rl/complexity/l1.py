@@ -1,5 +1,7 @@
 import torch
+
 from sparse_causal_model_learner_rl.complexity.complexity_metric import ComplexityMetric
+
 
 class L1(ComplexityMetric):
     def __init__(self):
@@ -8,6 +10,7 @@ class L1(ComplexityMetric):
     def __call__(self, w):
         assert isinstance(w, torch.Tensor), f"Please supply a tensor {w}"
         return torch.sum(torch.abs(w))
+
 
 class Lp(ComplexityMetric):
     def __init__(self, p):

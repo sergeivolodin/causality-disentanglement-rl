@@ -1,8 +1,8 @@
-import numpy as np
-from gym.wrappers import TransformObservation
-import tensorflow as tf
 import gin
 import gym
+import numpy as np
+import tensorflow as tf
+from gym.wrappers import TransformObservation
 
 
 @gin.configurable
@@ -59,19 +59,22 @@ def non_linear_encoder(inp_shape, out_shape, hidden_layers=None,
     model = tf.keras.Sequential(layers)
     return model
 
+
 def linear_encoder_unbiased_normal(inp_shape, out_shape):
     """Create a linear keras model."""
     assert len(out_shape) == 1
     model = tf.keras.Sequential([
-                tf.keras.layers.Dense(out_shape[0], input_shape=inp_shape,
-                                      use_bias=False,
-                                      kernel_initializer='random_normal'),
-            ])
+        tf.keras.layers.Dense(out_shape[0], input_shape=inp_shape,
+                              use_bias=False,
+                              kernel_initializer='random_normal'),
+    ])
     return model
+
 
 @gin.configurable
 class KerasEncoderWrapper(TransformObservation):
     """Use a keras model to transform observations."""
+
     def __init__(self, env, **kwargs):
         if isinstance(env, str):
             env = gym.make(env)
@@ -81,13 +84,17 @@ class KerasEncoderWrapper(TransformObservation):
                                                 high=np.float32(np.inf),
                                                 shape=fcn.out_shape)
 
+
 @gin.configurable
 class ObservationScaleWrapper(TransformObservation):
     """Use a keras model to transform observations."""
+
     def __init__(self, env, scale_coeff=1.0):
         self.scale_coeff = scale_coeff
+
         def scale_array(x):
             return x * self.scale_coeff
+
         super(ObservationScaleWrapper, self).__init__(env, scale_array)
 
 

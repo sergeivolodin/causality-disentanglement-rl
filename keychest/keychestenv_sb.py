@@ -1,19 +1,15 @@
-import gym
-import keychest
-import numpy as np
-from stable_baselines.common.vec_env import DummyVecEnv
-from stable_baselines.common.policies import MlpPolicy
-#from stable_baselines.deepq.policies import MlpPolicy
-from stable_baselines import DQN
-from stable_baselines import PPO2
-from stable_baselines.common.vec_env import VecEnv
 import argparse
-from gym.wrappers import Monitor
-from uuid import uuid1
-from tqdm import tqdm
 import os
-from functools import partial
+from uuid import uuid1
+
 import gin
+import gym
+from gym.wrappers import Monitor
+# from stable_baselines.deepq.policies import MlpPolicy
+from stable_baselines import PPO2
+from stable_baselines.common.policies import MlpPolicy
+from stable_baselines.common.vec_env import DummyVecEnv
+from tqdm import tqdm
 
 parser = argparse.ArgumentParser(description="Train/evaluate the model")
 parser.add_argument('--train_steps', type=int, default=250000)
@@ -28,8 +24,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
     gin.parse_config_file(args.config)
 
+
     def make_env():
         return gym.make(args.env)
+
 
     checkpoint_fn = args.env
     env = DummyVecEnv([make_env for _ in range(args.n_env)])
