@@ -67,3 +67,12 @@ def with_fixed_seed(fcn, seed=42, **kwargs):
         result = fcn(**kwargs)
 
     return result
+
+def lstdct2dctlst(lst):
+    """List of dictionaries -> dict of lists."""
+    keys = lst[0].keys()
+    result = {k: [] for k in keys}
+    for item in lst:
+        for k, v in item.items():
+            result[k].append(v)
+    return result

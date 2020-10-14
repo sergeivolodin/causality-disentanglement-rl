@@ -10,7 +10,7 @@ from stable_baselines.common.policies import MlpPolicy
 from stable_baselines.common.vec_env import DummyVecEnv
 from tqdm import tqdm
 
-from vectorincrement import load_env
+from causal_util import load_env
 from vectorincrement.observation_encoder import KerasEncoderWrapper
 from vectorincrement.observation_encoder_sb import KerasEncoderVecWrapper
 
