@@ -1,5 +1,5 @@
-import keychest
-import helpers
+import causal_util.helpers
+import keychest.keychestenv
 
 load_env.env_name = "KeyChest-v0"
 

@@ -3,9 +3,6 @@ from time import time
 import gin
 import gym
 import numpy as np
-from gym.wrappers import TimeLimit
-
-from vectorincrement.observation_encoder import ObservationScaleWrapper
 
 
 def rescale(x, min_value, max_value):
@@ -32,22 +29,6 @@ def vec_heatmap(vec, min_value=-1, max_value=1, sq_side=10):
         elif val < 0:
             square[:, :, 0] = -vec_rescaled[i]
     return obs
-
-
-@gin.configurable
-def load_env(env_name, time_limit=None, obs_scaler=None, wrappers=None, **kwargs):
-    """Load an environment, configurable via gin."""
-    print(f"Make environment {env_name} {wrappers} {kwargs}")
-    env = gym.make(env_name, **kwargs)
-    if time_limit:
-        env = TimeLimit(env, time_limit)
-    if obs_scaler:
-        env = ObservationScaleWrapper(env, obs_scaler)
-    if wrappers is None:
-        wrappers = []
-    for wrapper in wrappers[::-1]:
-        env = wrapper(env)
-    return env
 
 
 def args_to_dict(**kwargs):
@@ -86,20 +67,3 @@ def with_fixed_seed(fcn, seed=42, **kwargs):
         result = fcn(**kwargs)
 
     return result
-
-
-def get_env_performance(env, time_for_test=3.):
-    """Get performance of the environment on a random uniform policy."""
-    done = False
-    env.reset()
-    steps = 0
-
-    time_start = time()
-    while time() - time_start <= time_for_test:
-        _, _, done, _ = env.step(env.action_space.sample())
-        steps += 1
-        if done:
-            env.reset()
-            steps += 1
-
-    return steps / time_for_test
