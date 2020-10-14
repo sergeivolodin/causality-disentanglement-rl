@@ -1,51 +1,37 @@
 import torch
+from sparse_causal_model_learner_rl.loss import loss
 
-def reconstruction_loss(obss, decoder, reconstructor, **kwargs):
+
+@loss
+def reconstruction_loss(observations, decoder, reconstructor, **kwargs):
     """Ensure that the decoder is not degenerate by fitting a reconstructor."""
     mse = torch.nn.MSELoss()
-    return mse(reconstructor(decoder(obss)), obss)
+    return mse(reconstructor(decoder(observations)), observations)
 
 
-def reconstruction_loss_norm(reconstructor):
+@loss
+def reconstruction_loss_norm(reconstructor, config, **kwargs):
     """Ensure that the decoder is not degenerate (inverse norm not too high)."""
     regularization_loss = 0
     for param in reconstructor.parameters():
         regularization_loss += torch.sum(torch.square(param))
+    if regularization_loss < config['rn_threshold']:
+        regularization_loss = torch.from_numpy(np.array(config['rn_threshold']))
     return regularization_loss
 
 
-def fit_loss(obss, decoder, model):
+@loss
+def fit_loss(obs_x, obs_y, action_x, decoder, model, **kwargs):
     """Ensure that the model fits the features data."""
     mse = torch.nn.MSELoss()
 
-    return mse(model(decoder(obss[:-1])), decoder(obss[1:]))
+    return mse(model(decoder(obs_x), action_x), decoder(obs_y))
 
 
-def sparsity_loss(model):
+@loss
+def sparsity_loss(model, **kwargs):
     """Ensure that the model is sparse."""
     regularization_loss = 0
     for param in model.parameters():
         regularization_loss += torch.sum(torch.abs(param))
     return regularization_loss
-
-
-# %%
-
-def losses(obss_torch, decoder, reconstructor, model, rn_threshold=100):
-    """Compute all losses ob observations."""
-    res = {}
-    res['r'] = reconstruction_loss(obss_torch, decoder, reconstructor)
-    res['f'] = fit_loss(obss_torch, decoder, model)
-    res['s'] = sparsity_loss(model)
-    res['rn'] = reconstruction_loss_norm(reconstructor)
-    if res['rn'] < rn_threshold:
-        res['rn'] = torch.from_numpy(np.array(rn_threshold))
-    return res
-
-
-def total_loss(losses_, hypers):
-    """Compute total loss."""
-    loss = 0.0
-    for key in hypers.keys():
-        loss += hypers[key] * losses_[key]
-    return loss
