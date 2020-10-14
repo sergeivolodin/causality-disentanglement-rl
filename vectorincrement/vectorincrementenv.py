@@ -1,7 +1,7 @@
 import gin
 import gym
 import numpy as np
-from helpers import vec_heatmap
+from util.helpers import vec_heatmap
 
 
 @gin.configurable
