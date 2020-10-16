@@ -1,6 +1,7 @@
 import gin
 
 
+@gin.configurable
 class Config(object):
     """Configurable dictionary that updates itself."""
 
@@ -46,3 +47,12 @@ class Config(object):
 
     def __repr__(self):
         return f"<Config with keys {self._config.keys()}"
+
+    def get(self, *args, **kwargs):
+        return self.config.get(*args, **kwargs)
+
+    def __getitem__(self, key):
+        return self.config.__getitem__(key)
+
+    def __contains__(self, key):
+        return self.config.__contains__(key)
