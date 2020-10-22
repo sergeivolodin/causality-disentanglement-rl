@@ -5,6 +5,13 @@ import gym
 import numpy as np
 import torch
 
+def one_hot_encode(n, value):
+    """Get a one-hot encoding of length n with a given value."""
+    result = np.zeros(n, dtype=np.float32)
+    assert isinstance(n, int) and isinstance(value, int)
+    assert n >= 0 and 0 <= value < n
+    result[value] = 1
+    return result
 
 def flatten_dict_keys(dct, prefix='', separator='/'):
     """Nested dictionary to a flat dictionary."""

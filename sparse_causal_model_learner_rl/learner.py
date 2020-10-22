@@ -7,6 +7,7 @@ from tqdm import tqdm
 import uuid
 import pickle
 import os
+import gym
 
 from causal_util import load_env
 from causal_util.collect_data import EnvDataCollector
@@ -14,7 +15,7 @@ from sparse_causal_model_learner_rl.config import Config
 from sparse_causal_model_learner_rl.trainable.decoder import Decoder
 from sparse_causal_model_learner_rl.trainable.model import Model
 from sparse_causal_model_learner_rl.trainable.reconstructor import Reconstructor
-from causal_util.helpers import postprocess_info
+from causal_util.helpers import postprocess_info, one_hot_encode
 from matplotlib import pyplot as plt
 from causal_util.helpers import dict_to_sacred
 from sparse_causal_model_learner_rl.sacred_gin_tune.sacred_wrapper import gin_sacred
@@ -34,7 +35,15 @@ class Learner(object):
         self.collector = EnvDataCollector(self.env)
 
         self.feature_shape = self.config['feature_shape']
-        self.action_shape = self.env.action_space.shape
+
+        # Discrete action -> one-hot encoding
+        if isinstance(self.env.action_space, gym.spaces.Discrete):
+            self.to_onehot = True
+            self.action_shape = (self.env.action_space.n,)
+        else:
+            self.to_onehot = False
+            self.action_shape = self.env.action_space.shape
+
         self.observation_shape = self.env.observation_space.shape
 
         # self.action_shape = self.config.get('action_shape')
@@ -59,6 +68,7 @@ class Learner(object):
                                                     observation_shape=self.observation_shape)
 
         self.trainables = [self.model, self.decoder, self.reconstructor]
+        self.history = []
 
         self.epochs = 0
 
@@ -98,8 +108,12 @@ class Learner(object):
                 obs.append(step['observation'])
 
                 if is_multistep and not is_first:
+                    action = step['action']
+                    if self.to_onehot:
+                        action = one_hot_encode(self.action_shape[0], action)
+
                     obs_y.append(step['observation'])
-                    act_x.append(step['action'])
+                    act_x.append(action)
 
                 if is_multistep and not is_last:
                     obs_x.append(step['observation'])
@@ -168,6 +182,7 @@ class Learner(object):
         # send information downstream
         if self.callback:
             self.callback(self, epoch_info)
+        self.history.append(epoch_info)
 
         # update config
         self.config.update(epoch_info=epoch_info)
@@ -205,6 +220,9 @@ class Learner(object):
             elif val > 1:
                 print(f"Warning: loss {loss} is used more than once")
 
+    def __repr__(self):
+        return f"<Learner env={self.env} feature_shape={self.feature_shape} epochs={self.epochs}>"
+
     def visualize(self):
         # plotting
         plt.figure(figsize=(16, 5))
@@ -222,14 +240,10 @@ class Learner(object):
 
 
 parser = argparse.ArgumentParser(description="Causal learning experiment")
-parser.add_argument('--train', required=False, action='store_true')
 parser.add_argument('--config', type=str, default=None, action='append')
 
-
-
-if __name__ == '__main__':
-    args = parser.parse_args()
-
+def learner_gin_sacred(configs):
+    """Launch Learner from gin configs."""
     def main_fcn(config, ex, **kwargs):
         """Main function for gin_sacred."""
         def callback(self, epoch_info):
@@ -247,6 +261,10 @@ if __name__ == '__main__':
 
         learner = Learner(config, callback=callback)
         learner.train()
+        return learner
 
-    if args.train:
-        gin_sacred(args.config, main_fcn, db_name='causal_sparse')
+    return gin_sacred(configs, main_fcn, db_name='causal_sparse')
+
+if __name__ == '__main__':
+    args = parser.parse_args()
+    learner_gin_sacred(args.config)

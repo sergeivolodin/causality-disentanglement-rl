@@ -30,6 +30,6 @@ def gin_sacred(config_files, main_fcn, db_name='causal_sparse'):
 
     @ex.main
     def run_train():
-        main_fcn(config=config, ex=ex)
+        return main_fcn(config=config, ex=ex)
 
     return ex.run()
