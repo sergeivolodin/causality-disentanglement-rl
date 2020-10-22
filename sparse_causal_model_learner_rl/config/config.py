@@ -29,10 +29,16 @@ class Config(object):
 
     def update(self, **kwargs):
         if self.UPDATE_KEY in self._config:
-            f = self._config[self.UPDATE_KEY]
-            assert callable(f), f"Update entry must be callable {f}"
-            return f(config=self._config, temp=self._temporary_variables,
-                     **kwargs)
+            update_val = self._config[self.UPDATE_KEY]
+            if not isinstance(update_val, list):
+                update_val = [update_val]
+            results = []
+            for i, f in enumerate(update_val):
+                assert callable(f), f"Update entry {i} must be callable: {f}, {type(f)}"
+                results.append(f(config=self._config, temp=self._temporary_variables,
+                         **kwargs))
+            return results
+        return []
 
     def set_gin_variables(self):
         if self.GIN_KEY in self._config:
@@ -46,7 +52,7 @@ class Config(object):
         return dict(self._config)
 
     def __repr__(self):
-        return f"<Config with keys {self._config.keys()}"
+        return f"<Config with keys [{', '.join(self._config.keys())}]>"
 
     def get(self, *args, **kwargs):
         return self.config.get(*args, **kwargs)

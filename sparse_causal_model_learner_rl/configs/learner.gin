@@ -1,0 +1,35 @@
+import sparse_causal_model_learner_rl.trainable.decoder
+import sparse_causal_model_learner_rl.trainable.reconstructor
+import sparse_causal_model_learner_rl.trainable.model
+import sparse_causal_model_learner_rl.config
+import sparse_causal_model_learner_rl.annealer.threshold
+import sparse_causal_model_learner_rl.loss.losses
+import sparse_causal_model_learner_rl.loss.optimizer
+import sparse_causal_model_learner_rl.metrics.nnz
+
+Config.train_steps = 20
+Config.env_steps = 1000
+
+Config.model = @LinearModel
+Config.decoder = @LinearDecoder
+Config.reconstructor = @LinearReconstructor
+Config.feature_shape = (10, )
+
+ThresholdAnnealer.fit_threshold = 1e-2
+Config._update_function = [@ThresholdAnnealer]
+
+Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1.0},
+                 'sparsity': {'fcn': @sparsity_loss, 'coeff': 1.0},
+                 'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 1.0}
+                }
+
+nnz.eps = 1e-3
+Config.metrics = {'nnz': @nnz}
+
+opt1/Optimizer.name = 'Adam'
+opt1/Optimizer.lr = 1e-3
+Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt1/Optimizer}
+Config.execution = {'opt1': ['reconstruction'],
+                    'opt2': ['fit', 'sparsity']}
+
+    
