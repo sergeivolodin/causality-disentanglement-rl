@@ -11,7 +11,8 @@ from sparse_causal_model_learner_rl.config import Config
 from sparse_causal_model_learner_rl.trainable.decoder import Decoder
 from sparse_causal_model_learner_rl.trainable.model import Model
 from sparse_causal_model_learner_rl.trainable.reconstructor import Reconstructor
-from sparse_causal_model_learner_rl.helpers import postprocess_info
+from causal_util.helpers import postprocess_info
+from matplotlib import pyplot as plt
 
 
 @gin.configurable
