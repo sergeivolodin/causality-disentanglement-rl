@@ -27,6 +27,10 @@ def torch_to_numpy(x):
             x = np.mean(x)
         elif len(x.shape) == 0:
             x = np.mean(x)
+    if isinstance(x, np.float32) or isinstance(x, np.float64):
+        x = float(x)
+    if isinstance(x, np.int32) or isinstance(x, np.int64):
+        x = int(x)
     return x
 
 def postprocess_info(d):
@@ -106,3 +110,11 @@ def lstdct2dctlst(lst):
         for k, v in item.items():
             result[k].append(v)
     return result
+
+def dict_to_sacred(ex, d, iteration, prefix=''):
+    """Log a dictionary to sacred."""
+    for k, v in d.items():
+        if isinstance(v, dict):
+            dict_to_sacred(ex, v, iteration, prefix=prefix + k + '/')
+        elif isinstance(v, float) or isinstance(v, int):
+            ex.log_scalar(prefix + k, v, iteration)

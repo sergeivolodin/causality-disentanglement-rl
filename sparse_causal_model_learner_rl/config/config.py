@@ -57,8 +57,15 @@ class Config(object):
     def get(self, *args, **kwargs):
         return self.config.get(*args, **kwargs)
 
+    def set(self, key, val):
+        self.config[key] = val
+
     def __getitem__(self, key):
         return self.config.__getitem__(key)
 
     def __contains__(self, key):
         return self.config.__contains__(key)
+
+    def __iter__(self):
+        for k, v in self.config.items():
+            yield k, v

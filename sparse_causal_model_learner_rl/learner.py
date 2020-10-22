@@ -4,6 +4,9 @@ import gin
 import numpy as np
 import torch
 from tqdm import tqdm
+import uuid
+import pickle
+import os
 
 from causal_util import load_env
 from causal_util.collect_data import EnvDataCollector
@@ -13,15 +16,18 @@ from sparse_causal_model_learner_rl.trainable.model import Model
 from sparse_causal_model_learner_rl.trainable.reconstructor import Reconstructor
 from causal_util.helpers import postprocess_info
 from matplotlib import pyplot as plt
+from causal_util.helpers import dict_to_sacred
+from sparse_causal_model_learner_rl.sacred_gin_tune.sacred_wrapper import gin_sacred
 
 
 @gin.configurable
 class Learner(object):
     """Learn a model for an RL environment with custom losses and parameters."""
 
-    def __init__(self, config):
+    def __init__(self, config, callback=None):
         assert isinstance(config, Config), f"Please supply a valid config: {config}"
         self.config = config
+        self.callback = callback
 
         # creating environment
         self.env = self.create_env()
@@ -156,12 +162,12 @@ class Learner(object):
         for metric_label, metric in self.config['metrics'].items():
             epoch_info['metrics'][metric_label] = metric(**context)
 
-        # pass metrics to sacred
-
-        # save graph as artifact
-
         # process epoch information
         epoch_info = postprocess_info(epoch_info)
+
+        # send information downstream
+        if self.callback:
+            self.callback(self, epoch_info)
 
         # update config
         self.config.update(epoch_info=epoch_info)
@@ -172,15 +178,15 @@ class Learner(object):
     @property
     def graph(self):
         """Return the current causal model."""
-        pass
+        return None
 
     def train(self):
         """Train (many epochs)."""
-        for i in tqdm(range(self.config['train_steps'])):
-            info = self._epoch()
-            print(info)
+        for _ in tqdm(range(self.config['train_steps'])):
+            self._epoch()
 
     def _check_execution(self):
+        """Check that all losses are used and all optimizers are used."""
         optimizers_usage = {x: 0 for x in self.config['optimizers']}
         losses_usage = {x: 0 for x in self.config['losses']}
         for opt, losses in self.config['execution'].items():
@@ -219,11 +225,28 @@ parser = argparse.ArgumentParser(description="Causal learning experiment")
 parser.add_argument('--train', required=False, action='store_true')
 parser.add_argument('--config', type=str, default=None, action='append')
 
+
+
 if __name__ == '__main__':
     args = parser.parse_args()
-    for c in args.config:
-        gin.parse_config_file(c)
-    learner = Learner(Config())
+
+    def main_fcn(config, ex, **kwargs):
+        """Main function for gin_sacred."""
+        def callback(self, epoch_info):
+            """Callback for Learner."""
+            # pass metrics to sacred
+            dict_to_sacred(ex, epoch_info, epoch_info['epochs'])
+
+            # save graph as artifact
+            uid = str(uuid.uuid4())
+            base_dir = ex.base_dir
+            fn = os.path.join(base_dir, f"G_{uid}.pkl")
+            pickle.dump(self.graph, open(fn, 'wb'))
+
+            ex.add_artifact(fn, "W")
+
+        learner = Learner(config, callback=callback)
+        learner.train()
 
     if args.train:
-        learner.train()
+        gin_sacred(args.config, main_fcn, db_name='causal_sparse')
