@@ -67,7 +67,8 @@ class Learner(object):
         self.reconstructor = self.reconstructor_cls(feature_shape=self.feature_shape,
                                                     observation_shape=self.observation_shape)
 
-        self.trainables = [self.model, self.decoder, self.reconstructor]
+        self.trainables = {'model': self.model, 'decoder': self.decoder,
+                           'reconstructor': self.reconstructor}
         self.history = []
 
         self.epochs = 0
@@ -141,10 +142,11 @@ class Learner(object):
         """One training iteration."""
         # obtain data from environment
         self._check_execution()
-
         self.collect_steps()
 
-        variables = [p for x in self.trainables for p in x.parameters()]
+        variables = [p for k in sorted(self.trainables.keys())
+                     for p in self.trainables[k].parameters()]
+
         optimizers = {label: fcn(params=variables)
                       for label, fcn in self.config['optimizers'].items()}
 
@@ -175,6 +177,9 @@ class Learner(object):
         # compute metrics
         for metric_label, metric in self.config['metrics'].items():
             epoch_info['metrics'][metric_label] = metric(**context)
+
+        epoch_info['weights'] = {label: [x.detach().numpy() for x in trainable.parameters()]
+                                 for label, trainable in self.trainables.items()}
 
         # process epoch information
         epoch_info = postprocess_info(epoch_info)

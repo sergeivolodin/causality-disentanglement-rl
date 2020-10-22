@@ -1,3 +1,4 @@
+CausalModel*.png
 *.gin.py
 *.egg-info
 __pycache__

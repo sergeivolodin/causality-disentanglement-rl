@@ -32,3 +32,5 @@ Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt1/Optimizer}
 Config.execution = {'opt1': ['reconstruction'],
                     'opt2': ['fit', 'sparsity']}
 
+
+LinearModel.use_bias = False
