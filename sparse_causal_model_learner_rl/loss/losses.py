@@ -12,13 +12,13 @@ def reconstruction_loss(obs, decoder, reconstructor, **kwargs):
 
 
 @gin.configurable
-def reconstruction_loss_norm(reconstructor, config, **kwargs):
+def reconstruction_loss_norm(reconstructor, config, rn_threshold=100, **kwargs):
     """Ensure that the decoder is not degenerate (inverse norm not too high)."""
     regularization_loss = 0
     for param in reconstructor.parameters():
         regularization_loss += torch.sum(torch.square(param))
-    if regularization_loss < config['rn_threshold']:
-        regularization_loss = torch.from_numpy(np.array(config['rn_threshold']))
+    if regularization_loss < rn_threshold:
+        regularization_loss = torch.from_numpy(np.array(rn_threshold))
     return regularization_loss
 
 

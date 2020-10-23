@@ -178,7 +178,7 @@ class Learner(object):
         for metric_label, metric in self.config['metrics'].items():
             epoch_info['metrics'][metric_label] = metric(**context)
 
-        epoch_info['weights'] = {label: [x.detach().numpy() for x in trainable.parameters()]
+        epoch_info['weights'] = {label: [np.copy(x.detach().numpy()) for x in trainable.parameters()]
                                  for label, trainable in self.trainables.items()}
 
         # process epoch information

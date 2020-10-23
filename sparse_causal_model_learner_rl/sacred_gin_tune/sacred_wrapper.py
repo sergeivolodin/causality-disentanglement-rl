@@ -11,19 +11,28 @@ def gin_sacred(config_files, main_fcn, db_name='causal_sparse'):
     from sacred import Experiment, SETTINGS
     SETTINGS.CONFIG.READ_ONLY_CONFIG = False
 
+    config_names = []
     for c in config_files:
-        gin.parse_config_file(c)
+        if callable(c):
+            c()
+            config_names.append(str(c))
+        elif isinstance(c, str):
+            gin.parse_config_file(c)
+            config_names.append(os.path.basename(c)[:-4])
+        else:
+            raise TypeError(f"Config file can be either a callable or a string: {c}")
 
-    name = '_'.join([os.path.basename(x)[:-4] for x in config_files])
+    name = '_'.join(config_names)
     base_dir = os.getcwd()
 
     ex = Experiment(name, base_dir=base_dir)
     ex.observers.append(MongoObserver(db_name=db_name))
 
     for f in config_files:
-        f_py = f + '.py'
-        shutil.copy(f, f_py)
-        ex.add_source_file(f_py)
+        if isinstance(f, str):
+            f_py = f + '.py'
+            shutil.copy(f, f_py)
+            ex.add_source_file(f_py)
 
     config = Config()
     ex.add_config(config=config, **dict(config))
