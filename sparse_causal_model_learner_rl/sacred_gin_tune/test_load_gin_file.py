@@ -3,11 +3,16 @@ import gin
 import tempfile
 import pytest
 import os
+from ray import tune
 
 
 @gin.configurable
 def f(param):
     return param
+
+@gin.configurable
+def g(param1, param2):
+    return (param1, param2)
 
 @pytest.fixture
 def f_conf_123():
@@ -16,6 +21,7 @@ def f_conf_123():
         test_load_gin_file.f.param = 123
         """
     return conf_file
+
 
 def test_load_file(f_conf_123):
     with tempfile.NamedTemporaryFile(mode='w+') as tmp_config_file:
