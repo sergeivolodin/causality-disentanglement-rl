@@ -1,0 +1,16 @@
+import gin_tune.test_config
+import gin_tune
+
+ABA = 'caba'
+
+scope1/test_config.f.x = 123
+scope2/test_config.f.x = 456
+
+tune1/grid_search.values = [@scope1/test_config.f(), @scope2/test_config.f()]
+tune2/grid_search.values = [%ABA, 999]
+
+test_config.g.x1 = @tune1/grid_search()
+test_config.g.x2 = @tune2/grid_search()
+
+gin_tune_config.num_workers = 0
+tune_run.verbose = True
