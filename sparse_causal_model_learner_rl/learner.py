@@ -272,7 +272,8 @@ def main_fcn(config, ex, **kwargs):
 
 def learner_gin_sacred(configs):
     """Launch Learner from gin configs."""
-    return gin_sacred(configs, main_fcn, db_name='causal_sparse')
+    return gin_sacred(configs, main_fcn, db_name='causal_sparse',
+                      base_dir=os.path.join(os.getcwd(), 'results'))
 
 if __name__ == '__main__':
     args = parser.parse_args()
