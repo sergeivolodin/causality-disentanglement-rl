@@ -10,6 +10,7 @@ We use torch to learn the sparse model and stable baselines for RL.
 ### Installation
 1. You will need `conda` and `pip`
 2. Install requirements: `pip install -r requirements.txt`
+3. Install gin_tune: `pip install -e gin_tune`
 3. Set up a MongoDB database `test` on port `27017` on local machine
 4. `pip install -e .`
 
