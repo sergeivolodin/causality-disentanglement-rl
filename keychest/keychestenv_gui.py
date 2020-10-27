@@ -8,24 +8,53 @@ from IPython.display import clear_output
 from matplotlib import pyplot as plt
 
 from keychest.keychestenv import KeyChestGymEnv
+from keychest.keychestenv_gofa import hardcoded_policy_step
 
 parser = argparse.ArgumentParser("Play the KeyChest environment in a GUI manually")
 parser.add_argument("--config", type=str, default="config/5x5.gin")
+parser.add_argument("--solver", action='store_true')
 
+def show_rendered(scale=3, text=''):
+    image = np.array(env.render(mode='rgb_array'), dtype=np.float32) / 255.
+    old_shape = np.array(image.shape)[:2][::-1]
+    new_shape = old_shape * scale
+    new_shape = tuple([int(x) for x in new_shape])
+    image = cv2.resize(image, new_shape, interpolation=cv2.INTER_NEAREST)
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
+    cv2.putText(image, text, (0, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+    cv2.imshow("Key Chest Environment", image)
+
+def gui_for_env_gofa(env):
+    """cv2 GUI for the KeyChest environment."""
+    env.reset()
+    show_rendered()
+
+    while True:
+        k = cv2.waitKey(1)
+
+        if k == ord('x'):
+            break
+
+        action = hardcoded_policy_step(env)
+        obs, rew, done, info = env.step(action)
+        text = f"reward={rew}"
+        if done:
+            text = "done " + text
+            sleep(0.2)
+            env.reset()
+            show_rendered()
+            continue
+
+        show_rendered(text=text)
+        sleep(0.1)
+
+
+    cv2.destroyAllWindows()
 
 def gui_for_env(env):
     """cv2 GUI for the KeyChest environment."""
     env.reset()
-
-    def show_rendered(scale=3, text=''):
-        image = np.array(env.render(mode='rgb_array'), dtype=np.float32)
-        new_shape = tuple([int(x) for x in np.array(image.shape) * scale][:2])
-        image = cv2.resize(image, new_shape, interpolation=cv2.INTER_NEAREST)
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-
-        cv2.putText(image, text, (0, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-        cv2.imshow("Key Chest Environment", image)
-
     show_rendered()
 
     while True:
@@ -96,5 +125,8 @@ def jupyter_gui(env):
 if __name__ == '__main__':
     args = parser.parse_args()
     gin.parse_config_file(args.config)
-    env = KeyChestGymEnv()
-    gui_for_env(env)
+    env = KeyChestGymEnv(flatten_observation=False)
+    if args.solver:
+        gui_for_env_gofa(env)
+    else:
+        gui_for_env(env)
