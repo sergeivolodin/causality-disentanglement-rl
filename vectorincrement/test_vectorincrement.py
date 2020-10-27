@@ -57,3 +57,5 @@ def test_keras_encoder():
     obs_raw = env1.f.raw_observation
 
     assert np.allclose(obs_raw * 2, obs_transformed)
+
+    gin.clear_config()

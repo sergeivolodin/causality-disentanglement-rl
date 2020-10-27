@@ -32,3 +32,5 @@ def test_tune():
     res = {x['res'] for x in res.results.values()}
 
     assert res == {(456, 'caba'), (456, 999), (123, 'caba'), (123, 999)}
+
+    gin.clear_config()
