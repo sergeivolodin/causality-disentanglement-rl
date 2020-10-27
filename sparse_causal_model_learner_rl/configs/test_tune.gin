@@ -10,15 +10,15 @@ import gin_tune
 
 Config.train_steps = 20000
 
-env_steps/grid_search.values = [1000, 10000]
-Config.env_steps = @env_steps/grid_search()
+Config.env_steps = 1000
 
 Config.model = @LinearModel
 Config.decoder = @LinearDecoder
 Config.reconstructor = @LinearReconstructor
 Config.feature_shape = (10, )
 
-ThresholdAnnealer.fit_threshold = 1e-2
+thr/grid_search.values = [1e-2, 1e-3, 1e-1]
+ThresholdAnnealer.fit_threshold = @thr/grid_search()
 Config._update_function = [@ThresholdAnnealer]
 
 Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1.0},
@@ -30,11 +30,10 @@ nnz.eps = 1e-3
 Config.metrics = {'nnz': @nnz}
 
 opt1/Optimizer.name = 'Adam'
-opt_lr/grid_search.values = [1e-3, 1e-2]
+opt_lr/grid_search.values = [1e-3, 1e-4]
 opt1/Optimizer.lr = @opt_lr/grid_search()
-Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt1/Optimizer}
-Config.execution = {'opt1': ['reconstruction'],
-                    'opt2': ['fit', 'sparsity']}
+Config.optimizers = {'opt1': @opt1/Optimizer}
+Config.execution = {'opt1': ['fit', 'sparsity', 'reconstruction']}
 
 
 LinearModel.use_bias = False
