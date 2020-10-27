@@ -8,6 +8,7 @@ import uuid
 import pickle
 import os
 import gym
+from ray import tune
 
 from causal_util import load_env
 from causal_util.collect_data import EnvDataCollector
@@ -245,30 +246,37 @@ class Learner(object):
 
 
 parser = argparse.ArgumentParser(description="Causal learning experiment")
-parser.add_argument('--config', type=str, default=None, action='append')
+parser.add_argument('--config', type=str, required=True, action='append')
+
+
+def main_fcn(config, ex, **kwargs):
+    """Main function for gin_sacred."""
+
+    def callback(self, epoch_info):
+        """Callback for Learner."""
+        # pass metrics to sacred
+        dict_to_sacred(ex, epoch_info, epoch_info['epochs'])
+
+        tune.report(**epoch_info)
+
+        # save graph as artifact
+        uid = str(uuid.uuid4())
+        base_dir = ex.base_dir
+        fn = os.path.join(base_dir, f"G_{uid}.pkl")
+        pickle.dump(self.graph, open(fn, 'wb'))
+
+        ex.add_artifact(fn, "W")
+
+    # learner = Learner(config, callback=callback)
+    # learner.train()
+    # return learner
+    pass
+
 
 def learner_gin_sacred(configs):
     """Launch Learner from gin configs."""
-    def main_fcn(config, ex, **kwargs):
-        """Main function for gin_sacred."""
-        def callback(self, epoch_info):
-            """Callback for Learner."""
-            # pass metrics to sacred
-            dict_to_sacred(ex, epoch_info, epoch_info['epochs'])
-
-            # save graph as artifact
-            uid = str(uuid.uuid4())
-            base_dir = ex.base_dir
-            fn = os.path.join(base_dir, f"G_{uid}.pkl")
-            pickle.dump(self.graph, open(fn, 'wb'))
-
-            ex.add_artifact(fn, "W")
-
-        learner = Learner(config, callback=callback)
-        learner.train()
-        return learner
-
     return gin_sacred(configs, main_fcn, db_name='causal_sparse')
+
 
 if __name__ == '__main__':
     args = parser.parse_args()

@@ -3,6 +3,8 @@ from sparse_causal_model_learner_rl.config import Config
 import gin
 import shutil
 import os
+from gin_tune import tune_gin
+from functools import partial
 
 
 def load_config_files(config_files):
@@ -19,7 +21,7 @@ def load_config_files(config_files):
             raise TypeError(f"Config file can be either a callable or a string: {c}")
     return config_names
 
-def sacred_experiment_with_config(config, main_fcn, db_name, base_dir, sources=[]):
+def sacred_experiment_with_config(config, name, main_fcn, db_name, base_dir, sources=[]):
     """Launch a sacred experiment."""
     # creating a sacred experiment
     # https://github.com/IDSIA/sacred/issues/492
@@ -44,6 +46,19 @@ def sacred_experiment_with_config(config, main_fcn, db_name, base_dir, sources=[
     return ex.run()
 
 
+def inner_fcn(config, main_fcn=None, checkpoint_dir=None, **kwargs):
+    """Inner fuction running inside tune."""
+
+
+    kwargs = dict(main_fcn=main_fcn, name=config['name'],
+                  base_dir=config['base_dir'], db_name=config['db_name'],
+                  sources=config['sources'])
+
+    config_ = Config()
+
+    result = sacred_experiment_with_config(config=config_, **kwargs)
+    return result
+    pass
 
 def gin_sacred(config_files, main_fcn, db_name='causal_sparse'):
     """launch a sacred experiment from .gin config files."""
@@ -52,7 +67,13 @@ def gin_sacred(config_files, main_fcn, db_name='causal_sparse'):
     name = '_'.join(config_names)
     base_dir = os.getcwd()
 
-    result = sacred_experiment_with_config(config=Config(), main_fcn=main_fcn, name=name,
-                                           base_dir=base_dir, db_name=db_name, sources=config_files)
+    inner_fcn1 = partial(inner_fcn, main_fcn=main_fcn)
+    inner_fcn1.__name__ = main_fcn.__name__
+    
+    from ray import tune
+    print(tune.utils.diagnose_serialization(inner_fcn1))
+    analysis = tune_gin(inner_fcn1, config_update={'name': name, 'base_dir': base_dir,
+                                                  'db_name': db_name, 'sources': config_files})
 
-    return result
+
+    return analysis
