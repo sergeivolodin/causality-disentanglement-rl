@@ -16,19 +16,6 @@ Original causal graph (left) and optimized causal graph (right):<br />
 <img src="https://github.com/sergeivolodin/causality-disentanglement-rl/blob/master/images/graph_orig.pdf.png" height="300" />
 <img src="https://github.com/sergeivolodin/causality-disentanglement-rl/blob/master/images/graph_sparse.pdf.png" height="300" />
 
-Non-convex losses during training:<br />
-<img src="https://github.com/sergeivolodin/causality-disentanglement-rl/blob/master/images/descent_pca.pdf.png" height="200" />
-<img src="https://github.com/sergeivolodin/causality-disentanglement-rl/blob/master/images/plot_nodata_synthetic.png" height="200" />
-
-Training feedback:<br />
-<img src="https://github.com/sergeivolodin/causality-disentanglement-rl/blob/master/images/sml.pdf.png" height="300" />
-
-Tensorboard integration:<br />
-<img src="https://github.com/sergeivolodin/causality-disentanglement-rl/blob/master/images/vectorincrement_tb.png" height="300" />
-
-KeyChest environment:<br />
-<img src="https://github.com/sergeivolodin/causality-disentanglement-rl/blob/master/images/keychest.gif" />
-
 
 Done as a semester project at Laboratory of Computational Neuroscience at the Swiss Federal Institute of Technology in Lausanne (EPFL)
 <a href="https://www.overleaf.com/read/nqgjrjbcybrp">See full project report</a>
@@ -49,3 +36,18 @@ We use torch to learn the sparse model and stable baselines for RL.
 
 ### Learner
 `python -m sparse_causal_model_learner_rl.learner --config $(pwd)/sparse_causal_model_learner_rl/configs/test_tune.gin --config $(pwd)/vectorincrement/config/ve5.gin`
+
+### More images
+
+Non-convex losses during training:<br />
+<img src="https://github.com/sergeivolodin/causality-disentanglement-rl/blob/master/images/descent_pca.pdf.png" height="200" />
+<img src="https://github.com/sergeivolodin/causality-disentanglement-rl/blob/master/images/plot_nodata_synthetic.png" height="200" />
+
+Training feedback:<br />
+<img src="https://github.com/sergeivolodin/causality-disentanglement-rl/blob/master/images/sml.pdf.png" height="300" />
+
+Tensorboard integration:<br />
+<img src="https://github.com/sergeivolodin/causality-disentanglement-rl/blob/master/images/vectorincrement_tb.png" height="300" />
+
+KeyChest environment:<br />
+<img src="https://github.com/sergeivolodin/causality-disentanglement-rl/blob/master/images/keychest.gif" />
