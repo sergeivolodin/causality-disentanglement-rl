@@ -22,7 +22,6 @@ from causal_util.helpers import dict_to_sacred
 from sparse_causal_model_learner_rl.sacred_gin_tune.sacred_wrapper import gin_sacred
 
 
-@gin.configurable
 class Learner(object):
     """Learn a model for an RL environment with custom losses and parameters."""
 
@@ -256,7 +255,6 @@ def main_fcn(config, ex, **kwargs):
         """Callback for Learner."""
         # pass metrics to sacred
         dict_to_sacred(ex, epoch_info, epoch_info['epochs'])
-
         tune.report(**epoch_info)
 
         # save graph as artifact
@@ -267,16 +265,14 @@ def main_fcn(config, ex, **kwargs):
 
         ex.add_artifact(fn, "W")
 
-    # learner = Learner(config, callback=callback)
-    # learner.train()
-    # return learner
-    pass
+    learner = Learner(config, callback=callback)
+    learner.train()
+    return None
 
 
 def learner_gin_sacred(configs):
     """Launch Learner from gin configs."""
     return gin_sacred(configs, main_fcn, db_name='causal_sparse')
-
 
 if __name__ == '__main__':
     args = parser.parse_args()

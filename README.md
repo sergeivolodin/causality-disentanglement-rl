@@ -18,3 +18,6 @@ We use torch to learn the sparse model and stable baselines for RL.
 1. `python -m causal_util.env_performance --env KeyChest-v0 --config keychest/config/5x5.gin` 
 2. `python -m causal_util.env_performance --env CartPole-v0`
 3. `python -m causal_util.env_performance --env VectorIncrement-v0 --config vectorincrement/config/ve5.gin`
+
+### Learner
+`python -m sparse_causal_model_learner_rl.learner --config $(pwd)/sparse_causal_model_learner_rl/configs/test_tune.gin --config $(pwd)/vectorincrement/config/ve5.gin`

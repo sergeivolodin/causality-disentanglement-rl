@@ -28,6 +28,7 @@ def ThresholdAnnealer(config, epoch_info, temp,
         temp['last_hyper_adjustment'] = 0
     i = epoch_info['epochs']
 
+    suggested_hyper = None
     if rec_loss + fit_loss > fit_threshold:
         if config['losses']['sparsity']['coeff'] > min_hyper:
             suggested_hyper = config['losses']['sparsity']['coeff'] * factor
@@ -35,7 +36,7 @@ def ThresholdAnnealer(config, epoch_info, temp,
         if config['losses']['sparsity']['coeff'] < max_hyper:
             suggested_hyper = config['losses']['sparsity']['coeff'] / factor
 
-    if i - temp['last_hyper_adjustment'] >= 100:
+    if suggested_hyper and (i - temp['last_hyper_adjustment'] >= 100):
         config['losses']['sparsity']['coeff'] = suggested_hyper
         temp['last_hyper_adjustment'] = i
     return config

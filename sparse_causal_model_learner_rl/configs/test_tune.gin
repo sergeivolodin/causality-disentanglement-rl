@@ -39,5 +39,7 @@ Config.execution = {'opt1': ['reconstruction'],
 
 LinearModel.use_bias = False
 
-gin_tune_config.num_workers = 0
+gin_tune_config.num_workers = 10
 tune_run.verbose = True
+tune_run.queue_trials = True
+tune_run.name = 'test_tune.gin'
