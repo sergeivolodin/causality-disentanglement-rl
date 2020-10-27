@@ -45,6 +45,8 @@ def tune_gin_wrap(function):
         del config_new[GIN_CONFIG_ATTR]
         return function(config_new)
 
+    inner.__name__ = function.__name__
+
     return inner
 
 

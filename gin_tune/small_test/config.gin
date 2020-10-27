@@ -1,0 +1,13 @@
+import myfunc
+import gin_tune
+
+
+tune1/grid_search.values = [123, 456]
+tune2/grid_search.values = [789, 12]
+
+myfunc.f.x1 = @tune1/grid_search()
+myfunc.f.x2 = @tune2/grid_search()
+
+gin_tune_config.num_workers = 0
+tune_run.verbose = True
+
