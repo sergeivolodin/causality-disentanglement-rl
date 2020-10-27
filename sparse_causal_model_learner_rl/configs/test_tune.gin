@@ -8,7 +8,7 @@ import sparse_causal_model_learner_rl.loss.optimizer
 import sparse_causal_model_learner_rl.metrics.nnz
 import gin_tune
 
-Config.train_steps = 2000
+Config.train_steps = 20000
 
 env_steps/grid_search.values = [1000, 10000]
 Config.env_steps = @env_steps/grid_search()
