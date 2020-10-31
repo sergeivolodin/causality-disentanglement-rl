@@ -1,8 +1,6 @@
-from graphviz import Digraph
-import pandas as pd
-import gin
 from collections import OrderedDict
 
+import gin
 import matplotlib.cm as cm
 import numpy as np
 import pandas as pd
@@ -37,6 +35,7 @@ def plot_model(model):
     sns.heatmap(Ma, vmin=-1, vmax=1, cmap=cm)
     plt.xlabel('Actions')
     plt.ylabel('New features')
+    return fig
 
 
 def select_threshold(array, name='exp', do_plot=True):
@@ -218,14 +217,16 @@ def plot_contour(flat_history, loss_w, scale=5, n=50):
     ax.set_title('Loss contour plot')
 
     Zlog = np.log(Z)
+    extent = (-R[0], R[0], -R[1], R[1])
+
     im = ax.imshow(Zlog, interpolation='bilinear', origin='lower',
-                   cmap=cm.RdGy, extent=(-3, 3, -2, 2))
+                   cmap=cm.RdGy, extent=extent)
 
     levels = np.linspace(np.min(Zlog), np.max(Zlog), 10)
 
     CS = ax.contour(Zlog, levels, origin='lower', extend='both',
                     cmap='gray',
-                    linewidths=2, extent=(-3, 3, -2, 2))
+                    linewidths=2, extent=extent)
 
     # make a colorbar for the contour lines
     # CB = fig.colorbar(CS, shrink=0.8)
@@ -245,7 +246,7 @@ def plot_contour(flat_history, loss_w, scale=5, n=50):
 
     plt.legend()
 
-    return fig
+    return fig, ax
 
 
 def get_mesh(scale=5, n=50):

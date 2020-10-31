@@ -20,6 +20,11 @@ from causal_util.helpers import postprocess_info, one_hot_encode
 from matplotlib import pyplot as plt
 from causal_util.helpers import dict_to_sacred
 from sparse_causal_model_learner_rl.sacred_gin_tune.sacred_wrapper import gin_sacred
+from causal_util.helpers import lstdct2dctlst
+from functools import partial
+from sparse_causal_model_learner_rl.visual.learner_visual import total_loss, loss_and_history, plot_contour, plot_3d
+import numpy as np
+from sparse_causal_model_learner_rl.visual.learner_visual import plot_model, graph_for_matrices, select_threshold
 
 
 class Learner(object):
@@ -231,20 +236,37 @@ class Learner(object):
     def __repr__(self):
         return f"<Learner env={self.env} feature_shape={self.feature_shape} epochs={self.epochs}>"
 
-    def visualize(self):
-        # plotting
-        plt.figure(figsize=(16, 5))
-        for i, (k_, v) in enumerate(lstdct2dctlst(results).items()):
-            plt.subplot(1, len(results[0]) + 1, i + 1)
-            plt.xlabel('epoch')
-            plt.title(k_)
-            plt.axhline(0)
-            plt.plot(v)
-            plt.yscale('log')
+    def visualize_loss_landscape(self, steps_skip=10, scale=5, n=20, mode='2d'):
+        """Plot loss landscape in PCA space with the descent curve."""
+        weight_names = [f"{t}/{param}" for t, model in self.trainables.items() for param, _ in
+                        model.named_parameters()]
 
-        plt.subplot(1, len(results[0]) + 1, len(results[0]) + 1)
-        plt.title("Weights heatmap")
-        sns.heatmap(list(model.parameters())[0].detach().numpy())
+        results = {}
+
+        for opt_label in self.config['optimizers'].keys():
+            loss = partial(total_loss, learner=self, opt_label=opt_label)
+
+            loss_w, flat_history = loss_and_history(self, loss, weight_names)
+            flat_history = flat_history[::steps_skip]
+
+            if mode == '2d':
+                res = plot_contour(flat_history, loss_w, n=n, scale=scale)
+            elif mode == '3d':
+                res = plot_3d(flat_history, loss_w, n=n, scale=scale)
+            else:
+                raise ValueError(f"Wrong mode: {mode}, needs to be 2d/3d.")
+            results[opt_label] = res
+
+        return results
+
+    def visualize_model(self):
+        return plot_model(self.model)
+
+    def visualize_graph(self, threshold='auto', do_write=False):
+        if threshold == 'auto':
+            threshold = select_threshold(self.model.Ma, do_plot=do_write, name='learner')
+        ps, f_out = graph_for_matrices(self.model, threshold=threshold, do_write=do_write)
+        return threshold, ps, f_out
 
 
 parser = argparse.ArgumentParser(description="Causal learning experiment")
