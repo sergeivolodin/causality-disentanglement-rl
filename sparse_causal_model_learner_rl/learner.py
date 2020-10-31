@@ -178,8 +178,9 @@ class Learner(object):
         for metric_label, metric in self.config['metrics'].items():
             epoch_info['metrics'][metric_label] = metric(**context)
 
-        epoch_info['weights'] = {label: [np.copy(x.detach().numpy()) for x in trainable.parameters()]
-                                 for label, trainable in self.trainables.items()}
+        epoch_info['weights'] = {label + '/' + param_name: np.copy(param.detach().numpy())
+                                 for label, trainable in self.trainables.items()
+                                 for param_name, param in trainable.named_parameters()}
 
         # process epoch information
         epoch_info = postprocess_info(epoch_info)
@@ -187,7 +188,9 @@ class Learner(object):
         # send information downstream
         if self.callback:
             self.callback(self, epoch_info)
-        self.history.append(epoch_info)
+
+        if self.config.get('keep_history'):
+            self.history.append(epoch_info)
 
         # update config
         self.config.update(epoch_info=epoch_info)

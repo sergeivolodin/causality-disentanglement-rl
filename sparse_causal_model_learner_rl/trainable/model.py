@@ -32,3 +32,13 @@ class LinearModel(Model):
         f_next_f = self.fc_features(f_t)
         f_next_a = self.fc_action(a_t)
         return f_next_f + f_next_a
+
+    @property
+    def Mf(self):
+        """Return features model."""
+        return list(self.fc_features.parameters())[0].detach().numpy()
+
+    @property
+    def Ma(self):
+        """Return action model."""
+        return list(self.fc_action.parameters())[0].detach().numpy()
