@@ -17,13 +17,19 @@ class Decoder(nn.Module):
 
 @gin.configurable
 class LinearDecoder(Decoder):
-    def __init__(self, use_bias=False, **kwargs):
+    def __init__(self, use_bias=False, use_batchnorm=False, **kwargs):
         super(LinearDecoder, self).__init__(**kwargs)
         self.use_bias = use_bias
         assert len(self.observation_shape) == 1
         assert len(self.feature_shape) == 1
         self.fc = nn.Linear(self.observation_shape[0], self.feature_shape[0],
                             bias=self.use_bias)
+        self.use_batchnorm = use_batchnorm
+        if use_batchnorm:
+            self.bn = nn.BatchNorm1d(self.feature_shape[0], affine=False)
 
     def forward(self, x):
-        return self.fc(x)
+        x = self.fc(x)
+        if self.use_batchnorm:
+            x = self.bn(x)
+        return x

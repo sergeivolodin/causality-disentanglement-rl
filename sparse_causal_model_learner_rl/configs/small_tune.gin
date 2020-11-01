@@ -1,0 +1,44 @@
+import sparse_causal_model_learner_rl.trainable.decoder
+import sparse_causal_model_learner_rl.trainable.reconstructor
+import sparse_causal_model_learner_rl.trainable.model
+import sparse_causal_model_learner_rl.config
+import sparse_causal_model_learner_rl.annealer.threshold
+import sparse_causal_model_learner_rl.loss.losses
+import sparse_causal_model_learner_rl.loss.optimizer
+import sparse_causal_model_learner_rl.metrics.nnz
+import gin_tune
+
+Config.train_steps = 20000
+
+Config.env_steps = 1000
+
+Config.model = @LinearModel
+Config.decoder = @LinearDecoder
+Config.reconstructor = @LinearReconstructor
+Config.feature_shape = (10, )
+
+thr/grid_search.values = [1e-2, 1e-3, 1e-1]
+ThresholdAnnealer.fit_threshold = @thr/grid_search()
+Config._update_function = [@ThresholdAnnealer]
+
+Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1.0},
+                 'sparsity': {'fcn': @sparsity_loss, 'coeff': 1e-5},
+                 'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 1.0}
+                }
+
+nnz.eps = 1e-3
+Config.metrics = {'nnz': @nnz}
+
+opt1/Optimizer.name = 'Adam'
+opt_lr/grid_search.values = [1e-3, 1e-4]
+opt1/Optimizer.lr = @opt_lr/grid_search()
+Config.optimizers = {'opt1': @opt1/Optimizer}
+Config.execution = {'opt1': ['fit', 'sparsity', 'reconstruction']}
+
+
+LinearModel.use_bias = False
+
+gin_tune_config.num_workers = 10
+tune_run.verbose = True
+tune_run.queue_trials = True
+tune_run.name = 'test_tune.gin'
