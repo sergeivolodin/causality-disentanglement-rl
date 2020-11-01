@@ -26,3 +26,4 @@ tensorboardx==2.1
 tensorflow==1.15.4
 torch==1.6.0
 tqdm==4.50.2
+imageio==2.9.0
