@@ -15,8 +15,8 @@ tune_run.num_samples = 100
 Config.train_steps = 20000
 Config.env_steps = 1000
 
-Config.loss_every = 2000
-Config.graph_every = 1000
+Config.loss_every = 500
+Config.graph_every = 500
 Config.checkpoint_every = 200
 Config.report_every = 20
 

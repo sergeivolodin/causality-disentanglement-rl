@@ -13,6 +13,7 @@ import gym
 from ray import tune
 from path import Path
 from imageio import imread
+import cv2
 
 from causal_util import load_env, WeightRestorer
 from causal_util.collect_data import EnvDataCollector
@@ -328,7 +329,25 @@ def main_fcn(config, ex, checkpoint_dir, **kwargs):
             # export of images to tensorflow (super slow...)
             if fn.endswith('.png'):
                 try:
-                    img = np.array(imread(fn, pilmode='RGB'), dtype=np.float32) / 255.
+                    # downscaling the image as ray is slow with big images...
+                    img = imread(fn, pilmode='RGB')
+                    x, y = img.shape[0:2]
+                    factor_x, factor_y = 1, 1
+                    mx, my = 150., 150.
+                    if x > mx:
+                        factor_x = mx / x
+                    if y > my:
+                        factor_y = my / y
+
+                    factor = min(factor_x, factor_y)
+
+                    if factor != 1:
+                        new_shape = (x * factor, y * factor)
+                        new_shape = tuple((int(t) for t in new_shape))[::-1]
+                        img = cv2.resize(img, new_shape, interpolation=cv2.INTER_AREA)
+
+                    img = np.array(img, dtype=np.float32) / 255.
+
                     img = img.swapaxes(0, 2)
                     img = img.swapaxes(1, 2)
                     # img = np.expand_dims(img, 0)
