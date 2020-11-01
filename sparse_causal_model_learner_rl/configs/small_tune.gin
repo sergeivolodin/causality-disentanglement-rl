@@ -10,6 +10,7 @@ import gin_tune
 
 gin_tune_config.log_sys_usage = True
 tune_run.verbose = False
+tune_run.num_samples = 100
 
 Config.train_steps = 20000
 Config.env_steps = 1000
@@ -17,21 +18,29 @@ Config.env_steps = 1000
 Config.loss_every = 500
 Config.graph_every = 100
 Config.keep_history = True
+Config.max_history_size = 10000
 
-batchnorm/choice.values = [False, True]
-LinearModel.use_batchnorm = @batchnorm/choice()
+batchnorm/choice.categories = [False, True]
+LinearDecoder.use_batchnorm = @batchnorm/choice()
 
 Config.model = @LinearModel
 Config.decoder = @LinearDecoder
 Config.reconstructor = @LinearReconstructor
-Config.feature_shape = (10, )
+
+fdim/choice.categories = [4, 5, 6, 7, 8, 9, 10, 15, 20, 30]
+Config.feature_shape = (@fdim/choice(), )
 
 thr/loguniform.lower = 1e-9
 thr/loguniform.upper = 1e-1
-ThresholdAnnealer.fit_threshold = @thr/loguniform()
 
-updatefcn/choice.values = [[@ThresholdAnnealer], []]
-Config._update_function = @updatefcn.choice()
+thr_factor/uniform.lower = 0.1
+thr_factor/uniform.upper = 0.9
+
+ThresholdAnnealer.fit_threshold = @thr/loguniform()
+ThresholdAnnealer.factor = @thr_factor/uniform()
+
+updatefcn/choice.categories = [[@ThresholdAnnealer], []]
+Config._update_function = @updatefcn/choice()
 
 spcoeffinit/loguniform.lower = 1e-9
 spcoeffinit/loguniform.upper = 1
@@ -40,10 +49,10 @@ rnt/loguniform.lower = 1e-1
 rnt/loguniform.upper = 1e5
 
 reconstruction_loss_norm.rn_threshold = @rnt/loguniform()
-reconstruction_loss_inverse_encoder.rn_threshold = @rnt/loguniform()
+reconstruction_loss_inverse_decoder.rn_threshold = @rnt/loguniform()
 reconstruction_loss_inverse_model.rn_threshold = @rnt/loguniform()
 
-recloss/choice.values = [@reconstruction_loss, @reconstruction_loss_norm, @reconstruction_loss_inverse_encoder,
+recloss/choice.categories = [@reconstruction_loss, @reconstruction_loss_norm, @reconstruction_loss_inverse_decoder,
                          @reconstruction_loss_inverse_model]
 
 Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1.0},
@@ -54,7 +63,7 @@ Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1.0},
 nnz.eps = 1e-3
 Config.metrics = {'nnz': @nnz}
 
-opt.choice.values = ['Adam', 'SGD']
+opt/choice.categories = ['Adam', 'SGD']
 opt1/Optimizer.name = @opt/choice()
 opt_lr/loguniform.lower = 1e-5
 opt_lr/loguniform.upper = 1e-1
@@ -66,6 +75,6 @@ Config.execution = {'opt1': ['fit', 'sparsity', 'reconstruction']}
 
 LinearModel.use_bias = False
 
-gin_tune_config.num_workers = 10
+gin_tune_config.num_workers = 3
 tune_run.verbose = True
 tune_run.queue_trials = True

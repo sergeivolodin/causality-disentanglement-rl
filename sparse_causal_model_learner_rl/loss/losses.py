@@ -22,9 +22,9 @@ def reconstruction_loss_norm(reconstructor, config, rn_threshold=100, **kwargs):
     return regularization_loss
 
 @gin.configurable
-def reconstruction_loss_inverse_encoder(encoder, rn_threshold, **kwargs):
+def reconstruction_loss_inverse_decoder(decoder, rn_threshold, **kwargs):
     regularization_loss = 0
-    for param in encoder.parameters():
+    for param in decoder.parameters():
         regularization_loss += torch.sum(torch.square(torch.pinverse(param)))
     if regularization_loss < rn_threshold:
         regularization_loss = torch.from_numpy(np.array(rn_threshold))

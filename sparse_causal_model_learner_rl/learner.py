@@ -220,6 +220,10 @@ class Learner(object):
         if self.config.get('keep_history'):
             self.history.append(epoch_info)
 
+        if self.config.get('max_history_size'):
+            mhistsize = int(self.config.get('max_history_size'))
+            self.history = self.history[-mhistsize:]
+
         # update config
         self.config.update(epoch_info=epoch_info)
         self.epochs += 1
@@ -231,9 +235,10 @@ class Learner(object):
         """Return the current causal model."""
         return [self.model.Mf, self.model.Ma]
 
-    def train(self):
+    def train(self, do_tqdm=False):
         """Train (many epochs)."""
-        for _ in tqdm(range(self.config['train_steps'])):
+        tqdm_ = tqdm if do_tqdm else (lambda x: x)
+        for _ in tqdm_(range(self.config['train_steps'])):
             self._epoch()
 
     def _check_execution(self):
@@ -320,22 +325,28 @@ def main_fcn(config, ex, checkpoint_dir, **kwargs):
         def add_artifact(fn):
             ex.add_artifact(fn, name=("epoch_%05d_" % self.epochs) + os.path.basename(fn))
             if fn.endswith('.png'):
-                img = np.array(imread(fn, pilmode='RGB'), dtype=np.float32) / 255.
-                img = img.swapaxes(0, 2)
-                img = img.swapaxes(1, 2)
-                # img = np.expand_dims(img, 0)
-                # img = np.expand_dims(img, 0)
-                epoch_info[os.path.basename(fn)[:-4]] = img
+                try:
+                    img = np.array(imread(fn, pilmode='RGB'), dtype=np.float32) / 255.
+                    img = img.swapaxes(0, 2)
+                    img = img.swapaxes(1, 2)
+                    # img = np.expand_dims(img, 0)
+                    # img = np.expand_dims(img, 0)
+                    epoch_info[os.path.basename(fn)[:-4]] = img
+                except Exception as e:
+                    print(f"Can't read image: {fn} {e} {type(e)}")
 
         # writing figures if requested
         if self.epochs % self.config.get('graph_every', 5) == 0:
             os.makedirs(path_epoch, exist_ok=True)
             with path_epoch:
-                threshold, ps, f_out = self.visualize_graph(do_write=True)
-                artifact = path_epoch / (f_out + ".png")
-                add_artifact(artifact)
-                artifact = path_epoch / "threshold_learner.png"
-                add_artifact(artifact)
+                try:
+                    threshold, ps, f_out = self.visualize_graph(do_write=True)
+                    artifact = path_epoch / (f_out + ".png")
+                    add_artifact(artifact)
+                    artifact = path_epoch / "threshold_learner.png"
+                    add_artifact(artifact)
+                except Exception as e:
+                    print(f"Error plotting causal graph: {self.epochs} {e} {type(e)}")
 
                 fig = self.visualize_model()
                 fig.savefig("model.png",  bbox_inches="tight")
@@ -371,7 +382,7 @@ def main_fcn(config, ex, checkpoint_dir, **kwargs):
     else:
         learner = Learner(config, callback=callback)
 
-    learner.train()
+    learner.train(do_tqdm=False)
     return None
 
 
@@ -381,5 +392,7 @@ def learner_gin_sacred(configs):
                       base_dir=os.path.join(os.getcwd(), 'results'))
 
 if __name__ == '__main__':
+    import ray
+    ray.init(num_cpus=5)
     args = parser.parse_args()
     learner_gin_sacred(args.config)
