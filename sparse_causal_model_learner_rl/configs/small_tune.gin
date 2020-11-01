@@ -16,8 +16,9 @@ Config.train_steps = 20000
 Config.env_steps = 1000
 
 Config.loss_every = 500
-Config.graph_every = 100
+Config.graph_every = 500
 Config.checkpoint_every = 100
+Config.report_every = 20
 
 Config.keep_history = True
 Config.max_history_size = 10000
@@ -38,8 +39,11 @@ thr/loguniform.upper = 1e-1
 thr_factor/uniform.lower = 0.1
 thr_factor/uniform.upper = 0.9
 
+ann_every/choice.categories = [10, 20, 50, 100, 200]
+
 ThresholdAnnealer.fit_threshold = @thr/loguniform()
 ThresholdAnnealer.factor = @thr_factor/uniform()
+ThresholdAnnealer.adjust_every = @ann_every/choice()
 
 updatefcn/choice.categories = [[@ThresholdAnnealer], []]
 Config._update_function = @updatefcn/choice()

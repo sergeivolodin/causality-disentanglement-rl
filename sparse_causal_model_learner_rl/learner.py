@@ -375,8 +375,9 @@ def main_fcn(config, ex, checkpoint_dir, **kwargs):
                 epoch_info['checkpoint_size'] = os.path.getsize(ckpt)
 
         # pass metrics to sacred
-        dict_to_sacred(ex, epoch_info, epoch_info['epochs'])
-        tune.report(**epoch_info)
+        if self.epochs % self.config.get('report_every', 1) == 0:
+            dict_to_sacred(ex, epoch_info, epoch_info['epochs'])
+            tune.report(**epoch_info)
 
     if checkpoint_dir:
         learner = pickle.load(os.path.join(checkpoint_dir, "checkpoint"))
