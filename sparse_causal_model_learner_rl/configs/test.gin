@@ -6,6 +6,7 @@ import sparse_causal_model_learner_rl.annealer.threshold
 import sparse_causal_model_learner_rl.loss.losses
 import sparse_causal_model_learner_rl.loss.optimizer
 import sparse_causal_model_learner_rl.metrics.nnz
+import sparse_causal_model_learner_rl.metrics.loss_thresholded
 
 import gin_tune
 
@@ -33,8 +34,11 @@ Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1.0},
                  'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 1.0}
                 }
 
+loss_thresholded.eps = 1e-3
+loss_thresholded.loss = @fit_loss
+
 nnz.eps = 1e-3
-Config.metrics = {'nnz': @nnz}
+Config.metrics = {'nnz': @nnz, 'fit_thresholded': @loss_thresholded}
 
 opt1/Optimizer.name = 'Adam'
 opt1/Optimizer.lr = 1e-3

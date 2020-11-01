@@ -6,6 +6,7 @@ import sparse_causal_model_learner_rl.annealer.threshold
 import sparse_causal_model_learner_rl.loss.losses
 import sparse_causal_model_learner_rl.loss.optimizer
 import sparse_causal_model_learner_rl.metrics.nnz
+import sparse_causal_model_learner_rl.metrics.loss_thresholded
 import gin_tune
 
 gin_tune_config.log_sys_usage = True
@@ -19,6 +20,7 @@ Config.loss_every = 500
 Config.graph_every = 500
 Config.checkpoint_every = 200
 Config.report_every = 20
+Config.metrics_every = 20
 
 Config.keep_history = True
 # Config.max_history_size = 10000
@@ -66,8 +68,12 @@ Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1.0},
                  'reconstruction': {'fcn': @recloss/choice(), 'coeff': 1.0}
                 }
 
+loss_thresholded.eps = 1e-3
+loss_thresholded.loss = @fit_loss
+loss_thresholded.delta = True
+
 nnz.eps = 1e-3
-Config.metrics = {'nnz': @nnz}
+Config.metrics = {'nnz': @nnz, 'sparsity_gap_fit': @loss_thresholded}
 
 opt/choice.categories = ['Adam', 'SGD']
 opt1/Optimizer.name = @opt/choice()

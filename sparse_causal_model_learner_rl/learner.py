@@ -3,6 +3,7 @@ import argparse
 import matplotlib as mpl
 mpl.use('Agg')
 
+import ray
 import gin
 import numpy as np
 import torch
@@ -24,7 +25,7 @@ from sparse_causal_model_learner_rl.trainable.reconstructor import Reconstructor
 from causal_util.helpers import postprocess_info, one_hot_encode
 from matplotlib import pyplot as plt
 from causal_util.helpers import dict_to_sacred
-from sparse_causal_model_learner_rl.sacred_gin_tune.sacred_wrapper import gin_sacred
+from sparse_causal_model_learner_rl.sacred_gin_tune.sacred_wrapper import gin_sacred, load_config_files
 from causal_util.helpers import lstdct2dctlst
 from functools import partial
 from sparse_causal_model_learner_rl.visual.learner_visual import total_loss, loss_and_history, plot_contour, plot_3d
@@ -149,7 +150,8 @@ class Learner(object):
                    'obs': obs,
                    'decoder': self.decoder, 'model': self.model,
                    'reconstructor': self.reconstructor,
-                   'config': self.config}
+                   'config': self.config,
+                   'trainables': self.trainables}
 
         def possible_to_torch(x):
             """Convert a list of inputs into an array suitable for the torch model."""
@@ -200,9 +202,10 @@ class Learner(object):
             epoch_info['losses'][f"{opt_label}/value"] = total_loss
             opt.step()
 
-        # compute metrics
-        for metric_label, metric in self.config['metrics'].items():
-            epoch_info['metrics'][metric_label] = metric(**context)
+        if self.epochs % self.config.get('metrics_every', 1) == 0:
+            # compute metrics
+            for metric_label, metric in self.config['metrics'].items():
+                epoch_info['metrics'][metric_label] = metric(**context, context=context)
 
         epoch_info['weights'] = {label + '/' + param_name: np.copy(param.detach().numpy())
                                  for label, trainable in self.trainables.items()
@@ -302,10 +305,6 @@ class Learner(object):
         return threshold, ps, f_out
 
 
-parser = argparse.ArgumentParser(description="Causal learning experiment")
-parser.add_argument('--config', type=str, required=True, action='append')
-
-
 def main_fcn(config, ex, checkpoint_dir, **kwargs):
     """Main function for gin_sacred."""
 
@@ -369,10 +368,13 @@ def main_fcn(config, ex, checkpoint_dir, **kwargs):
                 except Exception as e:
                     print(f"Error plotting causal graph: {self.epochs} {e} {type(e)}")
 
-                fig = self.visualize_model()
-                fig.savefig("model.png",  bbox_inches="tight")
-                artifact = path_epoch / "model.png"
-                add_artifact(artifact)
+                try:
+                    fig = self.visualize_model()
+                    fig.savefig("model.png",  bbox_inches="tight")
+                    artifact = path_epoch / "model.png"
+                    add_artifact(artifact)
+                except Exception as e:
+                    print(f"Error plotting model: {self.epochs} {e} {type(e)}")
 
         if (self.epochs % self.config.get('loss_every', 100) == 0) and self.history:
             os.makedirs(path_epoch, exist_ok=True)
@@ -397,6 +399,8 @@ def main_fcn(config, ex, checkpoint_dir, **kwargs):
         if self.epochs % self.config.get('report_every', 1) == 0:
             dict_to_sacred(ex, epoch_info, epoch_info['epochs'])
             tune.report(**epoch_info)
+        else:
+            tune.report()
 
     if checkpoint_dir:
         learner = pickle.load(os.path.join(checkpoint_dir, "checkpoint"))
@@ -413,8 +417,20 @@ def learner_gin_sacred(configs):
     return gin_sacred(configs, main_fcn, db_name='causal_sparse',
                       base_dir=os.path.join(os.getcwd(), 'results'))
 
+parser = argparse.ArgumentParser(description="Causal learning experiment")
+parser.add_argument('--config', type=str, required=True, action='append')
+parser.add_argument('--n_cpus', type=int, required=False, default=None)
+parser.add_argument('--nowrap', action='store_true')
+
+
 if __name__ == '__main__':
-    import ray
-    ray.init(num_cpus=8)
     args = parser.parse_args()
-    learner_gin_sacred(args.config)
+
+    if args.nowrap:
+        # useful for debugging/testing
+        load_config_files(args.config)
+        l = Learner(Config())
+        l.train(do_tqdm=True)
+    else:
+        ray.init(num_cpus=args.n_cpus)
+        learner_gin_sacred(args.config)

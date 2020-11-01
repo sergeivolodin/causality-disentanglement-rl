@@ -40,23 +40,27 @@ def plot_model(model):
 
 def select_threshold(array, name='exp', do_plot=True):
     """Select threshold for a matrix."""
-    x = pd.DataFrame({'x': np.log(np.abs(array.flatten()))})
-    kmeans = KMeans(n_clusters=2)
-    kmeans.fit_transform(X=np.array(x.x).reshape((-1, 1)))
-    x['label'] = kmeans.labels_
-    clusters = np.argsort([np.min(df.x) for l, df in x.groupby('label')])
-    l = np.max(x.x[x.label == clusters[0]])
-    r = np.min(x.x[x.label == clusters[1]])
-    assert l < r
-    threshold = (l + r) / 2
+    try:
+        x = pd.DataFrame({'x': np.log(np.abs(array.flatten()))})
+        kmeans = KMeans(n_clusters=2)
+        kmeans.fit_transform(X=np.array(x.x).reshape((-1, 1)))
+        x['label'] = kmeans.labels_
+        clusters = np.argsort([np.min(df.x) for l, df in x.groupby('label')])
+        l = np.max(x.x[x.label == clusters[0]])
+        r = np.min(x.x[x.label == clusters[1]])
+        assert l < r
+        threshold = (l + r) / 2
 
-    if do_plot:
-        plt.figure()
-        plt.hist(x.x)
-        plt.axvline(threshold, label='threshold')
-        plt.legend()
-        plt.savefig(f"threshold_{name}.png", bbox_inches='tight')
-    return np.exp(threshold)
+        if do_plot:
+            plt.figure()
+            plt.hist(x.x)
+            plt.axvline(threshold, label='threshold')
+            plt.legend()
+            plt.savefig(f"threshold_{name}.png", bbox_inches='tight')
+        return np.exp(threshold)
+    except Exception as e:
+        print(f"Threshold selection failed: {type(e)} {e} {array}")
+        return 0.0
 
 
 def graph_for_matrices(model, threshold=0.2, do_write=True):
