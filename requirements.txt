@@ -22,7 +22,6 @@ seaborn==0.11.0
 sklearn==0.0
 stable-baselines==2.10.1
 tabulate==0.8.7
-tensorboard-plugin-wit==1.6.0
 tensorboardx==2.1
 tensorflow==1.15.4
 torch==1.6.0
