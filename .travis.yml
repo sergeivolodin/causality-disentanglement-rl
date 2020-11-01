@@ -7,6 +7,7 @@ install:
   - pip install -e gin_tune
   - python ray/python/ray/setup-dev.py --yes 
   - pip install -e .
+  - sudo apt-get install graphviz
 # command to run tests
 script:
   - ./tests.sh
