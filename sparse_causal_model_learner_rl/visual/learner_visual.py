@@ -51,6 +51,7 @@ def select_threshold(array, name='exp', do_plot=True):
     threshold = (l + r) / 2
 
     if do_plot:
+        plt.figure()
         plt.hist(x.x)
         plt.axvline(threshold, label='threshold')
         plt.legend()
@@ -90,8 +91,8 @@ def graph_for_matrices(model, threshold=0.2, do_write=True):
 
     max_edges = features ** 2 + actions * features
     percent = int(100 - 100. * edges / max_edges)
-    print("Number of edges: %d out of %d, sparsity %.2f%%" % \
-          (edges, max_edges, percent))
+    # print("Number of edges: %d out of %d, sparsity %.2f%%" % \
+    #       (edges, max_edges, percent))
 
     f_out = None
     if do_write:

@@ -8,14 +8,13 @@ import numpy as np
 import torch
 from tqdm import tqdm
 import uuid
-import pickle
 import os
 import gym
 from ray import tune
 from path import Path
 from imageio import imread
 
-from causal_util import load_env
+from causal_util import load_env, WeightRestorer
 from causal_util.collect_data import EnvDataCollector
 from sparse_causal_model_learner_rl.config import Config
 from sparse_causal_model_learner_rl.trainable.decoder import Decoder
@@ -30,6 +29,7 @@ from functools import partial
 from sparse_causal_model_learner_rl.visual.learner_visual import total_loss, loss_and_history, plot_contour, plot_3d
 import numpy as np
 from sparse_causal_model_learner_rl.visual.learner_visual import plot_model, graph_for_matrices, select_threshold
+import cloudpickle as pickle
 
 
 class Learner(object):
@@ -45,6 +45,8 @@ class Learner(object):
         self.collector = EnvDataCollector(self.env)
 
         self.feature_shape = self.config['feature_shape']
+
+        self.checkpoint_every = self.config.get('checkpoint_every', 10)
 
         # Discrete action -> one-hot encoding
         if isinstance(self.env.action_space, gym.spaces.Discrete):
@@ -82,6 +84,19 @@ class Learner(object):
         self.history = []
 
         self.epochs = 0
+
+    def checkpoint(self, directory):
+        ckpt = os.path.join(directory, "checkpoint")
+        with open(ckpt, 'wb') as f:
+            # callback contains tune and sacred data and is not pickleable
+            old_callback = self.callback
+            self.callback = None
+
+            pickle.dump(self, f)
+
+            # restoring callback
+            self.callback = old_callback
+        return ckpt
 
     def create_env(self):
         """Create the RL environment."""
@@ -253,19 +268,21 @@ class Learner(object):
 
         results = {}
 
-        for opt_label in self.config['optimizers'].keys():
-            loss = partial(total_loss, learner=self, opt_label=opt_label)
+        # restore weights to original values
+        with WeightRestorer(models=list(self.trainables.values())):
+            for opt_label in self.config['optimizers'].keys():
+                loss = partial(total_loss, learner=self, opt_label=opt_label)
 
-            loss_w, flat_history = loss_and_history(self, loss, weight_names)
-            flat_history = flat_history[::steps_skip]
+                loss_w, flat_history = loss_and_history(self, loss, weight_names)
+                flat_history = flat_history[::steps_skip]
 
-            if mode == '2d':
-                res = plot_contour(flat_history, loss_w, n=n, scale=scale)
-            elif mode == '3d':
-                res = plot_3d(flat_history, loss_w, n=n, scale=scale)
-            else:
-                raise ValueError(f"Wrong mode: {mode}, needs to be 2d/3d.")
-            results[opt_label] = res
+                if mode == '2d':
+                    res = plot_contour(flat_history, loss_w, n=n, scale=scale)
+                elif mode == '3d':
+                    res = plot_3d(flat_history, loss_w, n=n, scale=scale)
+                else:
+                    raise ValueError(f"Wrong mode: {mode}, needs to be 2d/3d.")
+                results[opt_label] = res
 
         return results
 
@@ -283,7 +300,7 @@ parser = argparse.ArgumentParser(description="Causal learning experiment")
 parser.add_argument('--config', type=str, required=True, action='append')
 
 
-def main_fcn(config, ex, **kwargs):
+def main_fcn(config, ex, checkpoint_dir, **kwargs):
     """Main function for gin_sacred."""
 
     def callback(self, epoch_info):
@@ -337,11 +354,23 @@ def main_fcn(config, ex, **kwargs):
                 except Exception as e:
                     print(f"Loss landscape error: {type(e)} {str(e)}")
 
+        epoch_info['checkpoint_tune'] = None
+        if self.epochs % self.checkpoint_every == 0:
+            with tune.checkpoint_dir(step=self.epochs) as checkpoint_dir:
+                ckpt = self.checkpoint(checkpoint_dir)
+                epoch_info['checkpoint_tune'] = ckpt
+                epoch_info['checkpoint_size'] = os.path.getsize(ckpt)
+
         # pass metrics to sacred
         dict_to_sacred(ex, epoch_info, epoch_info['epochs'])
         tune.report(**epoch_info)
 
-    learner = Learner(config, callback=callback)
+    if checkpoint_dir:
+        learner = pickle.load(os.path.join(checkpoint_dir, "checkpoint"))
+        learner.callback = callback
+    else:
+        learner = Learner(config, callback=callback)
+
     learner.train()
     return None
 

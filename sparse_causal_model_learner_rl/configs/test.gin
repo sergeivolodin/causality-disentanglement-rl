@@ -10,6 +10,7 @@ import sparse_causal_model_learner_rl.metrics.nnz
 import gin_tune
 
 gin_tune_config.num_workers = 0
+gin_tune_config.log_sys_usage = True
 #tune_run.verbose = True
 
 Config.train_steps = 100
