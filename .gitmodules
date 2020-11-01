@@ -1,3 +1,6 @@
 [submodule "gin_tune"]
 	path = gin_tune
 	url = https://github.com/sergeivolodin/gin_tune.git
+[submodule "ray"]
+	path = ray
+	url = https://github.com/sergeivolodin/ray.git
