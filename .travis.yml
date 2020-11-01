@@ -5,7 +5,7 @@ python:
 install:
   - pip install -r requirements.txt
   - pip install -e gin_tune
-  - python ray/python/ray/setup-dev.py 
+  - python ray/python/ray/setup-dev.py --yes 
   - pip install -e .
 # command to run tests
 script:
