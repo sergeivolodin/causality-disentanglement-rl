@@ -15,13 +15,13 @@ tune_run.num_samples = 100
 Config.train_steps = 20000
 Config.env_steps = 1000
 
-Config.loss_every = 500
-Config.graph_every = 500
-Config.checkpoint_every = 100
+Config.loss_every = 2000
+Config.graph_every = 1000
+Config.checkpoint_every = 200
 Config.report_every = 20
 
 Config.keep_history = True
-Config.max_history_size = 10000
+# Config.max_history_size = 10000
 
 batchnorm/choice.categories = [False, True]
 LinearDecoder.use_batchnorm = @batchnorm/choice()
@@ -81,6 +81,5 @@ Config.execution = {'opt1': ['fit', 'sparsity', 'reconstruction']}
 
 LinearModel.use_bias = False
 
-gin_tune_config.num_workers = 3
 tune_run.verbose = True
 tune_run.queue_trials = True

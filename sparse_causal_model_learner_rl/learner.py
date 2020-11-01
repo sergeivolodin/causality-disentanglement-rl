@@ -326,16 +326,16 @@ def main_fcn(config, ex, checkpoint_dir, **kwargs):
             ex.add_artifact(fn, name=("epoch_%05d_" % self.epochs) + os.path.basename(fn))
 
             # export of images to tensorflow (super slow...)
-            # if fn.endswith('.png'):
-            #     try:
-            #         img = np.array(imread(fn, pilmode='RGB'), dtype=np.float32) / 255.
-            #         img = img.swapaxes(0, 2)
-            #         img = img.swapaxes(1, 2)
-            #         # img = np.expand_dims(img, 0)
-            #         # img = np.expand_dims(img, 0)
-            #         epoch_info[os.path.basename(fn)[:-4]] = img
-            #     except Exception as e:
-            #         print(f"Can't read image: {fn} {e} {type(e)}")
+            if fn.endswith('.png'):
+                try:
+                    img = np.array(imread(fn, pilmode='RGB'), dtype=np.float32) / 255.
+                    img = img.swapaxes(0, 2)
+                    img = img.swapaxes(1, 2)
+                    # img = np.expand_dims(img, 0)
+                    # img = np.expand_dims(img, 0)
+                    epoch_info[os.path.basename(fn)[:-4]] = img
+                except Exception as e:
+                    print(f"Can't read image: {fn} {e} {type(e)}")
 
         # writing figures if requested
         if self.epochs % self.config.get('graph_every', 5) == 0:
@@ -396,6 +396,6 @@ def learner_gin_sacred(configs):
 
 if __name__ == '__main__':
     import ray
-    ray.init(num_cpus=5)
+    ray.init(num_cpus=8)
     args = parser.parse_args()
     learner_gin_sacred(args.config)
