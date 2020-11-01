@@ -1,5 +1,7 @@
 ## Learning Interpretable Abstract Representations in Reinforcement Learning via Model Sparsity
 
+<img src="https://api.travis-ci.com/sergeivolodin/causality-disentanglement-rl.svg?branch=master&status=started" />
+
 The problem of learning good abstractions is arguably one of the cornerstones of Artificial Intelligence. One of the theoretical or philosophical approaches to learn abstract representations is the Consciousness Prior proposed by Yoshua Bengio. One of the key components in that project is the sparsity of the transition model, which supposedly leads to good learned abstractions. In this project, we design a simple environment where abstractions can be learned. We propose a practical framework for learning abstractions via sparsity of the transition model. The results show that we are able to recover the correct representation. We provide theoretical formulation of the problem and the explanation of the results. We provide exciting future research directions and concrete questions in the domain of learning good abstractions.
 
 Talk for <a href="http://mlss.tuebingen.mpg.de/2020/">MLSS 2020</a>:<br />
