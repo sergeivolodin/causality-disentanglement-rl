@@ -324,16 +324,18 @@ def main_fcn(config, ex, checkpoint_dir, **kwargs):
 
         def add_artifact(fn):
             ex.add_artifact(fn, name=("epoch_%05d_" % self.epochs) + os.path.basename(fn))
-            if fn.endswith('.png'):
-                try:
-                    img = np.array(imread(fn, pilmode='RGB'), dtype=np.float32) / 255.
-                    img = img.swapaxes(0, 2)
-                    img = img.swapaxes(1, 2)
-                    # img = np.expand_dims(img, 0)
-                    # img = np.expand_dims(img, 0)
-                    epoch_info[os.path.basename(fn)[:-4]] = img
-                except Exception as e:
-                    print(f"Can't read image: {fn} {e} {type(e)}")
+
+            # export of images to tensorflow (super slow...)
+            # if fn.endswith('.png'):
+            #     try:
+            #         img = np.array(imread(fn, pilmode='RGB'), dtype=np.float32) / 255.
+            #         img = img.swapaxes(0, 2)
+            #         img = img.swapaxes(1, 2)
+            #         # img = np.expand_dims(img, 0)
+            #         # img = np.expand_dims(img, 0)
+            #         epoch_info[os.path.basename(fn)[:-4]] = img
+            #     except Exception as e:
+            #         print(f"Can't read image: {fn} {e} {type(e)}")
 
         # writing figures if requested
         if self.epochs % self.config.get('graph_every', 5) == 0:

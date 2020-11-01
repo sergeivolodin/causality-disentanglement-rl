@@ -17,6 +17,8 @@ Config.env_steps = 1000
 
 Config.loss_every = 500
 Config.graph_every = 100
+Config.checkpoint_every = 100
+
 Config.keep_history = True
 Config.max_history_size = 10000
 
