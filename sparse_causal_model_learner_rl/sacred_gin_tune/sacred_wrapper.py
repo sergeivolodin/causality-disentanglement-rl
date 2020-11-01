@@ -81,6 +81,7 @@ def gin_sacred(config_files, main_fcn, db_name='causal_sparse', base_dir=None):
     inner_fcn1.__name__ = main_fcn.__name__
 
     analysis = tune_gin(inner_fcn1, config_update={'name': name, 'base_dir': base_dir,
-                                                   'db_name': db_name, 'sources': config_files})
+                                                   'db_name': db_name, 'sources': config_files},
+                        name=name)
 
     return analysis

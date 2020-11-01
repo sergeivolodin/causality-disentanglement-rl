@@ -13,7 +13,7 @@ import os
 import gym
 from ray import tune
 from path import Path
-
+from imageio import imread
 
 from causal_util import load_env
 from causal_util.collect_data import EnvDataCollector
@@ -288,9 +288,8 @@ def main_fcn(config, ex, **kwargs):
 
     def callback(self, epoch_info):
         """Callback for Learner."""
-        # pass metrics to sacred
-        dict_to_sacred(ex, epoch_info, epoch_info['epochs'])
-        tune.report(**epoch_info)
+
+        epoch_info = dict(epoch_info)
 
         # save graph as artifact
         uid = str(uuid.uuid4())
@@ -302,8 +301,14 @@ def main_fcn(config, ex, **kwargs):
         mpl.use('Agg')
 
         def add_artifact(fn):
-            print(fn)
             ex.add_artifact(fn, name=("epoch_%05d_" % self.epochs) + os.path.basename(fn))
+            if fn.endswith('.png'):
+                img = np.array(imread(fn, pilmode='RGB'), dtype=np.float32) / 255.
+                img = img.swapaxes(0, 2)
+                img = img.swapaxes(1, 2)
+                # img = np.expand_dims(img, 0)
+                # img = np.expand_dims(img, 0)
+                epoch_info[os.path.basename(fn)[:-4]] = img
 
         # writing figures if requested
         if self.epochs % self.config.get('graph_every', 5) == 0:
@@ -311,6 +316,8 @@ def main_fcn(config, ex, **kwargs):
             with path_epoch:
                 threshold, ps, f_out = self.visualize_graph(do_write=True)
                 artifact = path_epoch / (f_out + ".png")
+                add_artifact(artifact)
+                artifact = path_epoch / "threshold_learner.png"
                 add_artifact(artifact)
 
                 fig = self.visualize_model()
@@ -329,6 +336,10 @@ def main_fcn(config, ex, **kwargs):
                             add_artifact(artifact)
                 except Exception as e:
                     print(f"Loss landscape error: {type(e)} {str(e)}")
+
+        # pass metrics to sacred
+        dict_to_sacred(ex, epoch_info, epoch_info['epochs'])
+        tune.report(**epoch_info)
 
     learner = Learner(config, callback=callback)
     learner.train()

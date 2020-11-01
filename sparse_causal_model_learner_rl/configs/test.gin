@@ -7,6 +7,11 @@ import sparse_causal_model_learner_rl.loss.losses
 import sparse_causal_model_learner_rl.loss.optimizer
 import sparse_causal_model_learner_rl.metrics.nnz
 
+import gin_tune
+
+gin_tune_config.num_workers = 0
+#tune_run.verbose = True
+
 Config.train_steps = 100
 Config.env_steps = 1000
 

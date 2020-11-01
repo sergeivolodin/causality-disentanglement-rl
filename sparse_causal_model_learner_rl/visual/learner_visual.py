@@ -54,7 +54,7 @@ def select_threshold(array, name='exp', do_plot=True):
         plt.hist(x.x)
         plt.axvline(threshold, label='threshold')
         plt.legend()
-        plt.savefig(f"threshold_{name}.pdf", bbox_inches='tight')
+        plt.savefig(f"threshold_{name}.png", bbox_inches='tight')
     return np.exp(threshold)
 
 
@@ -95,7 +95,7 @@ def graph_for_matrices(model, threshold=0.2, do_write=True):
 
     f_out = None
     if do_write:
-        f_out = f"CausalModel_Edges{edges}_outof{max_edges}_Sparsity{percent}perc"
+        f_out = f"CausalModel"
         ps.render(filename=f_out, format='png')
 
     return ps, f_out
