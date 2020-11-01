@@ -16,3 +16,4 @@ image*.png
 *.pkl
 output
 .ipynb_checkpoints
+results/

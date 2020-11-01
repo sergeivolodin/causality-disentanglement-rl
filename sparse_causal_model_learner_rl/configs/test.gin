@@ -7,8 +7,12 @@ import sparse_causal_model_learner_rl.loss.losses
 import sparse_causal_model_learner_rl.loss.optimizer
 import sparse_causal_model_learner_rl.metrics.nnz
 
-Config.train_steps = 20
+Config.train_steps = 100
 Config.env_steps = 1000
+
+Config.loss_every = 49
+Config.graph_every = 20
+Config.keep_history = True
 
 Config.model = @LinearModel
 Config.decoder = @LinearDecoder

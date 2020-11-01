@@ -55,7 +55,6 @@ def select_threshold(array, name='exp', do_plot=True):
         plt.axvline(threshold, label='threshold')
         plt.legend()
         plt.savefig(f"threshold_{name}.pdf", bbox_inches='tight')
-        plt.show()
     return np.exp(threshold)
 
 
@@ -213,7 +212,7 @@ def plot_contour(flat_history, loss_w, scale=5, n=50):
             w = pca.inverse_transform(xys)[0]
             Z[i, j] = loss_w(w)
 
-    fig, ax = plt.subplots(figsize=(10, 10))
+    fig, ax = plt.subplots(figsize=(10, 20))
     ax.set_title('Loss contour plot')
 
     Zlog = np.log(Z)

@@ -1,5 +1,8 @@
 import argparse
 
+import matplotlib as mpl
+mpl.use('Agg')
+
 import gin
 import numpy as np
 import torch
@@ -9,6 +12,8 @@ import pickle
 import os
 import gym
 from ray import tune
+from path import Path
+
 
 from causal_util import load_env
 from causal_util.collect_data import EnvDataCollector
@@ -187,6 +192,9 @@ class Learner(object):
                                  for label, trainable in self.trainables.items()
                                  for param_name, param in trainable.named_parameters()}
 
+        epoch_info['threshold/action'] = select_threshold(self.model.Ma, do_plot=False)
+        epoch_info['threshold/feature'] = select_threshold(self.model.Mf, do_plot=False)
+
         # process epoch information
         epoch_info = postprocess_info(epoch_info)
 
@@ -206,7 +214,7 @@ class Learner(object):
     @property
     def graph(self):
         """Return the current causal model."""
-        return None
+        return [self.model.Mf, self.model.Ma]
 
     def train(self):
         """Train (many epochs)."""
@@ -240,6 +248,8 @@ class Learner(object):
         """Plot loss landscape in PCA space with the descent curve."""
         weight_names = [f"{t}/{param}" for t, model in self.trainables.items() for param, _ in
                         model.named_parameters()]
+
+        self._last_loss_mode = mode
 
         results = {}
 
@@ -285,10 +295,40 @@ def main_fcn(config, ex, **kwargs):
         # save graph as artifact
         uid = str(uuid.uuid4())
         base_dir = ex.base_dir
-        fn = os.path.join(base_dir, f"G_{uid}.pkl")
-        pickle.dump(self.graph, open(fn, 'wb'))
 
-        ex.add_artifact(fn, "W")
+        # chdir to base_dir
+        path_epoch = Path(base_dir) / ("epoch%05d" % self.epochs)
+
+        mpl.use('Agg')
+
+        def add_artifact(fn):
+            print(fn)
+            ex.add_artifact(fn, name=("epoch_%05d_" % self.epochs) + os.path.basename(fn))
+
+        # writing figures if requested
+        if self.epochs % self.config.get('graph_every', 5) == 0:
+            os.makedirs(path_epoch, exist_ok=True)
+            with path_epoch:
+                threshold, ps, f_out = self.visualize_graph(do_write=True)
+                artifact = path_epoch / (f_out + ".png")
+                add_artifact(artifact)
+
+                fig = self.visualize_model()
+                fig.savefig("model.png",  bbox_inches="tight")
+                artifact = path_epoch / "model.png"
+                add_artifact(artifact)
+
+        if (self.epochs % self.config.get('loss_every', 100) == 0) and self.history:
+            os.makedirs(path_epoch, exist_ok=True)
+            with path_epoch:
+                try:
+                    for opt, (fig, ax) in self.visualize_loss_landscape().items():
+                        if self._last_loss_mode == '2d':
+                            fig.savefig(f"loss_{opt}.png", bbox_inches="tight")
+                            artifact = path_epoch / f"loss_{opt}.png"
+                            add_artifact(artifact)
+                except Exception as e:
+                    print(f"Loss landscape error: {type(e)} {str(e)}")
 
     learner = Learner(config, callback=callback)
     learner.train()

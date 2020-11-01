@@ -1,6 +1,7 @@
 import os
 import shutil
 from functools import partial
+import datetime
 
 import gin
 from sacred.observers import MongoObserver
@@ -70,7 +71,9 @@ def gin_sacred(config_files, main_fcn, db_name='causal_sparse', base_dir=None):
     if base_dir is None:
         base_dir = os.getcwd()
 
-    base_dir = os.path.join(base_dir, name)
+    run_uid = datetime.datetime.utcnow().strftime("%Y_%m_%d_%H_%M_%S")
+
+    base_dir = os.path.join(base_dir, name, run_uid)
 
     os.makedirs(base_dir, exist_ok=True)
 
