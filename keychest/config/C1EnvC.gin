@@ -1,0 +1,30 @@
+import causal_util.helpers
+import keychest.keychestenv
+
+load_env.env_name = "KeyChest-v0"
+
+KeyChestGymEnv.engine_constructor = @KeyChestEnvironmentFixedMap
+
+#with_fixed_seed.seed = 42
+#with_fixed_seed.fcn = @KeyChestEnvironmentRandom
+
+KeyChestGymEnv.reward_dict = @helpers.reward_as_dict()
+reward_as_dict.step = -0.01
+reward_as_dict.food_collected = 0.1
+reward_as_dict.key_collected = 0.3
+reward_as_dict.chest_opened = 0.5
+
+KeyChestEnvironment.flatten_observation = True
+KeyChestEnvironment.initial_health = 30
+KeyChestEnvironment.food_efficiency = 2
+
+KeyChestEnvironmentFixedMap.map_array = """
+        
+ l      
+   > @< 
+        
+ @<  L  
+        
+  P   > 
+        
+"""
