@@ -80,7 +80,7 @@ class KeyChestEnvironment(object):
     SYMBOLS = {'wall': '#', 'player': 'P', 'key': '<', 'chest': '>', 'food': '@',
                'lamp_on': 'L', 'lamp_off': 'l', 'empty': ' ', 'health': '@', 'keys_collected': '<'}
     INNER_OBJECTS = ['empty', 'wall', 'key', 'chest', 'food', 'lamp_on', 'lamp_off', 'player']
-    COLORS = {'empty': (191, 191, 191), 'wall': (0, 0, 0), 'key': (0, 0, 255), 'chest': (255, 255, 0),
+    COLORS = {'empty': (191, 191, 191), 'wall': (0, 0, 0), 'key': (0, 0, 255), 'chest': (255, 200, 0),
               'lamp_on': (255, 255, 255),
               'lamp_off': (94, 94, 94), 'food': (0, 255, 0), 'player': (255, 0, 0), 'health': (0, 255, 0),
               'keys_collected': (0, 0, 255)}
