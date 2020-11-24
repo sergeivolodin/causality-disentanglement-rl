@@ -1,4 +1,5 @@
 CausalModel*
+*.pyc
 *.Identifier
 *.gin.py
 *.egg-info
