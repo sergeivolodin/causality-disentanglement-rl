@@ -433,9 +433,12 @@ if __name__ == '__main__':
 
     if args.nowrap:
         # useful for debugging/testing
-        load_config_files(args.config)
+        load_config_files(config)
         l = Learner(Config())
         l.train(do_tqdm=True)
     else:
-        ray.init(num_cpus=args.n_cpus, num_gpus=args.n_gpus)
-        learner_gin_sacred(args.config)
+        kwargs = {'num_cpus': args.n_cpus}
+        if args.n_cpus == 0:
+            kwargs = {'num_cpus': 1, 'local_mode': True}
+        ray.init(**kwargs, num_gpus=args.n_gpus)
+        learner_gin_sacred(config)
