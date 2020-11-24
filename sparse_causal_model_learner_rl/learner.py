@@ -426,6 +426,10 @@ parser.add_argument('--nowrap', action='store_true')
 
 if __name__ == '__main__':
     args = parser.parse_args()
+    cwd = os.getcwd()
+    config = args.config
+    config = [c if os.path.isabs(c) else os.path.join(cwd, c) for c in config]
+    print("Absolute config paths:", config)
 
     if args.nowrap:
         # useful for debugging/testing
