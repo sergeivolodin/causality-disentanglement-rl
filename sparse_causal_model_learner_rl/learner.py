@@ -420,6 +420,7 @@ def learner_gin_sacred(configs):
 parser = argparse.ArgumentParser(description="Causal learning experiment")
 parser.add_argument('--config', type=str, required=True, action='append')
 parser.add_argument('--n_cpus', type=int, required=False, default=None)
+parser.add_argument('--n_gpus', type=int, required=False, default=None)
 parser.add_argument('--nowrap', action='store_true')
 
 
@@ -432,5 +433,5 @@ if __name__ == '__main__':
         l = Learner(Config())
         l.train(do_tqdm=True)
     else:
-        ray.init(num_cpus=args.n_cpus)
+        ray.init(num_cpus=args.n_cpus, num_gpus=args.n_gpus)
         learner_gin_sacred(args.config)
