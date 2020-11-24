@@ -36,9 +36,9 @@ class LinearModel(Model):
     @property
     def Mf(self):
         """Return features model."""
-        return list(self.fc_features.parameters())[0].detach().numpy()
+        return list(self.fc_features.parameters())[0].detach().cpu().numpy()
 
     @property
     def Ma(self):
         """Return action model."""
-        return list(self.fc_action.parameters())[0].detach().numpy()
+        return list(self.fc_action.parameters())[0].detach().cpu().numpy()

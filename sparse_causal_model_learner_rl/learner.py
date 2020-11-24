@@ -42,6 +42,8 @@ class Learner(object):
         self.config = config
         self.callback = callback
 
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
         # creating environment
         self.env = self.create_env()
         self.collector = EnvDataCollector(self.env)
@@ -86,6 +88,10 @@ class Learner(object):
         self.history = []
 
         self.epochs = 0
+
+        self.trainables = {x: y.to(self.device) for x, y in self.trainables.items()}
+
+        print("Using device", self.device)
 
     def checkpoint(self, directory):
         ckpt = os.path.join(directory, "checkpoint")
@@ -159,7 +165,7 @@ class Learner(object):
                 x = np.array(x, dtype=np.float32)
                 if len(x.shape) == 1:
                     x = x.reshape(-1, 1)
-                return torch.from_numpy(x)
+                return torch.from_numpy(x).to(self.device)
             return x
 
         context = {x: possible_to_torch(y) for x, y in context.items()}
@@ -207,7 +213,7 @@ class Learner(object):
             for metric_label, metric in self.config['metrics'].items():
                 epoch_info['metrics'][metric_label] = metric(**context, context=context)
 
-        epoch_info['weights'] = {label + '/' + param_name: np.copy(param.detach().numpy())
+        epoch_info['weights'] = {label + '/' + param_name: np.copy(param.detach().cpu().numpy())
                                  for label, trainable in self.trainables.items()
                                  for param_name, param in trainable.named_parameters()}
 
@@ -420,17 +426,25 @@ def learner_gin_sacred(configs):
 parser = argparse.ArgumentParser(description="Causal learning experiment")
 parser.add_argument('--config', type=str, required=True, action='append')
 parser.add_argument('--n_cpus', type=int, required=False, default=None)
+parser.add_argument('--n_gpus', type=int, required=False, default=None)
 parser.add_argument('--nowrap', action='store_true')
 
 
 if __name__ == '__main__':
     args = parser.parse_args()
+    cwd = os.getcwd()
+    config = args.config
+    config = [c if os.path.isabs(c) else os.path.join(cwd, c) for c in config]
+    print("Absolute config paths:", config)
 
     if args.nowrap:
         # useful for debugging/testing
-        load_config_files(args.config)
+        load_config_files(config)
         l = Learner(Config())
         l.train(do_tqdm=True)
     else:
-        ray.init(num_cpus=args.n_cpus)
-        learner_gin_sacred(args.config)
+        kwargs = {'num_cpus': args.n_cpus}
+        if args.n_cpus == 0:
+            kwargs = {'num_cpus': 1, 'local_mode': True}
+        ray.init(**kwargs, num_gpus=args.n_gpus)
+        learner_gin_sacred(config)
