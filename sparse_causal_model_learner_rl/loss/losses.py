@@ -10,13 +10,16 @@ def reconstruction_loss(obs, decoder, reconstructor, **kwargs):
     mse = torch.nn.MSELoss()
     return mse(reconstructor(decoder(obs)), obs)
 
+def square(t):
+    """Torch.square compat."""
+    return torch.pow(t, 2.0)
 
 @gin.configurable
 def reconstruction_loss_norm(reconstructor, config, rn_threshold=100, **kwargs):
     """Ensure that the decoder is not degenerate (inverse norm not too high)."""
     regularization_loss = 0
     for param in reconstructor.parameters():
-        regularization_loss += torch.sum(torch.square(param))
+        regularization_loss += torch.sum(square(param))
     if regularization_loss < rn_threshold:
         regularization_loss = torch.from_numpy(np.array(rn_threshold))
     return regularization_loss
@@ -25,7 +28,7 @@ def reconstruction_loss_norm(reconstructor, config, rn_threshold=100, **kwargs):
 def reconstruction_loss_inverse_decoder(decoder, rn_threshold, **kwargs):
     regularization_loss = 0
     for param in decoder.parameters():
-        regularization_loss += torch.sum(torch.square(torch.pinverse(param)))
+        regularization_loss += torch.sum(square(torch.pinverse(param)))
     if regularization_loss < rn_threshold:
         regularization_loss = torch.from_numpy(np.array(rn_threshold))
     return regularization_loss
@@ -34,7 +37,7 @@ def reconstruction_loss_inverse_decoder(decoder, rn_threshold, **kwargs):
 def reconstruction_loss_inverse_model(model, rn_threshold, **kwargs):
     regularization_loss = 0
     for param in model.parameters():
-        regularization_loss += torch.sum(torch.square(torch.pinverse(param)))
+        regularization_loss += torch.sum(square(torch.pinverse(param)))
     if regularization_loss < rn_threshold:
         regularization_loss = torch.from_numpy(np.array(rn_threshold))
     return regularization_loss
