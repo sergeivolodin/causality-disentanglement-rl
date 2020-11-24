@@ -446,5 +446,5 @@ if __name__ == '__main__':
         kwargs = {'num_cpus': args.n_cpus}
         if args.n_cpus == 0:
             kwargs = {'num_cpus': 1, 'local_mode': True}
-        ray.init(**kwargs, num_gpus=args.n_gpus)
+        ray.init(**kwargs, num_gpus=args.n_gpus, include_dashboard=True)
         learner_gin_sacred(config)

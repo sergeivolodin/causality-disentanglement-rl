@@ -60,7 +60,7 @@ def inner_fcn(config, main_fcn=None, checkpoint_dir=None, **kwargs):
     config_ = Config()
 
     result = sacred_experiment_with_config(config=config_, **kwargs)
-    return result
+    return None
 
 
 def gin_sacred(config_files, main_fcn, db_name='causal_sparse', base_dir=None):
