@@ -2,6 +2,10 @@ import numpy as np
 
 from keychest.keychestenv import KeyChestEnvironment
 
+# the environment is NP-hard due to reduction from TSP
+# (imagine a setting where only 1 combination leads to enough food)
+# https://en.wikipedia.org/wiki/Travelling_salesman_problem
+# this file provides a heuristic "solving" the environment (to some extent)
 
 def features_for_obs(obs):
     """Features for an observation."""
