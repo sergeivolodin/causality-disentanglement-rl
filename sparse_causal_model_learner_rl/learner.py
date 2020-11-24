@@ -89,8 +89,7 @@ class Learner(object):
 
         self.epochs = 0
 
-        for trainable in self.trainables.values():
-            trainable = trainable.to(self.device)
+        self.trainables = {x: y.to(self.device) for x, y in self.trainables.items()}
 
         print("Using device", self.device)
 
@@ -214,7 +213,7 @@ class Learner(object):
             for metric_label, metric in self.config['metrics'].items():
                 epoch_info['metrics'][metric_label] = metric(**context, context=context)
 
-        epoch_info['weights'] = {label + '/' + param_name: np.copy(param.detach().numpy())
+        epoch_info['weights'] = {label + '/' + param_name: np.copy(param.detach().cpu().numpy())
                                  for label, trainable in self.trainables.items()
                                  for param_name, param in trainable.named_parameters()}
 

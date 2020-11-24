@@ -140,7 +140,7 @@ def set_weights(weights, data_numpy):
     """Set weights from numpy arrays."""
     assert len(weights) == len(data_numpy)
     for w, data in zip(weights, data_numpy):
-        w.data = torch.from_numpy(data).to(w.dtype)
+        w.data = torch.from_numpy(data).to(w.dtype).to(w.device)
 
 
 def with_weights(weights_list, dest_shape=None):

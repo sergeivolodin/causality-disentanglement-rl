@@ -28,7 +28,7 @@ def flatten_dict_keys(dct, prefix='', separator='/'):
 
 def torch_to_numpy(x):
     if isinstance(x, torch.Tensor):
-        x = x.detach().numpy()
+        x = x.detach().cpu().numpy()
     if isinstance(x, np.ndarray):
         if len(x.shape) == 1 and x.shape[0] == 1:
             x = np.mean(x)
