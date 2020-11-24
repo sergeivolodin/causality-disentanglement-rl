@@ -49,9 +49,9 @@ def fit_loss(obs_x, obs_y, action_x, decoder, model, **kwargs):
 
 
 @gin.configurable
-def sparsity_loss(model, **kwargs):
+def sparsity_loss(model, ord=1, **kwargs):
     """Ensure that the model is sparse."""
     regularization_loss = 0
     for param in model.parameters():
-        regularization_loss += torch.sum(torch.abs(param))
+        regularization_loss += torch.linalg.norm(param.flatten(), ord=ord)
     return regularization_loss

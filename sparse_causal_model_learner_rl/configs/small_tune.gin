@@ -89,3 +89,8 @@ LinearModel.use_bias = False
 
 tune_run.verbose = True
 tune_run.queue_trials = True
+
+ord_u/uniform.lower = 0
+ord_u/uniform.upper = 1.1
+ord_c/choice.categories = [@ord_u/uniform(), 'inf']
+sparsity_loss.ord = ord/choice()
