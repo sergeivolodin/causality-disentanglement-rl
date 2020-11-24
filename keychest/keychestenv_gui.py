@@ -9,11 +9,15 @@ from matplotlib import pyplot as plt
 
 from keychest.keychestenv import KeyChestGymEnv
 from keychest.keychestenv_gofa import hardcoded_policy_step
+import gin
 
 parser = argparse.ArgumentParser("Play the KeyChest environment in a GUI manually")
 parser.add_argument("--config", type=str, default="config/5x5.gin")
 parser.add_argument("--solver", action='store_true')
+parser.add_argument("--scale", type=float, help="Scale for images", default=3)
 
+
+@gin.configurable
 def show_rendered(scale=3, text=''):
     image = np.array(env.render(mode='rgb_array'), dtype=np.float32) / 255.
     old_shape = np.array(image.shape)[:2][::-1]
@@ -126,6 +130,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     gin.parse_config_file(args.config)
     env = KeyChestGymEnv(flatten_observation=False)
+    gin.bind_parameter("show_rendered.scale", args.scale)
     if args.solver:
         gui_for_env_gofa(env)
     else:
