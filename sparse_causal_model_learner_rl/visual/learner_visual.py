@@ -59,8 +59,11 @@ def select_threshold(array, name='exp', do_plot=True):
             plt.savefig(f"threshold_{name}.png", bbox_inches='tight')
         return np.exp(threshold)
     except Exception as e:
-        print(f"Threshold selection failed: {type(e)} {e} {array}")
-        return 0.0
+        if np.isnan(array).any():
+            raise ValueError(f"Threshold selection failed (NaN): {type(e)} {e} {array}")
+        else:
+            print(f"Threshold selection failed (no NaN): {type(e)} {e} {array}")
+            return 0.0
 
 
 def graph_for_matrices(model, threshold=0.2, do_write=True):

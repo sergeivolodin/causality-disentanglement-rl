@@ -42,6 +42,8 @@ class Learner(object):
         self.config = config
         self.callback = callback
 
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
         # creating environment
         self.env = self.create_env()
         self.collector = EnvDataCollector(self.env)
@@ -86,6 +88,11 @@ class Learner(object):
         self.history = []
 
         self.epochs = 0
+
+        for trainable in self.trainables.values():
+            trainable = trainable.to(self.device)
+
+        print("Using device", self.device)
 
     def checkpoint(self, directory):
         ckpt = os.path.join(directory, "checkpoint")
@@ -159,7 +166,7 @@ class Learner(object):
                 x = np.array(x, dtype=np.float32)
                 if len(x.shape) == 1:
                     x = x.reshape(-1, 1)
-                return torch.from_numpy(x)
+                return torch.from_numpy(x).to(self.device)
             return x
 
         context = {x: possible_to_torch(y) for x, y in context.items()}

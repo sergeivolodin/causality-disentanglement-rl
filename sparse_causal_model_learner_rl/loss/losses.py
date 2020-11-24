@@ -53,5 +53,5 @@ def sparsity_loss(model, ord=1, **kwargs):
     """Ensure that the model is sparse."""
     regularization_loss = 0
     for param in model.parameters():
-        regularization_loss += torch.linalg.norm(param.flatten(), ord=ord)
+        regularization_loss += torch.norm(param.flatten(), p=ord)
     return regularization_loss

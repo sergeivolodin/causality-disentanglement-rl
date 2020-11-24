@@ -12,7 +12,7 @@ import gin_tune
 gin_tune_config.log_sys_usage = True
 tune_run.verbose = False
 tune_run.num_samples = 100
-tune_run.resources_per_trial = {'gpu': 0.1, 'cpu': 3}
+tune_run.resources_per_trial = {'gpu': 0.1, 'cpu': 1}
 
 Config.train_steps = 20000
 Config.env_steps = 1000
