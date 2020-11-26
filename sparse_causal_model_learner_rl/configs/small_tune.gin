@@ -8,9 +8,8 @@ import sparse_causal_model_learner_rl.loss.optimizer
 import sparse_causal_model_learner_rl.metrics.nnz
 import sparse_causal_model_learner_rl.metrics.loss_thresholded
 import gin_tune
+include 'common.gin'
 
-gin_tune_config.log_sys_usage = True
-tune_run.verbose = False
 tune_run.num_samples = 100
 tune_run.resources_per_trial = {'gpu': 0.1, 'cpu': 1}
 
@@ -85,11 +84,7 @@ opt1/Optimizer.lr = @opt_lr/loguniform()
 Config.optimizers = {'opt1': @opt1/Optimizer}
 Config.execution = {'opt1': ['fit', 'sparsity', 'reconstruction']}
 
-
 LinearModel.use_bias = False
-
-tune_run.verbose = True
-tune_run.queue_trials = True
 
 ord_u/uniform.lower = 0
 ord_u/uniform.upper = 1.1
