@@ -23,6 +23,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
+        sudo apt-get update
         sudo apt-get install -y mongodb graphviz
         sudo service mongodb start
         pip install flake8 pytest
