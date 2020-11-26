@@ -443,9 +443,13 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
     return None
 
 
-def learner_gin_sacred(configs):
+def learner_gin_sacred(configs, nofail=False):
     """Launch Learner from gin configs."""
-    return gin_sacred(configs, main_fcn, db_name='causal_sparse',
+    main_fcn_use = main_fcn
+    if nofail:
+        main_fcn_use = partial(main_fcn, do_exit=False)
+    main_fcn_use.__name__ = "main_fcn"
+    return gin_sacred(configs, main_fcn_use, db_name='causal_sparse',
                       base_dir=os.path.join(os.getcwd(), 'results'))
 
 parser = argparse.ArgumentParser(description="Causal learning experiment")
@@ -453,6 +457,7 @@ parser.add_argument('--config', type=str, required=True, action='append')
 parser.add_argument('--n_cpus', type=int, required=False, default=None)
 parser.add_argument('--n_gpus', type=int, required=False, default=None)
 parser.add_argument('--nowrap', action='store_true')
+parser.add_argument('--nofail', help="Disable killing ray actors at the end of the trial", action='store_true')
 
 
 if __name__ == '__main__':
@@ -474,4 +479,4 @@ if __name__ == '__main__':
         if args.n_cpus == 0:
             kwargs = {'num_cpus': 1, 'local_mode': True}
         ray.init(**kwargs, num_gpus=args.n_gpus, include_dashboard=True)
-        learner_gin_sacred(config)
+        learner_gin_sacred(config, nofail=args.nofail)

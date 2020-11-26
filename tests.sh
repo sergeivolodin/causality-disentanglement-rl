@@ -23,7 +23,7 @@ python3 -m pytest causal_util sparse_causal_model_learner_rl vectorincrement key
 rm -rf $DIR/results/test_ve5
 
 echo "Running training with gin/sacred/tune"
-python3 -m sparse_causal_model_learner_rl.learner --config $MODULE_PATH/configs/test.gin --config $MODULE_PATH/../vectorincrement/config/ve5.gin
+python3 -m sparse_causal_model_learner_rl.learner --config $MODULE_PATH/configs/test.gin --config $MODULE_PATH/../vectorincrement/config/ve5.gin --nofail
 
 rm -rf $DIR/results/test_ve5
 
