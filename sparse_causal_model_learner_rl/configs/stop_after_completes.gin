@@ -1,0 +1,12 @@
+import sparse_causal_model_learner_rl.sacred_gin_tune.complete_callback
+import gin_tune
+
+
+cs/get_singleton.cls = @CompletesCallback
+cs/get_singleton.name = "cs"
+
+tune_run.stop = @StopOnCompletes()
+tune_run.callbacks = [@cs/get_singleton()]
+
+StopOnCompletes.completes_callback = @cs/get_singleton()
+StopOnCompletes.target_trials = 4
