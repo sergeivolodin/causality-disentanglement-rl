@@ -23,8 +23,13 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
+        sudo apt-get install -y mongodb graphviz
+        sudo service mongodb start
         pip install flake8 pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        pip install -e gin_tune
+        python ray/python/ray/setup-dev.py --yes
+        pip install -e .
     - name: Test with pytest
       run: |
         ./tests.sh
