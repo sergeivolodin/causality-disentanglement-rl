@@ -312,7 +312,7 @@ class Learner(object):
         return threshold, ps, f_out
 
 
-def main_fcn(config, ex, checkpoint_dir, **kwargs):
+def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, **kwargs):
     """Main function for gin_sacred."""
 
     def callback(self, epoch_info):
@@ -322,7 +322,10 @@ def main_fcn(config, ex, checkpoint_dir, **kwargs):
 
         # save graph as artifact
         uid = str(uuid.uuid4())
-        base_dir = ex.base_dir
+        if do_sacred:
+            base_dir = ex.base_dir
+        else:
+            base_dir = '/tmp/'
 
         # chdir to base_dir
         path_epoch = Path(base_dir) / ("epoch%05d" % self.epochs)
@@ -330,7 +333,8 @@ def main_fcn(config, ex, checkpoint_dir, **kwargs):
         mpl.use('Agg')
 
         def add_artifact(fn):
-            ex.add_artifact(fn, name=("epoch_%05d_" % self.epochs) + os.path.basename(fn))
+            if do_sacred:
+                ex.add_artifact(fn, name=("epoch_%05d_" % self.epochs) + os.path.basename(fn))
 
             # export of images to tensorflow (super slow...)
             if fn.endswith('.png'):
@@ -408,10 +412,13 @@ def main_fcn(config, ex, checkpoint_dir, **kwargs):
 
         # pass metrics to sacred
         if self.epochs % self.config.get('report_every', 1) == 0:
-            dict_to_sacred(ex, epoch_info, epoch_info['epochs'])
-            tune.report(**epoch_info)
+            if do_sacred:
+                dict_to_sacred(ex, epoch_info, epoch_info['epochs'])
+            if do_tune:
+                tune.report(**epoch_info)
         else:
-            tune.report()
+            if do_tune:
+                tune.report()
 
     if checkpoint_dir:
         learner = pickle.load(os.path.join(checkpoint_dir, "checkpoint"))
@@ -446,8 +453,9 @@ if __name__ == '__main__':
     if args.nowrap:
         # useful for debugging/testing
         load_config_files(config)
-        l = Learner(Config())
-        l.train(do_tqdm=True)
+        config = Config()
+
+        main_fcn(config=config, ex=None, checkpoint_dir=None, do_tune=False, do_sacred=False)
     else:
         kwargs = {'num_cpus': args.n_cpus}
         if args.n_cpus == 0:
