@@ -380,6 +380,8 @@ def main_fcn(config, ex, checkpoint_dir, **kwargs):
                     fig.savefig("model.png",  bbox_inches="tight")
                     artifact = path_epoch / "model.png"
                     add_artifact(artifact)
+                    plt.clf()
+                    plt.close(fig)
                 except Exception as e:
                     print(f"Error plotting model: {self.epochs} {e} {type(e)}")
 
@@ -392,6 +394,8 @@ def main_fcn(config, ex, checkpoint_dir, **kwargs):
                             fig.savefig(f"loss_{opt}.png", bbox_inches="tight")
                             artifact = path_epoch / f"loss_{opt}.png"
                             add_artifact(artifact)
+                            plt.clf()
+                            plt.close(fig)
                 except Exception as e:
                     print(f"Loss landscape error: {type(e)} {str(e)}")
 

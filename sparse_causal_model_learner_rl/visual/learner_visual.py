@@ -52,11 +52,13 @@ def select_threshold(array, name='exp', do_plot=True):
         threshold = (l + r) / 2
 
         if do_plot:
-            plt.figure()
+            fig = plt.figure()
             plt.hist(x.x)
             plt.axvline(threshold, label='threshold')
             plt.legend()
             plt.savefig(f"threshold_{name}.png", bbox_inches='tight')
+            plt.clf()
+            plt.close(fig)
         return np.exp(threshold)
     except Exception as e:
         if np.isnan(array).any():
