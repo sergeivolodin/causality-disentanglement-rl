@@ -312,7 +312,8 @@ class Learner(object):
         return threshold, ps, f_out
 
 
-def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, **kwargs):
+def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=False,
+             do_exit=True, **kwargs):
     """Main function for gin_sacred."""
 
     def callback(self, epoch_info):
@@ -335,6 +336,8 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, **kwargs)
         def add_artifact(fn):
             if do_sacred:
                 ex.add_artifact(fn, name=("epoch_%05d_" % self.epochs) + os.path.basename(fn))
+            else:
+                print(f"Artifact available: {fn}")
 
             # export of images to tensorflow (super slow...)
             if fn.endswith('.png'):
@@ -405,10 +408,16 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, **kwargs)
 
         epoch_info['checkpoint_tune'] = None
         if self.epochs % self.checkpoint_every == 0:
-            with tune.checkpoint_dir(step=self.epochs) as checkpoint_dir:
-                ckpt = self.checkpoint(checkpoint_dir)
-                epoch_info['checkpoint_tune'] = ckpt
-                epoch_info['checkpoint_size'] = os.path.getsize(ckpt)
+            if do_tune:
+                with tune.checkpoint_dir(step=self.epochs) as checkpoint_dir:
+                    ckpt = self.checkpoint(checkpoint_dir)
+                    epoch_info['checkpoint_tune'] = ckpt
+                    epoch_info['checkpoint_size'] = os.path.getsize(ckpt)
+            else:
+                ckpt_dir = os.path.join(base_dir, "checkpoint%05d" % epoch_info['epochs'])
+                os.makedirs(ckpt_dir, exist_ok=True)
+                self.checkpoint(ckpt_dir)
+                print(f"Checkpoint available: {ckpt_dir}")
 
         # pass metrics to sacred
         if self.epochs % self.config.get('report_every', 1) == 0:
@@ -416,6 +425,8 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, **kwargs)
                 dict_to_sacred(ex, epoch_info, epoch_info['epochs'])
             if do_tune:
                 tune.report(**epoch_info)
+            if not do_sacred and not do_tune:
+                print(f"Report ready, len={len(epoch_info)}")
         else:
             if do_tune:
                 tune.report()
@@ -426,8 +437,9 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, **kwargs)
     else:
         learner = Learner(config, callback=callback)
 
-    learner.train(do_tqdm=False)
-    sys.exit(0)
+    learner.train(do_tqdm=do_tqdm)
+    if do_exit:
+        sys.exit(0)
     return None
 
 
@@ -455,7 +467,8 @@ if __name__ == '__main__':
         load_config_files(config)
         config = Config()
 
-        main_fcn(config=config, ex=None, checkpoint_dir=None, do_tune=False, do_sacred=False)
+        main_fcn(config=config, ex=None, checkpoint_dir=None, do_tune=False, do_sacred=False,
+                 do_tqdm=True, do_exit=False)
     else:
         kwargs = {'num_cpus': args.n_cpus}
         if args.n_cpus == 0:
