@@ -8,6 +8,7 @@ from sacred.observers import MongoObserver
 
 from gin_tune import tune_gin
 from sparse_causal_model_learner_rl.config import Config
+from path import Path
 
 
 def load_config_files(config_files):
@@ -18,7 +19,8 @@ def load_config_files(config_files):
             c()
             config_names.append(str(c))
         elif isinstance(c, str):
-            gin.parse_config_file(c)
+            with Path(os.path.dirname(c)):
+                gin.parse_config_file(c)
             config_names.append(os.path.basename(c)[:-4])
         else:
             raise TypeError(f"Config file can be either a callable or a string: {c}")
