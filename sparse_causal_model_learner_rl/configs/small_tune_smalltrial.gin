@@ -1,0 +1,14 @@
+include 'small_tune.gin'
+
+Config.train_steps = 20
+Config.env_steps = 1000
+
+Config.loss_every = 1
+Config.graph_every = 1
+Config.checkpoint_every = 1
+Config.report_every = 1
+Config.metrics_every = 1
+
+Config.keep_history = True
+# Config.max_history_size = 10
+

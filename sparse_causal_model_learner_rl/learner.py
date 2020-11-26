@@ -3,6 +3,7 @@ import argparse
 import matplotlib as mpl
 mpl.use('Agg')
 
+import sys
 import ray
 import gin
 import numpy as np
@@ -415,6 +416,7 @@ def main_fcn(config, ex, checkpoint_dir, **kwargs):
         learner = Learner(config, callback=callback)
 
     learner.train(do_tqdm=False)
+    sys.exit(0)
     return None
 
 
