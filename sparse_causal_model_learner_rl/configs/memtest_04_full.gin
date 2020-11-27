@@ -1,0 +1,10 @@
+include 'common.gin'
+
+Config.loss_every = 500
+Config.graph_every = 500
+Config.checkpoint_every = 5000
+Config.report_every = 20
+Config.metrics_every = 20
+
+Config.keep_history = True
+# Config.max_history_size = 200
