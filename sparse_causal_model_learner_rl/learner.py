@@ -93,6 +93,8 @@ class Learner(object):
         self.trainables = {x: y.to(self.device) for x, y in self.trainables.items()}
 
         print("Using device", self.device)
+        
+        self.epoch_info = None
 
     def checkpoint(self, directory):
         ckpt = os.path.join(directory, "checkpoint")
@@ -239,6 +241,8 @@ class Learner(object):
         self.config.update(epoch_info=epoch_info)
         self.epochs += 1
 
+        self.epoch_info = epoch_info
+        
         return epoch_info
 
     @property
@@ -316,6 +320,22 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
              do_exit=True, **kwargs):
     """Main function for gin_sacred."""
 
+    def checkpoint_tune(self, epoch_info=None):
+        """Checkpoint, possibly with tune."""
+        if epoch_info is None:
+            epoch_info = self.epoch_info
+        
+        if do_tune:
+            with tune.checkpoint_dir(step=self.epochs) as checkpoint_dir:
+                ckpt = self.checkpoint(checkpoint_dir)
+                epoch_info['checkpoint_tune'] = ckpt
+                epoch_info['checkpoint_size'] = os.path.getsize(ckpt)
+        else:
+            ckpt_dir = os.path.join(base_dir, "checkpoint%05d" % epoch_info['epochs'])
+            os.makedirs(ckpt_dir, exist_ok=True)
+            self.checkpoint(ckpt_dir)
+            print(f"Checkpoint available: {ckpt_dir}")
+    
     def callback(self, epoch_info):
         """Callback for Learner."""
 
@@ -408,16 +428,7 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
 
         epoch_info['checkpoint_tune'] = None
         if self.epochs % self.checkpoint_every == 0:
-            if do_tune:
-                with tune.checkpoint_dir(step=self.epochs) as checkpoint_dir:
-                    ckpt = self.checkpoint(checkpoint_dir)
-                    epoch_info['checkpoint_tune'] = ckpt
-                    epoch_info['checkpoint_size'] = os.path.getsize(ckpt)
-            else:
-                ckpt_dir = os.path.join(base_dir, "checkpoint%05d" % epoch_info['epochs'])
-                os.makedirs(ckpt_dir, exist_ok=True)
-                self.checkpoint(ckpt_dir)
-                print(f"Checkpoint available: {ckpt_dir}")
+            checkpoint_tune(self, epoch_info)
 
         # pass metrics to sacred
         if self.epochs % self.config.get('report_every', 1) == 0:
@@ -438,8 +449,16 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
         learner = Learner(config, callback=callback)
 
     learner.train(do_tqdm=do_tqdm)
+    
+    # last checkpoint at the end
+    checkpoint_tune(learner)
+    
+    # closing all resources
+    del learner
+    
     if do_exit:
         sys.exit(0)
+    
     return None
 
 
