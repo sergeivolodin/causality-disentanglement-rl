@@ -18,7 +18,7 @@ Config.env_steps = 1000
 
 Config.loss_every = 500
 Config.graph_every = 500
-Config.checkpoint_every = 200
+Config.checkpoint_every = 5000
 Config.report_every = 20
 Config.metrics_every = 20
 
