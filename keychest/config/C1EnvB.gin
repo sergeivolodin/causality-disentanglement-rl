@@ -19,7 +19,7 @@ KeyChestEnvironment.initial_health = 30
 KeyChestEnvironment.food_efficiency = 2
 
 KeyChestEnvironmentFixedMap.map_array = """
-lL@  
+BL@  
  @<@ 
 ##P# 
 ## #<

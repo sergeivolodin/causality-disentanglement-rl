@@ -15,17 +15,17 @@ def test_hardcoded_env_behavior():
 
 P<>
 l@ 
-   
+B  
 
 
 
 """
 
-    mymap2 = ["P<>", "l@ ", "   "]
+    mymap2 = ["P<>", "l@ ", "B  "]
 
     mymap3 = np.array([['P', '<', '>'],
                        ['l', '@', ' '],
-                       [' ', ' ', ' ']],
+                       ['B', ' ', ' ']],
                       dtype='<U1')
 
     maps = [mymap, mymap2, mymap3]
@@ -46,11 +46,13 @@ l@
                                         ['#', '#', '#', '#', '#'],
                                         ['#', 'P', '<', '>', '#'],
                                         ['#', 'l', '@', ' ', '#'],
-                                        ['#', ' ', ' ', ' ', '#'],
+                                        ['#', 'B', ' ', ' ', '#'],
                                         ['#', '#', '#', '#', '#']], dtype='<U1')
 
         def assert_obs_equals(env, obs):
             print(env.render(mode='np_array').shape, obs.shape)
+            print(np.where(env.render(mode='np_array') != obs))
+            print(env.render(mode='np_array'))
             assert all((env.render(mode='np_array') == obs).flatten()), "Wrong observation"
 
         assert env.engine.shape == (3, 3)
@@ -122,7 +124,7 @@ l@
         assert env.engine.keys == 0
         assert env.engine.player_position == (2, 0)
         assert rew == -1
-        assert env.engine.lamp_state == 1
+        assert env.engine.lamp_state == 0
         assert done == False
 
         obs, rew, done, info = env.step_string('down')
@@ -138,7 +140,7 @@ l@
         assert env.engine.keys == 0
         assert env.engine.player_position == (2, 1)
         assert rew == -1
-        assert env.engine.lamp_state == 1
+        assert env.engine.lamp_state == 0
         assert done == False
 
         obs, rew, done, info = env.step_string('right')
@@ -146,7 +148,7 @@ l@
         assert env.engine.keys == 0
         assert env.engine.player_position == (2, 2)
         assert rew == -1
-        assert env.engine.lamp_state == 1
+        assert env.engine.lamp_state == 0
         assert done == False
 
         obs, rew, done, info = env.step_string('right')
@@ -154,7 +156,7 @@ l@
         assert env.engine.keys == 0
         assert env.engine.player_position == (2, 2)
         assert rew == -1
-        assert env.engine.lamp_state == 1
+        assert env.engine.lamp_state == 0
         assert done == True
 
 

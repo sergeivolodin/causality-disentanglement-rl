@@ -320,6 +320,13 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
              do_exit=True, **kwargs):
     """Main function for gin_sacred."""
 
+    # save graph as artifact
+
+    if do_sacred:
+        base_dir = ex.base_dir
+    else:
+        base_dir = '/tmp/'
+
     def checkpoint_tune(self, epoch_info=None):
         """Checkpoint, possibly with tune."""
         if epoch_info is None:
@@ -340,13 +347,6 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
         """Callback for Learner."""
 
         epoch_info = dict(epoch_info)
-
-        # save graph as artifact
-        uid = str(uuid.uuid4())
-        if do_sacred:
-            base_dir = ex.base_dir
-        else:
-            base_dir = '/tmp/'
 
         # chdir to base_dir
         path_epoch = Path(base_dir) / ("epoch%05d" % self.epochs)

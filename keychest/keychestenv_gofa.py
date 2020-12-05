@@ -56,7 +56,7 @@ def features_for_obs(obs):
     result['at_food'] = 'food' in items
     result['at_key'] = 'key' in items
     result['at_chest'] = 'chest' in items
-    result['at_button'] = 'lamp_on' in items or 'lamp_off' in items
+    result['at_button'] = 'button' in items
     result['health'] = np.sum(get_map('health'))
     result['keys_collected'] = np.sum(get_map('keys_collected'))
 
@@ -124,7 +124,7 @@ def hardcoded_policy_step(env, do_print=False):
     health = features_for_obs(obs)['health']
     keys = features_for_obs(obs)['keys_collected']
 
-    button_pos = list(zip(*np.where(get_map(obs, 'lamp_on') + get_map(obs, 'lamp_off'))))[0]
+    button_pos = closest_object(obs, 'button')['closest_object']
 
     key_info = closest_object(obs, 'key')
     chest_info = closest_object(obs, 'chest')

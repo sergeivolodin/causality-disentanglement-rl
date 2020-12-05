@@ -20,7 +20,7 @@ KeyChestEnvironment.food_efficiency = 2
 
 KeyChestEnvironmentFixedMap.map_array = """
         
- l      
+ B      
    > @< 
         
  @<  L  

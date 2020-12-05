@@ -76,14 +76,15 @@ def keychest_obs2d_to_image(obs, scale=15):
 @gin.configurable
 class KeyChestEnvironment(object):
     # class constants
-    OBJECTS = ['empty', 'keys_collected', 'health', 'wall', 'key', 'chest', 'food', 'lamp_on', 'lamp_off', 'player']
-    SYMBOLS = {'wall': '#', 'player': 'P', 'key': '<', 'chest': '>', 'food': '@',
+    OBJECTS = ['empty', 'keys_collected', 'health', 'wall', 'key', 'chest', 'food', 'button', 'lamp_on', 'lamp_off',
+               'player']
+    SYMBOLS = {'wall': '#', 'player': 'P', 'key': '<', 'chest': '>', 'food': '@', 'button': 'B',
                'lamp_on': 'L', 'lamp_off': 'l', 'empty': ' ', 'health': '@', 'keys_collected': '<'}
-    INNER_OBJECTS = ['empty', 'wall', 'key', 'chest', 'food', 'lamp_on', 'lamp_off', 'player']
+    INNER_OBJECTS = ['empty', 'wall', 'key', 'chest', 'food', 'button', 'lamp_on', 'lamp_off', 'player']
     COLORS = {'empty': (191, 191, 191), 'wall': (0, 0, 0), 'key': (0, 0, 255), 'chest': (255, 200, 0),
               'lamp_on': (255, 255, 255),
               'lamp_off': (94, 94, 94), 'food': (0, 255, 0), 'player': (255, 0, 0), 'health': (0, 255, 0),
-              'keys_collected': (0, 0, 255)}
+              'keys_collected': (0, 0, 255), 'button': (252, 3, 244)}
     ACTIONS = {0: (1, 0), 1: (-1, 0), 2: (0, 1), 3: (0, -1)}
     ACTION_NAMES = {(1, 0): "down", (-1, 0): "up", (0, 1): "right", (0, -1): "left"}
 
@@ -258,16 +259,22 @@ class KeyChestEnvironment(object):
             # otherwise we are moving
             item = self.item_at_position(next_position)
 
-            if item == 'lamp_on':
-                self.delete_object('lamp_on', next_position)
-                self.add_object('lamp_off', next_position)
+            if item == 'button':
+                if self.lamp_state == 1:  # lamp is on
+                    lamp_position = self.locate_single('lamp_on')
+                    self.delete_object('lamp_on', lamp_position)
+                    self.add_object('lamp_off', lamp_position)
 
-                info['event'] = 'lamp_turned_off'
-            elif item == 'lamp_off':
-                self.delete_object('lamp_off', next_position)
-                self.add_object('lamp_on', next_position)
+                    info['event'] = 'lamp_turned_off'
+                elif self.lamp_state == 0:  # lamp is off
+                    lamp_position = self.locate_single('lamp_off')
+                    self.delete_object('lamp_off', lamp_position)
+                    self.add_object('lamp_on', lamp_position)
 
-                info['event'] = 'lamp_turned_on'
+                    info['event'] = 'lamp_turned_on'
+                else:  # lamp not found
+                    info['event'] = 'lamp_does_not_exist'
+
             elif item == 'food':
                 self.delete_object('food', next_position)
                 self.health += self.food_efficiency
@@ -333,7 +340,6 @@ class KeyChestEnvironment(object):
 
     @property
     def lamp_state(self):
-        obs = self._observation
         lamp_on = np.sum(self.maps['lamp_on'])
         lamp_off = np.sum(self.maps['lamp_off'])
         if lamp_on:
@@ -346,16 +352,18 @@ class KeyChestEnvironment(object):
     @staticmethod
     def _locate(maps, object_type):
         """Where are objects of a given type on the map?"""
-        assert object_type in KeyChestEnvironment.OBJECTS, \
-            f"Wrong object {object_type}, have {maps.keys()}"
+        if object_type not in KeyChestEnvironment.OBJECTS:
+            raise KeyError(f"Wrong object {object_type}, have {maps.keys()}")
         return list(zip(*np.where(maps[object_type])))
 
     @staticmethod
     def _locate_single(maps, object_type):
         """Where is the single object?"""
         w = KeyChestEnvironment._locate(maps, object_type)
-        assert len(w) >= 1, f"No {object_type} found"
-        assert len(w) <= 1, f"More than one {object_type} found"
+        if len(w) == 0:
+            raise ValueError(f"No {object_type} found")
+        elif len(w) >= 2:
+            raise ValueError(f"More than one {object_type} found")
         return w[0]
 
 
@@ -376,7 +384,7 @@ class KeyChestEnvironmentRandom(KeyChestEnvironment):
     """Generate a random map for the KeyChest environment."""
 
     def __init__(self, width=10, height=10, n_keys=2, n_chests=2, n_food=2, **kwargs):
-        objects_to_fill = ['player', 'lamp_off']
+        objects_to_fill = ['player', 'lamp_off', 'button']
         objects_to_fill += ['key'] * n_keys
         objects_to_fill += ['chest'] * n_chests
         objects_to_fill += ['food'] * n_food
