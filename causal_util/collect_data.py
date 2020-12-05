@@ -11,6 +11,28 @@ import gin
 from gym import Wrapper
 
 
+def compute_reward_to_go(rewards_episode, gamma=0.95):
+    """Compute discounted rewards from current point.
+
+    Args:
+        rewards_episode: iterable with rewards from a single episode
+        gamma: discount factor
+
+    Returns:
+        iterablee of the same length as rewards_episode with rewards-to-go
+
+    Property:
+        Expectation_episode[reward-to-go] = value function
+    """
+
+    prev_rtg = 0
+    reward_to_go = []
+    for r in rewards_episode[::-1]:
+        rtg = r + gamma * prev_rtg
+        reward_to_go.append(rtg)
+        prev_rtg = rtg
+    return reward_to_go[::-1]
+
 class EnvDataCollector(Wrapper):
     """Collects data from the environment."""
 
