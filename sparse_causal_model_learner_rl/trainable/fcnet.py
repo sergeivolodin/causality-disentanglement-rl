@@ -26,6 +26,9 @@ class FCNet(nn.Module):
         for i in range(1, len(self.dims)):
             self.fc.append(nn.Linear(in_features=self.dims[i - 1], out_features=self.dims[i]))
 
+            # for torch to keep track of variables
+            setattr(self, f'fc%02d' % i, self.fc[-1])
+
     def forward(self, x):
         for i, fc in enumerate(self.fc):
             x = fc(x)
