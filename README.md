@@ -23,7 +23,9 @@ Original causal graph (left) and optimized causal graph (right):<br />
 Done as a semester project at Laboratory of Computational Neuroscience at the Swiss Federal Institute of Technology in Lausanne (EPFL)
 <a href="https://www.overleaf.com/read/nqgjrjbcybrp">See full project report</a>
 
-We use torch to learn the sparse model and stable baselines for RL.
+<a href="https://www.overleaf.com/read/mmmbrrvnkffq">Master thesis report draft</a>
+
+We use [pytorch](https://pytorch.org/) to learn the sparse model and [stable baselines](https://stable-baselines.readthedocs.io/en/master/) for RL.
 
 ### Installation
 1. You will need `conda` and `pip`
