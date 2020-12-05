@@ -1,0 +1,14 @@
+include 'test.gin'
+import sparse_causal_model_learner_rl.trainable.value_predictor
+import sparse_causal_model_learner_rl.trainable.fcnet
+
+Config.value_predictor = @ModelValuePredictor
+
+value/FCNet.hidden_sizes = [10, 10]
+value/FCNet.activation_cls = @ReLU
+ModelValuePredictor.model_cls = @value/FCNet
+
+Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1.0},
+                 'sparsity': {'fcn': @sparsity_loss, 'coeff': 1e-1},
+                 'reconstruction': {'fcn': @reconstruction_loss_value_function_reward_to_go, 'coeff': 1.0}
+                }

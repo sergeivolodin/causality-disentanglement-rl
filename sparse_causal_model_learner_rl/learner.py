@@ -104,6 +104,30 @@ class Learner(object):
         self.trainables = {x: y.to(self.device) for x, y in self.trainables.items()}
         self.epoch_info = None
 
+    # attributes to save to pickle files
+    PICKLE_DIRECTLY = ['history', 'epochs', 'epoch_info']
+
+    def __setstate__(self, dct, restore_gin=True):
+        # only support gin-defined Configs
+        if restore_gin:
+            gin.parse_config_file(dct['gin_config'])
+        self.__init__(config=Config())
+
+        # setting attributes
+        for key in set(self.PICKLE_DIRECTLY).intersection(dct.keys()):
+            setattr(self, key, dct[key])
+
+        # restoring trainables
+        for key in set(self.trainables.keys()).intersection(dct['trainable_weights'].keys()):
+            self.trainables[key].load_state_dict(dct['trainable_weights'][key])
+
+    def __getstate__(self):
+        result = {k: getattr(self, k) for k in self.PICKLE_DIRECTLY}
+        result['trainables_weights'] = {k: v.state_dict() for k, v in self.trainables.items()}
+        result['gin_config'] = gin.config_str()
+        return result
+
+
     def checkpoint(self, directory):
         ckpt = os.path.join(directory, "checkpoint")
         with open(ckpt, 'wb') as f:
@@ -159,7 +183,6 @@ class Learner(object):
                 is_first = i == 0
                 is_last = i == len(episode) - 1
 
-                rew.append(step['reward'])
                 obs.append(step['observation'])
 
                 if is_multistep and not is_first:
@@ -169,12 +192,22 @@ class Learner(object):
 
                     obs_y.append(step['observation'])
                     act_x.append(action)
+                    rew.append(step['reward'])
 
                 if is_multistep and not is_last:
                     obs_x.append(step['observation'])
 
             rew_to_go_episode = compute_reward_to_go(rew, gamma=self.vf_gamma)
             reward_to_go.extend(rew_to_go_episode)
+
+        # for value function prediction
+        assert len(reward_to_go) == len(obs_x)
+
+        # for modelling
+        assert len(obs_x) == len(act_x)
+
+        # for reconstruction
+        assert len(obs_x) == len(obs_y)
 
         context = {'obs_x': obs_x, 'obs_y': obs_y, 'action_x': act_x,
                    'obs': obs,
