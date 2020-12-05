@@ -42,12 +42,15 @@ def reconstruction_loss_inverse_model(model, rn_threshold, **kwargs):
         regularization_loss = torch.from_numpy(np.array(rn_threshold))
     return regularization_loss
 
+@gin.configurable
+def reconstruction_loss_value_function_reward_to_go(obs, value_predictor, reward_to_go, **kwargs):
+    mse = torch.nn.MSELoss()
+    return mse(value_predictor(obs), reward_to_go)
 
 @gin.configurable
 def fit_loss(obs_x, obs_y, action_x, decoder, model, **kwargs):
     """Ensure that the model fits the features data."""
     mse = torch.nn.MSELoss()
-
     return mse(model(decoder(obs_x), action_x), decoder(obs_y))
 
 

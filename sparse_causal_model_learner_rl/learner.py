@@ -18,11 +18,12 @@ from imageio import imread
 import cv2
 
 from causal_util import load_env, WeightRestorer
-from causal_util.collect_data import EnvDataCollector
+from causal_util.collect_data import EnvDataCollector, compute_reward_to_go
 from sparse_causal_model_learner_rl.config import Config
 from sparse_causal_model_learner_rl.trainable.decoder import Decoder
 from sparse_causal_model_learner_rl.trainable.model import Model
 from sparse_causal_model_learner_rl.trainable.reconstructor import Reconstructor
+from sparse_causal_model_learner_rl.trainable.value_predictor import ValuePredictor
 from causal_util.helpers import postprocess_info, one_hot_encode
 from matplotlib import pyplot as plt
 from causal_util.helpers import dict_to_sacred
@@ -52,6 +53,7 @@ class Learner(object):
         self.feature_shape = self.config['feature_shape']
 
         self.checkpoint_every = self.config.get('checkpoint_every', 10)
+        self.vf_gamma = self.config.get('vf_gamma', 1.0)
 
         # Discrete action -> one-hot encoding
         if isinstance(self.env.action_space, gym.spaces.Discrete):
@@ -84,16 +86,22 @@ class Learner(object):
         self.reconstructor = self.reconstructor_cls(feature_shape=self.feature_shape,
                                                     observation_shape=self.observation_shape)
 
+        self.value_predictor_cls = config.get('value_predictor', None)
+        if self.value_predictor_cls:
+            assert issubclass(self.value_predictor_cls, ValuePredictor), f"Please supply a valid value predictor class {self.value_predictor_cls}"
+            self.value_predictor = self.value_predictor_cls(observation_shape=self.observation_shape)
+
+        # creating a dictionary with all torch models
         self.trainables = {'model': self.model, 'decoder': self.decoder,
                            'reconstructor': self.reconstructor}
-        self.history = []
+        if hasattr(self, 'value_predictor'):
+            self.trainables['value_predictor'] = self.value_predictor
 
+        self.history = []
         self.epochs = 0
 
-        self.trainables = {x: y.to(self.device) for x, y in self.trainables.items()}
-
         print("Using device", self.device)
-        
+        self.trainables = {x: y.to(self.device) for x, y in self.trainables.items()}
         self.epoch_info = None
 
     def checkpoint(self, directory):
@@ -131,17 +139,27 @@ class Learner(object):
     @property
     def _context(self):
         """Context for losses."""
+        # x: pre time-step, y: post time-step
+
+        # observation
         obs_x = []
         obs_y = []
-        act_x = []
         obs = []
 
+        # actions
+        act_x = []
+
+        # reward-to-go
+        reward_to_go = []
+
         for episode in self.collector.raw_data:
+            rew = []
             is_multistep = len(episode) > 1
             for i, step in enumerate(episode):
                 is_first = i == 0
                 is_last = i == len(episode) - 1
 
+                rew.append(step['reward'])
                 obs.append(step['observation'])
 
                 if is_multistep and not is_first:
@@ -155,12 +173,15 @@ class Learner(object):
                 if is_multistep and not is_last:
                     obs_x.append(step['observation'])
 
+            rew_to_go_episode = compute_reward_to_go(rew, gamma=self.vf_gamma)
+            reward_to_go.extend(rew_to_go_episode)
+
         context = {'obs_x': obs_x, 'obs_y': obs_y, 'action_x': act_x,
                    'obs': obs,
-                   'decoder': self.decoder, 'model': self.model,
-                   'reconstructor': self.reconstructor,
                    'config': self.config,
-                   'trainables': self.trainables}
+                   'trainables': self.trainables,
+                   'reward_to_go': reward_to_go}
+        context.update(self.trainables)
 
         def possible_to_torch(x):
             """Convert a list of inputs into an array suitable for the torch model."""
