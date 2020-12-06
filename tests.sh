@@ -18,7 +18,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 MODULE_PATH=$(python3 -c "import sparse_causal_model_learner_rl; print(sparse_causal_model_learner_rl.__path__[0])")
 
 echo "Running tests..."
-python3 -m pytest causal_util sparse_causal_model_learner_rl vectorincrement keychest gin_tune
+python3 -m pytest causal_util sparse_causal_model_learner_rl vectorincrement keychest encoder gin_tune
 
 rm -rf $DIR/results/test_ve5
 

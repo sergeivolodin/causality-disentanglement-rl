@@ -5,7 +5,7 @@ import uuid
 import gin
 from observation_encoder import KerasEncoderWrapper
 
-from vectorincrement import load_env
+from causal_util import load_env
 
 parser = argparse.ArgumentParser(description="Create a KerasEncoder, save weights")
 parser.add_argument('--config', type=str, required=True)

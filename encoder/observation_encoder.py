@@ -3,6 +3,8 @@ import gym
 import numpy as np
 import tensorflow as tf
 from gym.wrappers import TransformObservation
+import vectorincrement
+import os
 
 
 @gin.configurable
@@ -11,6 +13,8 @@ class KerasEncoder(object):
 
     def __init__(self, model_callable=None, model_filename=None, **kwargs):
         if model_filename is not None:
+            if model_filename.startswith('/'):
+                model_filename = os.path.join(os.path.dirname(vectorincrement.__file__), "encoders", model_filename[1:])
             print("Loading model", model_filename)
             self.model = tf.keras.models.load_model(model_filename)
         elif model_callable is not None:

@@ -3,7 +3,7 @@ import gin
 import gym
 # noinspection PyUnresolvedReferences
 import vectorincrement  # noqa # pylint: disable=unused-import
-from vectorincrement.observation_encoder import ObservationScaleWrapper
+from encoder.observation_encoder import ObservationScaleWrapper
 # noinspection PyUnresolvedReferences
 import keychest  # noqa # pylint: disable=unused-import
 from causal_util.weight_restorer import WeightRestorer

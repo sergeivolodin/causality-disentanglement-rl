@@ -2,7 +2,7 @@ import tensorflow as tf
 
 tf.compat.v1.disable_eager_execution()
 from causal_util import load_env
-from vectorincrement.observation_encoder import KerasEncoderWrapper
+from encoder.observation_encoder import KerasEncoderWrapper
 import argparse
 from tqdm import tqdm
 from uuid import uuid1

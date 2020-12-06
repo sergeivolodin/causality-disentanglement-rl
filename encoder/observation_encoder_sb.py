@@ -1,7 +1,7 @@
 import gin
 import gym
 import numpy as np
-from vectorincrement.observation_encoder import KerasEncoder
+from encoder.observation_encoder import KerasEncoder
 from stable_baselines.common.vec_env.base_vec_env import VecEnvWrapper
 
 

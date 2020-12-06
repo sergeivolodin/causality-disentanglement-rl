@@ -11,8 +11,8 @@ from stable_baselines.common.vec_env import DummyVecEnv
 from tqdm import tqdm
 
 from causal_util import load_env
-from vectorincrement.observation_encoder import KerasEncoderWrapper
-from vectorincrement.observation_encoder_sb import KerasEncoderVecWrapper
+from encoder.observation_encoder import KerasEncoderWrapper
+from encoder.observation_encoder_sb import KerasEncoderVecWrapper
 
 parser = argparse.ArgumentParser(description="Train/evaluate the model")
 parser.add_argument('--train_steps', type=int, default=250000)

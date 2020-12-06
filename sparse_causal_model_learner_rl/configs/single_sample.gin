@@ -1,0 +1,4 @@
+import gin_tune
+
+tune_run.num_samples = 1
+tune_run.resources_per_trial = {'gpu': 0, 'cpu': 1}

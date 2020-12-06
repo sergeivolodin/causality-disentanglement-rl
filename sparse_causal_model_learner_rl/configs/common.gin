@@ -39,11 +39,9 @@ ThresholdAnnealer.adjust_every = 100
 
 Config._update_function = [@ThresholdAnnealer]
 
-reconstruction_loss_inverse_model.rn_threshold = 100
-
 Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1.0},
                  'sparsity': {'fcn': @sparsity_loss, 'coeff': 1e-5},
-                 'reconstruction': {'fcn': @reconstruction_loss_inverse_model, 'coeff': 1.0}
+                 'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 1.0}
                 }
 
 loss_thresholded.eps = 1e-3
