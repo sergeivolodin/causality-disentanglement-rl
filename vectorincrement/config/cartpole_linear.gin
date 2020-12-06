@@ -1,10 +1,10 @@
 import vectorincrement
-import vectorincrement.observation_encoder
+import encoder.observation_encoder
 
 load_env.env_name = "CartPole-v0"
 
 observation_encoder.KerasEncoder.model_callable = @observation_encoder.non_linear_encoder
-observation_encoder.KerasEncoder.model_filename = "encoders/encoder-config-cartpole_linear-0cb2ab64-fddd-11ea-b26a-00155d22e64a.pb"
+observation_encoder.KerasEncoder.model_filename = "/encoder-config-cartpole_linear-0cb2ab64-fddd-11ea-b26a-00155d22e64a.pb"
 
 observation_encoder.non_linear_encoder.hidden_layers = []
 observation_encoder.non_linear_encoder.activation = None

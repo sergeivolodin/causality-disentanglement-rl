@@ -1,5 +1,5 @@
 import vectorincrement
-import vectorincrement.observation_encoder
+import encoder.observation_encoder
 import causal_util.helpers
 
 load_env.env_name = "VectorIncrement-v0"
@@ -9,8 +9,8 @@ load_env.wrappers = [@KerasEncoderWrapper]
 
 vectorincrement.vectorincrementenv.VectorIncrementEnvironment.n = 5
 
-vectorincrement.observation_encoder.KerasEncoder.model_callable = @observation_encoder.non_linear_encoder
-vectorincrement.observation_encoder.KerasEncoder.model_filename = "/encoder-config-ve5_linear-2c77a48c-fde6-11ea-96a3-00155d22e64a.pb"
+observation_encoder.KerasEncoder.model_callable = @observation_encoder.non_linear_encoder
+observation_encoder.KerasEncoder.model_filename = "/encoder-config-ve5_linear-2c77a48c-fde6-11ea-96a3-00155d22e64a.pb"
 
 observation_encoder.non_linear_encoder.hidden_layers = []
 observation_encoder.non_linear_encoder.activation = None
