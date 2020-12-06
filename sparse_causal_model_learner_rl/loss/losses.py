@@ -51,7 +51,7 @@ def reconstruction_loss_value_function_reward_to_go(obs_x, decoder, value_predic
 def fit_loss(obs_x, obs_y, action_x, decoder, model, **kwargs):
     """Ensure that the model fits the features data."""
     mse = torch.nn.MSELoss()
-    return torch.pow(mse(model(decoder(obs_x), action_x), decoder(obs_y)), 0.5)
+    return mse(model(decoder(obs_x), action_x), decoder(obs_y))
 
 
 @gin.configurable
