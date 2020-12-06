@@ -7,6 +7,7 @@ import sparse_causal_model_learner_rl.loss.losses
 import sparse_causal_model_learner_rl.loss.optimizer
 import sparse_causal_model_learner_rl.metrics.nnz
 import sparse_causal_model_learner_rl.metrics.loss_thresholded
+import sparse_causal_model_learner_rl.metrics.max_element
 import gin_tune
 import sparse_causal_model_learner_rl.trainable.value_predictor
 import sparse_causal_model_learner_rl.trainable.fcnet
@@ -19,30 +20,26 @@ Config.train_steps = 20000
 Config.env_steps = 1000
 
 Config.loss_every = 99999999999999
-Config.graph_every = 999999999
+Config.graph_every = 2000
 Config.checkpoint_every = 10000
-Config.report_every = 20
-Config.metrics_every = 20
+Config.report_every = 300
+Config.metrics_every = 5000
+Config.report_weights = False
+
+Config.collect_every = 500
 
 Config.keep_history = False
-# Config.max_history_size = 10000
-
 Config.model = @LinearModel
 Config.decoder = @IdentityDecoder
 Config.reconstructor = @LinearReconstructor
 
+LinearModel.use_bias = False
 Config.feature_shape = (5, )
 
 Config._update_function = []
-
 Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1.0},}
-
-nnz.eps = 1e-3
-Config.metrics = {'nnz': @nnz, 'max_element_ma': @max_element_ma, 'max_element_mf': @max_element_mf}
+Config.metrics = {}
 
 opt1/Optimizer.name = 'Adam'
 opt1/Optimizer.lr = 1e-3
-
-Config.execution = {'opt1': ['fit'}
-
-LinearModel.use_bias = False
+Config.execution = {'opt1': ['fit']}
