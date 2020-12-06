@@ -3,8 +3,9 @@ import numpy as np
 
 
 @gin.configurable
-def nnz(model, eps=1e-3, **kwargs):
-    val = 0
-    for p in model.parameters():
-        val += np.sum(np.abs(p.detach().cpu().numpy()) > eps)
-    return val
+def max_element_mf(model, **kwargs):
+    return np.max(np.abs(model.Mf))
+
+@gin.configurable
+def max_element_ma(model, **kwargs):
+    return np.max(np.abs(model.Ma))
