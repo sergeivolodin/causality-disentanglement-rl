@@ -51,13 +51,24 @@ def reconstruction_loss_value_function_reward_to_go(obs_x, decoder, value_predic
 def fit_loss(obs_x, obs_y, action_x, decoder, model, **kwargs):
     """Ensure that the model fits the features data."""
     mse = torch.nn.MSELoss()
-    return mse(model(decoder(obs_x), action_x), decoder(obs_y))
+    return torch.pow(mse(model(decoder(obs_x), action_x), decoder(obs_y)), 0.5)
 
 
 @gin.configurable
 def sparsity_loss(model, ord=1, **kwargs):
     """Ensure that the model is sparse."""
     regularization_loss = 0
+
+    # parameters can have different scale, and we care about number of small elements
+    # therefore, dividing by the maximal element
+
+    nparams = 0
     for param in model.parameters():
-        regularization_loss += torch.norm(param.flatten(), p=ord)
-    return regularization_loss
+        regularization_loss += torch.norm(param.flatten(), p=ord) / torch.max(torch.abs(param.flatten()))#.detach()
+        nparams += torch.numel(param)
+
+    # loss=1 means all elements are maximal
+    # dividing by the total number of parameters, because care about total number
+    # of non-zero arrows
+    # and tensors can have different shapes
+    return regularization_loss / max(nparams, 1)
