@@ -26,13 +26,15 @@ def plot_model(model):
     Mf, Ma = model.Mf, model.Ma
     plt.subplot(1, 2, 1)
     plt.title("Model for features")
-    sns.heatmap(Mf, vmin=-1, vmax=1, cmap=cm)
+    max_f = np.max(np.abs(Mf))
+    sns.heatmap(Mf, vmin=-max_f, vmax=max_f, cmap=cm)
     plt.xlabel('Old features')
     plt.ylabel('New features')
 
     plt.subplot(1, 2, 2)
     plt.title("Model for actions")
-    sns.heatmap(Ma, cmap=cm)
+    max_a = np.max(np.abs(Ma))
+    sns.heatmap(Ma, vmin=-max_a, vmax=max_a, cmap=cm)
     plt.xlabel('Actions')
     plt.ylabel('New features')
     return fig
@@ -65,9 +67,9 @@ def select_threshold(array, name='exp', eps=1e-10, do_plot=True):
         return np.exp(threshold)
     except Exception as e:
         if np.isnan(array).any():
-            raise ValueError(f"Threshold selection failed (NaN): {type(e)} {e} {array}")
+            raise ValueError(f"Threshold selection failed (NaN): {name} {type(e)} {e} {array}")
         else:
-            print(f"Threshold selection failed (no NaN): {type(e)} {e} {array}")
+            print(f"Threshold selection failed (no NaN): {name} {type(e)} {e} {array}")
             print(traceback.format_exc())
             return 0.0
 
