@@ -11,7 +11,7 @@ def model_load(model, param_lst):
 
 def flatten_params(params):
     """Flatten parameters of a model."""
-    return np.concatenate([x.flatten() for x in params])
+    return np.concatenate([np.array(x).flatten() for x in params])
 
 
 def params_shape(params):
