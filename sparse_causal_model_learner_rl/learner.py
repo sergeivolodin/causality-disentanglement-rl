@@ -105,6 +105,14 @@ class Learner(object):
         self.trainables = {x: y.to(self.device) for x, y in self.trainables.items()}
         self.epoch_info = None
 
+        self.all_variables = [p for k in sorted(self.trainables.keys())
+                              for p in self.trainables[k].parameters()]
+
+        self.optimizer_objects = {label: fcn(params=self.all_variables)
+                                  for label, fcn in self.config['optimizers'].items()}
+        self._context_cache = None
+
+
     # attributes to save to pickle files
     PICKLE_DIRECTLY = ['history', 'epochs', 'epoch_info', 'config']
 
@@ -221,6 +229,7 @@ class Learner(object):
             return x
 
         context = {x: possible_to_torch(y) for x, y in context.items()}
+        self._context_cache = context
 
         return context
 
@@ -228,22 +237,19 @@ class Learner(object):
         """One training iteration."""
         # obtain data from environment
         self._check_execution()
-        self.collect_steps()
 
-        variables = [p for k in sorted(self.trainables.keys())
-                     for p in self.trainables[k].parameters()]
-
-        optimizers = {label: fcn(params=variables)
-                      for label, fcn in self.config['optimizers'].items()}
-
-        context = self._context
+        if (self.epochs % self.config.get('collect_every', 1) == 0) or self._context_cache is None:
+            self.collect_steps()
+            context = self._context
+        else:
+            context = self._context_cache
 
         epoch_info = {'epochs': self.epochs, 'n_samples': len(context['obs']), 'losses': {},
                       'metrics': {}}
 
         # train using losses
-        for opt_label in sorted(optimizers.keys()):
-            opt = optimizers[opt_label]
+        for opt_label in sorted(self.optimizer_objects.keys()):
+            opt = self.optimizer_objects[opt_label]
             opt.zero_grad()
             total_loss = 0
             for loss_label in self.config['execution'][opt_label]:
@@ -269,9 +275,6 @@ class Learner(object):
             epoch_info['weights'] = {label + '/' + param_name: np.copy(param.detach().cpu().numpy())
                                      for label, trainable in self.trainables.items()
                                      for param_name, param in trainable.named_parameters()}
-
-        epoch_info['threshold/action'] = select_threshold(self.model.Ma, do_plot=False)
-        epoch_info['threshold/feature'] = select_threshold(self.model.Mf, do_plot=False)
 
         # process epoch information
         epoch_info = postprocess_info(epoch_info)
@@ -394,6 +397,8 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
             os.makedirs(ckpt_dir, exist_ok=True)
             self.checkpoint(ckpt_dir)
             print(f"Checkpoint available: {ckpt_dir}")
+
+    mpl.use('Agg')
     
     def callback(self, epoch_info):
         """Callback for Learner."""
@@ -402,8 +407,6 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
 
         # chdir to base_dir
         path_epoch = Path(base_dir) / ("epoch%05d" % self.epochs)
-
-        mpl.use('Agg')
 
         def add_artifact(fn):
             if do_sacred:
