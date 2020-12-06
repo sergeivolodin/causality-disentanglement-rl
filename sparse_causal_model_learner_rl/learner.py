@@ -360,7 +360,9 @@ class Learner(object):
 
     def visualize_graph(self, threshold='auto', do_write=False):
         if threshold == 'auto':
-            threshold = select_threshold(self.model.Ma, do_plot=do_write, name='learner')
+            threshold_act = select_threshold(self.model.Ma, do_plot=do_write, name='learner_action')
+            threshold_f = select_threshold(self.model.Mf, do_plot=do_write, name='learner_feature')
+            threshold = np.mean([threshold_act, threshold_f])
         ps, f_out = graph_for_matrices(self.model, threshold=threshold, do_write=do_write)
         return threshold, ps, f_out
 
@@ -447,10 +449,22 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
                     threshold, ps, f_out = self.visualize_graph(do_write=True)
                     artifact = path_epoch / (f_out + ".png")
                     add_artifact(artifact)
-                    artifact = path_epoch / "threshold_learner.png"
-                    add_artifact(artifact)
                 except Exception as e:
                     print(f"Error plotting causal graph: {self.epochs} {e} {type(e)}")
+                    print(traceback.format_exc())
+
+                try:
+                    artifact = path_epoch / "threshold_learner_feature.png"
+                    add_artifact(artifact)
+                except Exception as e:
+                    print(f"Error plotting threshold for feature: {self.epochs} {e} {type(e)}")
+                    print(traceback.format_exc())
+
+                try:
+                    artifact = path_epoch / "threshold_learner_action.png"
+                    add_artifact(artifact)
+                except Exception as e:
+                    print(f"Error plotting threshold for action: {self.epochs} {e} {type(e)}")
                     print(traceback.format_exc())
 
                 try:
