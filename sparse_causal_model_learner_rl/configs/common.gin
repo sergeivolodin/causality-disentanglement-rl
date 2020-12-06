@@ -6,6 +6,7 @@ import sparse_causal_model_learner_rl.annealer.threshold
 import sparse_causal_model_learner_rl.loss.losses
 import sparse_causal_model_learner_rl.loss.optimizer
 import sparse_causal_model_learner_rl.metrics.nnz
+import sparse_causal_model_learner_rl.metrics.graph_threshold
 import sparse_causal_model_learner_rl.metrics.loss_thresholded
 import gin_tune
 
@@ -49,7 +50,8 @@ loss_thresholded.loss = @fit_loss
 loss_thresholded.delta = True
 
 nnz.eps = 1e-3
-Config.metrics = {'nnz': @nnz, 'sparsity_gap_fit': @loss_thresholded}
+Config.metrics = {'nnz': @nnz, 'sparsity_gap_fit': @loss_thresholded, 'threshold_action': @threshold_action,
+                  'threshold_features': @threshold_features, 'max_element_ma': @max_element_ma, 'max_element_mf': @max_element_mf}
 
 opt1/Optimizer.name = 'Adam'
 opt1/Optimizer.lr = 1e-3
