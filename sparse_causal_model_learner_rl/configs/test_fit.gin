@@ -1,0 +1,82 @@
+import sparse_causal_model_learner_rl.trainable.decoder
+import sparse_causal_model_learner_rl.trainable.reconstructor
+import sparse_causal_model_learner_rl.trainable.model
+import sparse_causal_model_learner_rl.config
+import sparse_causal_model_learner_rl.annealer.threshold
+import sparse_causal_model_learner_rl.loss.losses
+import sparse_causal_model_learner_rl.loss.optimizer
+import sparse_causal_model_learner_rl.metrics.nnz
+import sparse_causal_model_learner_rl.metrics.loss_thresholded
+import gin_tune
+import sparse_causal_model_learner_rl.trainable.value_predictor
+import sparse_causal_model_learner_rl.trainable.fcnet
+include 'common.gin'
+
+tune_run.num_samples = 100
+tune_run.resources_per_trial = {'gpu': 0.1, 'cpu': 1}
+
+Config.train_steps = 20000
+Config.env_steps = 1000
+
+Config.loss_every = 500
+Config.graph_every = 500
+Config.checkpoint_every = 10000
+Config.report_every = 20
+Config.metrics_every = 20
+
+Config.keep_history = False
+# Config.max_history_size = 10000
+
+ModelDecoder.use_batchnorm = True
+
+Config.model = @LinearModel
+#Config.decoder = @ModelDecoder
+Config.decoder = @IdentityDecoder
+Config.reconstructor = @LinearReconstructor
+Config.value_predictor = @ModelValuePredictor
+
+value/FCNet.hidden_sizes = [50, 50, 50, 50]
+value/FCNet.activation_cls = @ReLU
+ModelValuePredictor.model_cls = @value/FCNet
+
+decoder/FCNet.hidden_sizes = [50, 50, 50]
+decoder/FCNet.activation_cls = @ReLU
+ModelDecoder.model_cls = @decoder/FCNet
+
+fdim/choice.categories = [4, 5, 6, 7, 8, 9, 10, 15, 20, 30]
+Config.feature_shape = (@fdim/choice(), )
+
+ThresholdAnnealer.fit_threshold = 1e-2
+ThresholdAnnealer.factor = 0.5
+ThresholdAnnealer.adjust_every = 300
+
+Config._update_function = [@ThresholdAnnealer]
+
+reconstruction_loss_value_function_reward_to_go.value_scaler = 0.1
+
+Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1.0},
+                 'sparsity': {'fcn': @sparsity_loss, 'coeff': 1e-8},
+                 'reconstruction': {'fcn': @reconstruction_loss_value_function_reward_to_go, 'coeff': 0.1}
+                }
+
+loss_thresholded.eps = 1e-2
+loss_thresholded.loss = @fit_loss
+loss_thresholded.delta = False
+
+nnz.eps = 1e-3
+Config.metrics = {'nnz': @nnz, 'with_sparsity_fit': @loss_thresholded,
+                  'max_element_ma': @max_element_ma, 'max_element_mf': @max_element_mf}
+
+opt1/Optimizer.name = 'Adam'
+opt1/Optimizer.lr = 1e-3
+
+opt2/Optimizer.name = 'SGD'
+opt2/Optimizer.lr = 1e-3
+
+#Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer}
+#Config.execution = {'opt1': ['fit', 'sparsity'], 'opt2': ['reconstruction']}
+Config.execution = {'opt1': ['fit'}
+
+LinearModel.use_bias = False
+
+sparsity_loss.ord = 1

@@ -33,3 +33,29 @@ class LinearDecoder(Decoder):
         if self.use_batchnorm:
             x = self.bn(x)
         return x
+
+@gin.configurable
+class IdentityDecoder(Decoder):
+    def __init__(self, **kwargs):
+        super(IdentityDecoder, self).__init__(**kwargs)
+        assert self.observation_shape == self.feature_shape
+
+    def forward(self, x):
+        return x
+
+@gin.configurable
+class ModelDecoder(Decoder):
+    def __init__(self, model_cls, use_batchnorm=False, **kwargs):
+        super(ModelDecoder, self).__init__(**kwargs)
+        assert len(self.observation_shape) == 1
+        assert len(self.feature_shape) == 1
+        self.model = model_cls(input_shape=self.observation_shape, output_shape=self.feature_shape)
+        self.use_batchnorm = use_batchnorm
+        if use_batchnorm:
+            self.bn = nn.BatchNorm1d(self.feature_shape[0], affine=False)
+
+    def forward(self, x):
+        x = self.model(x)
+        if self.use_batchnorm:
+            x = self.bn(x)
+        return x
