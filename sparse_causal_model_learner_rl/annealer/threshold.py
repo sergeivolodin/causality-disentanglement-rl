@@ -18,11 +18,10 @@ def find_value(dct, key_substr):
 def ThresholdAnnealer(config, epoch_info, temp,
                       fit_threshold=1e-2,
                       min_hyper=1e-5,
-                      max_hyper=10,
+                      max_hyper=100,
                       adjust_every=100,
                       factor=0.5, **kwargs):
     """Increase sparsity if fit loss is low, decrease otherwise."""
-    rec_loss = find_value(epoch_info, '/reconstruction/value')
     fit_loss = find_value(epoch_info, '/fit/value')
 
     if 'last_hyper_adjustment' not in temp:
@@ -30,7 +29,7 @@ def ThresholdAnnealer(config, epoch_info, temp,
     i = epoch_info['epochs']
 
     suggested_hyper = None
-    if rec_loss + fit_loss > fit_threshold:
+    if fit_loss > fit_threshold:
         if config['losses']['sparsity']['coeff'] > min_hyper:
             suggested_hyper = config['losses']['sparsity']['coeff'] * factor
     else:
