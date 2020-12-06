@@ -38,9 +38,12 @@ def plot_model(model):
     return fig
 
 
-def select_threshold(array, name='exp', do_plot=True):
+def select_threshold(array, name='exp', eps=1e-10, do_plot=True):
     """Select threshold for a matrix."""
     try:
+        array = np.array(array)
+        # log would not work for low values
+        array[array == 0] = eps
         x = pd.DataFrame({'x': np.log(np.abs(array.flatten()))})
         kmeans = KMeans(n_clusters=2)
         kmeans.fit_transform(X=np.array(x.x).reshape((-1, 1)))

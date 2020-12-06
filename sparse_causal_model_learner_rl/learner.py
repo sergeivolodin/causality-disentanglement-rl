@@ -34,6 +34,7 @@ from sparse_causal_model_learner_rl.visual.learner_visual import total_loss, los
 import numpy as np
 from sparse_causal_model_learner_rl.visual.learner_visual import plot_model, graph_for_matrices, select_threshold
 import cloudpickle as pickle
+import traceback
 
 
 class Learner(object):
@@ -89,7 +90,7 @@ class Learner(object):
         self.value_predictor_cls = config.get('value_predictor', None)
         if self.value_predictor_cls:
             assert issubclass(self.value_predictor_cls, ValuePredictor), f"Please supply a valid value predictor class {self.value_predictor_cls}"
-            self.value_predictor = self.value_predictor_cls(observation_shape=self.observation_shape)
+            self.value_predictor = self.value_predictor_cls(observation_shape=self.feature_shape)
 
         # creating a dictionary with all torch models
         self.trainables = {'model': self.model, 'decoder': self.decoder,
@@ -436,6 +437,7 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
                     epoch_info[os.path.basename(fn)[:-4]] = img
                 except Exception as e:
                     print(f"Can't read image: {fn} {e} {type(e)}")
+                    print(traceback.format_exc())
 
         # writing figures if requested
         if self.epochs % self.config.get('graph_every', 5) == 0:
@@ -449,6 +451,7 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
                     add_artifact(artifact)
                 except Exception as e:
                     print(f"Error plotting causal graph: {self.epochs} {e} {type(e)}")
+                    print(traceback.format_exc())
 
                 try:
                     fig = self.visualize_model()
@@ -459,6 +462,7 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
                     plt.close(fig)
                 except Exception as e:
                     print(f"Error plotting model: {self.epochs} {e} {type(e)}")
+                    print(traceback.format_exc())
 
         if (self.epochs % self.config.get('loss_every', 100) == 0) and self.history:
             os.makedirs(path_epoch, exist_ok=True)
@@ -473,6 +477,7 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
                             plt.close(fig)
                 except Exception as e:
                     print(f"Loss landscape error: {type(e)} {str(e)}")
+                    print(traceback.format_exc())
 
         epoch_info['checkpoint_tune'] = None
         if self.epochs % self.checkpoint_every == 0:
