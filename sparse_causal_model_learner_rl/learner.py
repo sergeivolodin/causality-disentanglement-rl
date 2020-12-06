@@ -265,9 +265,10 @@ class Learner(object):
             for metric_label, metric in self.config['metrics'].items():
                 epoch_info['metrics'][metric_label] = metric(**context, context=context)
 
-        epoch_info['weights'] = {label + '/' + param_name: np.copy(param.detach().cpu().numpy())
-                                 for label, trainable in self.trainables.items()
-                                 for param_name, param in trainable.named_parameters()}
+        if self.config.get('report_weights', True):
+            epoch_info['weights'] = {label + '/' + param_name: np.copy(param.detach().cpu().numpy())
+                                     for label, trainable in self.trainables.items()
+                                     for param_name, param in trainable.named_parameters()}
 
         epoch_info['threshold/action'] = select_threshold(self.model.Ma, do_plot=False)
         epoch_info['threshold/feature'] = select_threshold(self.model.Mf, do_plot=False)
