@@ -11,7 +11,7 @@ from graphviz import Digraph
 from matplotlib import pyplot as plt
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
-
+import traceback
 from causal_util.helpers import lstdct2dctlst
 from sparse_causal_model_learner_rl.trainable.helpers import params_shape, flatten_params
 from sparse_causal_model_learner_rl.trainable.helpers import unflatten_params
@@ -32,7 +32,7 @@ def plot_model(model):
 
     plt.subplot(1, 2, 2)
     plt.title("Model for actions")
-    sns.heatmap(Ma, vmin=-1, vmax=1, cmap=cm)
+    sns.heatmap(Ma, cmap=cm)
     plt.xlabel('Actions')
     plt.ylabel('New features')
     return fig
@@ -43,7 +43,7 @@ def select_threshold(array, name='exp', eps=1e-10, do_plot=True):
     try:
         array = np.array(array)
         # log would not work for low values
-        array[array == 0] = eps
+        array[array == 0.0] = eps
         x = pd.DataFrame({'x': np.log(np.abs(array.flatten()))})
         kmeans = KMeans(n_clusters=2)
         kmeans.fit_transform(X=np.array(x.x).reshape((-1, 1)))
@@ -68,6 +68,7 @@ def select_threshold(array, name='exp', eps=1e-10, do_plot=True):
             raise ValueError(f"Threshold selection failed (NaN): {type(e)} {e} {array}")
         else:
             print(f"Threshold selection failed (no NaN): {type(e)} {e} {array}")
+            print(traceback.format_exc())
             return 0.0
 
 
