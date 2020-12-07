@@ -1,4 +1,5 @@
 import gin
+import logging
 
 
 def find_key(dct, key_substr):
@@ -23,24 +24,31 @@ def ThresholdAnnealer(config, epoch_info, temp,
                       reset_on_fail=False,
                       factor=0.5, **kwargs):
     """Increase sparsity if fit loss is low, decrease otherwise."""
-    fit_loss = find_value(epoch_info, '/fit/value')
+
+    try:
+        fit_loss = find_value(epoch_info, 'with_sparse_fit')
+        # logging.warning("Cannot find loss with sparsity, defaulting to fit loss")
+        logging.info(f"Annealer found loss {fit_loss} with_sparsity_fit")
+    except AssertionError as e:
+        return config
+        # fit_loss = find_value(epoch_info, '/fit/value')
 
     if 'last_hyper_adjustment' not in temp:
         temp['last_hyper_adjustment'] = 0
     i = epoch_info['epochs']
 
-    suggested_hyper = None
     if fit_loss > fit_threshold:
         if reset_on_fail:
-            suggested_hyper = min_hyper
+            temp['suggested_hyper'] = min_hyper
         else:
             if config['losses']['sparsity']['coeff'] > min_hyper:
-                suggested_hyper = config['losses']['sparsity']['coeff'] * factor
+                temp['suggested_hyper'] = config['losses']['sparsity']['coeff'] * factor
     else:
         if config['losses']['sparsity']['coeff'] < max_hyper:
-            suggested_hyper = config['losses']['sparsity']['coeff'] / factor
+            temp['suggested_hyper'] = config['losses']['sparsity']['coeff'] / factor
 
-    if suggested_hyper and (i - temp['last_hyper_adjustment'] >= adjust_every):
-        config['losses']['sparsity']['coeff'] = suggested_hyper
+    if 'suggested_hyper' in temp and temp['suggested_hyper'] is not None and (i - temp['last_hyper_adjustment'] >= adjust_every):
+        config['losses']['sparsity']['coeff'] = temp['suggested_hyper']
+        temp['suggested_hyper'] = None
         temp['last_hyper_adjustment'] = i
     return config
