@@ -40,13 +40,18 @@ def plot_model(model):
     return fig
 
 
-def select_threshold(array, name='exp', eps=1e-10, do_plot=True):
+def select_threshold(array, name='exp', eps=1e-10, do_plot=True, do_log=True):
     """Select threshold for a matrix."""
     try:
+        if not do_log:
+            eps = 0
         array = np.array(array)
         # log would not work for low values
         array[array == 0.0] = eps
-        x = pd.DataFrame({'x': np.log(np.abs(array.flatten()))})
+        aflat = np.abs(array.flatten())
+        if do_log:
+            aflat = np.log(aflat)
+        x = pd.DataFrame({'x': aflat})
         kmeans = KMeans(n_clusters=2)
         kmeans.fit_transform(X=np.array(x.x).reshape((-1, 1)))
         x['label'] = kmeans.labels_
@@ -64,7 +69,10 @@ def select_threshold(array, name='exp', eps=1e-10, do_plot=True):
             plt.savefig(f"threshold_{name}.png", bbox_inches='tight')
             plt.clf()
             plt.close(fig)
-        return np.exp(threshold)
+        res = threshold
+        if do_log:
+            np.exp(threshold)
+        return threshold
     except Exception as e:
         if np.isnan(array).any():
             raise ValueError(f"Threshold selection failed (NaN): {name} {type(e)} {e} {array}")
@@ -74,7 +82,7 @@ def select_threshold(array, name='exp', eps=1e-10, do_plot=True):
             return 0.0
 
 
-def graph_for_matrices(model, threshold=0.2, do_write=True):
+def graph_for_matrices(model, threshold_act=0.2, threshold_f=0.2, do_write=True):
     """Visualize matrices as a graph."""
     Mf, Ma = model.Mf, model.Ma
     # dimension
@@ -96,11 +104,11 @@ def graph_for_matrices(model, threshold=0.2, do_write=True):
     # adding edges
     edges = 0
 
-    for f1, a in zip(*np.where(np.abs(Ma) > threshold)):
+    for f1, a in zip(*np.where(np.abs(Ma) > threshold_act)):
         ps.edge('a%02d' % a, "f'%02d" % f1)
         edges += 1
 
-    for f1, f in zip(*np.where(np.abs(Mf) > threshold)):
+    for f1, f in zip(*np.where(np.abs(Mf) > threshold_f)):
         ps.edge('f%02d' % f, "f'%02d" % f1)
         edges += 1
 
