@@ -86,6 +86,7 @@ def fit_loss_linreg(obs_x, obs_y, action_x, decoder, model, **kwargs):
 
     return torch.abs(torch.tensor(np.array(0.0), requires_grad=True))
 
+@gin.configurable
 def sparsity_uniform(tensors, ord, maxval=100.):
     regularization_loss = 0
     # maxval_torch = torch.abs(torch.tensor(torch.from_numpy(np.array(maxval, dtype=np.float32)), requires_grad=False))
@@ -93,6 +94,7 @@ def sparsity_uniform(tensors, ord, maxval=100.):
         regularization_loss += torch.norm(param.flatten(), p=ord) #torch.min(maxval_torch, torch.norm(param.flatten(), p=ord))
     return regularization_loss
 
+@gin.configurable
 def sparsity_per_tensor(tensors, ord, maxval=100.):
     regularization_loss = 0
 
@@ -102,7 +104,7 @@ def sparsity_per_tensor(tensors, ord, maxval=100.):
     nparams = 0
     for param in tensors:
         regularization_loss += torch.norm(param.flatten(), p=ord) /\
-                               torch.max(torch.abs(param.flatten())).detach()
+                               torch.max(torch.abs(param.flatten())) # .detach() doesn't work with linreg optimization (jitter)
         nparams += torch.numel(param)
 
     # loss=1 means all elements are maximal
@@ -112,9 +114,9 @@ def sparsity_per_tensor(tensors, ord, maxval=100.):
     return regularization_loss / max(nparams, 1)
 
 @gin.configurable
-def sparsity_loss_linreg(obs_x, obs_y, action_x, decoder, ord=1, **kwargs):
+def sparsity_loss_linreg(obs_x, obs_y, action_x, decoder, fcn=sparsity_uniform, ord=1, **kwargs):
     Mf, Ma = MfMa(obs_x, obs_y, action_x, decoder)
-    return sparsity_per_tensor([Mf, Ma], ord=ord)
+    return fcn(tensors=[Mf, Ma], ord=ord)
     # return sparsity_uniform([Mf, Ma], ord=ord)
 
 @gin.configurable
