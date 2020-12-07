@@ -57,3 +57,8 @@ Tensorboard integration:<br />
 
 KeyChest environment:<br />
 <img src="https://github.com/sergeivolodin/causality-disentanglement-rl/blob/master/images/keychest.gif" />
+
+
+### Sanity checks
+1. Can fit raw data on vectorincrement: `python learner.py --config ../vectorincrement/config/ve5.gin --config configs/test_fit.gin --config configs/single_sample.gin --nofail`
+2. Can fit encoded data on vectorincrement: `python learner.py --config ../vectorincrement/config/ve5_linear.gin --config configs/test_fit.gin --config configs/single_sample.gin --nofail`
