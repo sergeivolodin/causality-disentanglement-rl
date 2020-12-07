@@ -51,20 +51,58 @@ def reconstruction_loss_value_function_reward_to_go(obs_x, decoder, value_predic
 def fit_loss(obs_x, obs_y, action_x, decoder, model, **kwargs):
     """Ensure that the model fits the features data."""
     mse = torch.nn.MSELoss()
+    # detaching second part like in q-learning makes the loss jitter
     return mse(model(decoder(obs_x), action_x), decoder(obs_y))
 
+def linreg(X, Y):
+    """Return weights for linear regression as a differentiable equation."""
+    # return torch.pinverse(X.T @ X) @ X.T @ Y
+    return torch.pinverse(X) @ Y
+
+def MfMa(obs_x, obs_y, action_x, decoder):
+    fx = decoder(obs_x)
+    fy = decoder(obs_y)
+
+    fx_ax = torch.cat((fx, action_x), 1)
+    # print(fx_ax.shape)
+    Mfa = linreg(fx_ax, fy).T
+
+    # sanity check
+    assert Mfa.shape[0] == fx.shape[1], (Mfa.shape, fx.shape)
+    assert Mfa.shape[1] == fx.shape[1] + action_x.shape[1], (Mfa.shape, fx.shape, action_x.shape)
+
+    Mf = Mfa[:, :fx.shape[1]]
+    Ma = Mfa[:, fx.shape[1]:]
+    return Mf, Ma
 
 @gin.configurable
-def sparsity_loss(model, ord=1, **kwargs):
-    """Ensure that the model is sparse."""
+def fit_loss_linreg(obs_x, obs_y, action_x, decoder, model, **kwargs):
+    """Compute the optimal linear model automatically."""
+    Mf, Ma = MfMa(obs_x, obs_y, action_x, decoder)
+
+    # setting the weights directly
+    # as if running optimization in 1 step
+    model.load_state_dict({'fc_features.weight': Mf, 'fc_action.weight': Ma})
+
+    return torch.abs(torch.tensor(np.array(0.0), requires_grad=True))
+
+def sparsity_uniform(tensors, ord, maxval=100.):
+    regularization_loss = 0
+    # maxval_torch = torch.abs(torch.tensor(torch.from_numpy(np.array(maxval, dtype=np.float32)), requires_grad=False))
+    for param in tensors:
+        regularization_loss += torch.norm(param.flatten(), p=ord) #torch.min(maxval_torch, torch.norm(param.flatten(), p=ord))
+    return regularization_loss
+
+def sparsity_per_tensor(tensors, ord, maxval=100.):
     regularization_loss = 0
 
     # parameters can have different scale, and we care about number of small elements
     # therefore, dividing by the maximal element
 
     nparams = 0
-    for param in model.parameters():
-        regularization_loss += torch.norm(param.flatten(), p=ord) / torch.max(torch.abs(param.flatten()))#.detach()
+    for param in tensors:
+        regularization_loss += torch.norm(param.flatten(), p=ord) /\
+                               torch.max(torch.abs(param.flatten())).detach()
         nparams += torch.numel(param)
 
     # loss=1 means all elements are maximal
@@ -72,3 +110,14 @@ def sparsity_loss(model, ord=1, **kwargs):
     # of non-zero arrows
     # and tensors can have different shapes
     return regularization_loss / max(nparams, 1)
+
+@gin.configurable
+def sparsity_loss_linreg(obs_x, obs_y, action_x, decoder, ord=1, **kwargs):
+    Mf, Ma = MfMa(obs_x, obs_y, action_x, decoder)
+    return sparsity_per_tensor([Mf, Ma], ord=ord)
+    # return sparsity_uniform([Mf, Ma], ord=ord)
+
+@gin.configurable
+def sparsity_loss(model, ord=1, **kwargs):
+    """Ensure that the model is sparse."""
+    return sparsity_per_tensor(model.parameters(), ord=ord)
