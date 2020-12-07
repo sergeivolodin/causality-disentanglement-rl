@@ -123,3 +123,15 @@ def sparsity_loss_linreg(obs_x, obs_y, action_x, decoder, fcn=sparsity_uniform, 
 def sparsity_loss(model, ord=1, **kwargs):
     """Ensure that the model is sparse."""
     return sparsity_per_tensor(model.parameters(), ord=ord)
+
+@gin.configurable
+def soft_batchnorm_regul(decoder, **kwargs):
+    mse = torch.nn.MSELoss()
+    if not hasattr(decoder, 'bn'):
+        raise ValueError("Decoder does not have batch norm.")
+    bn = decoder.bn
+    n = bn.num_features
+    params = dict(bn.named_parameters())
+    all_zeros = torch.tensor(np.zeros(n), dtype=torch.float32, requires_grad=False)
+    regul_loss = mse(torch.log(torch.abs(params['weight'])), all_zeros) + mse(params['bias'], all_zeros)
+    return regul_loss

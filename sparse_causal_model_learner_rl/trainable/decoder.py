@@ -52,7 +52,7 @@ class ModelDecoder(Decoder):
         self.model = model_cls(input_shape=self.observation_shape, output_shape=self.feature_shape)
         self.use_batchnorm = use_batchnorm
         if use_batchnorm:
-            self.bn = nn.BatchNorm1d(self.feature_shape[0], affine=False)
+            self.bn = nn.BatchNorm1d(self.feature_shape[0], affine=True)
 
     def forward(self, x):
         x = self.model(x)
