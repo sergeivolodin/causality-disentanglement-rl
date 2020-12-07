@@ -252,21 +252,23 @@ class Learner(object):
         # train using losses
         for opt_label in sorted(self.optimizer_objects.keys()):
             opt = self.optimizer_objects[opt_label]
-            opt.zero_grad()
-            total_loss = 0
-            for loss_label in self.config['execution'][opt_label]:
-                loss = self.config['losses'][loss_label]
-                value = loss['fcn'](**context)
-                coeff = loss['coeff']
-                epoch_info['losses'][f"{opt_label}/{loss_label}/coeff"] = coeff
-                epoch_info['losses'][f"{opt_label}/{loss_label}/value"] = value
-                total_loss += coeff * value
-            if hasattr(total_loss, 'backward'):
-                total_loss.backward()
-            else:
-                print(f"Warning: no losses for optimizer {opt_label}")
-            epoch_info['losses'][f"{opt_label}/value"] = total_loss
-            opt.step()
+
+            for _ in range(self.config.get('opt_iterations', {}).get(opt_label, 1)):
+                opt.zero_grad()
+                total_loss = 0
+                for loss_label in self.config['execution'][opt_label]:
+                    loss = self.config['losses'][loss_label]
+                    value = loss['fcn'](**context)
+                    coeff = loss['coeff']
+                    epoch_info['losses'][f"{opt_label}/{loss_label}/coeff"] = coeff
+                    epoch_info['losses'][f"{opt_label}/{loss_label}/value"] = value
+                    total_loss += coeff * value
+                if hasattr(total_loss, 'backward'):
+                    total_loss.backward()
+                else:
+                    print(f"Warning: no losses for optimizer {opt_label}")
+                epoch_info['losses'][f"{opt_label}/value"] = total_loss
+                opt.step()
 
         if self.epochs % self.config.get('metrics_every', 1) == 0:
             # compute metrics
