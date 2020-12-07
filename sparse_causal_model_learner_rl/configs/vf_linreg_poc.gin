@@ -13,7 +13,7 @@ import sparse_causal_model_learner_rl.trainable.fcnet
 include 'common.gin'
 
 tune_run.num_samples = 1
-tune_run.resources_per_trial = {'gpu': 0.2, 'cpu': 1}
+tune_run.resources_per_trial = {'gpu': 0, 'cpu': 1}
 
 Config.train_steps = 2000000
 Config.env_steps = 4000
@@ -35,7 +35,9 @@ LinearDecoder.use_bias = True
 decoder/FCNet.hidden_sizes = [50, 50, 50]
 decoder/FCNet.activation_cls = @ReLU
 ModelDecoder.model_cls = @decoder/FCNet
-ModelDecoder.use_batchnorm = True
+
+# can't optimize linreg loss with batchnorm for some reason
+ModelDecoder.use_batchnorm = False
 
 Config.model = @LinearModel
 Config.decoder = @ModelDecoder # @LinearDecoder
@@ -52,12 +54,13 @@ Config._update_function = []
 
 Config.losses = {'fit': {'fcn': @fit_loss_linreg, 'coeff': 1.0},
                  'sparsity': {'fcn': @sparsity_loss_linreg, 'coeff': 1},
-                 'reconstruction': {'fcn': @reconstruction_loss_value_function_reward_to_go, 'coeff': 1e-3}
+                 'reconstruction': {'fcn': @reconstruction_loss_value_function_reward_to_go, 'coeff': 1}
                 }
 
 # this one actually does the work
-opt1/Optimizer.name = 'Adam'
+opt1/Optimizer.name = 'Adam' # works sgd 1e-4 mom=0.9
 opt1/Optimizer.lr = 1e-4
+#opt1/Optimizer.momentum = 0.9
 
 # this one does not do anything, just sets the model to the new values
 # sets the value to the new computed model
@@ -65,9 +68,17 @@ opt2/Optimizer.name = 'SGD'
 opt2/Optimizer.lr = 1
 opt2/Optimizer.momentum = 0.9
 
-Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer}
-Config.execution = {'opt1': ['sparsity', 'reconstruction'], 'opt2': ['fit']}
+# this one is for the reconstruction loss
+opt3/Optimizer.name = 'SGD'
+opt3/Optimizer.lr = 1e-3
+opt3/Optimizer.momentum = 0.9
+
+Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer, 'opt3': @opt3/Optimizer}
+Config.execution = {'opt1': ['sparsity'], 'opt2': ['fit'], 'opt3': []}
+# Config.opt_iterations = {'opt3': 5}
 
 LinearModel.use_bias = False
 
 sparsity_loss_linreg.ord = 1
+
+sparsity_loss_linreg.fcn = @sparsity_per_tensor
