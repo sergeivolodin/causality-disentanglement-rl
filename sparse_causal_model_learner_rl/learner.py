@@ -51,8 +51,6 @@ class Learner(object):
         self.env = self.create_env()
         self.collector = EnvDataCollector(self.env)
 
-        self.feature_shape = self.config['feature_shape']
-
         self.checkpoint_every = self.config.get('checkpoint_every', 10)
         self.vf_gamma = self.config.get('vf_gamma', 1.0)
 
@@ -65,6 +63,10 @@ class Learner(object):
             self.action_shape = self.env.action_space.shape
 
         self.observation_shape = self.env.observation_space.shape
+
+        self.feature_shape = self.config['feature_shape']
+        if self.feature_shape is None:
+            self.feature_shape = self.observation_shape
 
         # self.action_shape = self.config.get('action_shape')
         # self.observation_shape = self.config.get('observation_shape')
@@ -111,6 +113,8 @@ class Learner(object):
         self.optimizer_objects = {label: fcn(params=self.all_variables)
                                   for label, fcn in self.config['optimizers'].items()}
         self._context_cache = None
+
+        self._check_execution()
 
 
     # attributes to save to pickle files
@@ -236,8 +240,6 @@ class Learner(object):
     def _epoch(self):
         """One training iteration."""
         # obtain data from environment
-        self._check_execution()
-
         if (self.epochs % self.config.get('collect_every', 1) == 0) or self._context_cache is None:
             self.collect_steps()
             context = self._context
@@ -269,9 +271,10 @@ class Learner(object):
         if self.epochs % self.config.get('metrics_every', 1) == 0:
             # compute metrics
             for metric_label, metric in self.config['metrics'].items():
-                epoch_info['metrics'][metric_label] = metric(**context, context=context)
+                epoch_info['metrics'][metric_label] = metric(**context, context=context,
+                                                             prev_epoch_info=self.epoch_info)
 
-        if self.config.get('report_weights', True):
+        if self.config.get('report_weights', True) and ((self.epochs - 1) % self.config.get('report_weights_every', 1) == 0):
             epoch_info['weights'] = {label + '/' + param_name: np.copy(param.detach().cpu().numpy())
                                      for label, trainable in self.trainables.items()
                                      for param_name, param in trainable.named_parameters()}
@@ -364,10 +367,12 @@ class Learner(object):
 
     def visualize_graph(self, threshold='auto', do_write=False):
         if threshold == 'auto':
-            threshold_act = select_threshold(self.model.Ma, do_plot=do_write, name='learner_action')
-            threshold_f = select_threshold(self.model.Mf, do_plot=do_write, name='learner_feature')
+            _ = select_threshold(self.model.Ma, do_plot=do_write, name='learner_action')
+            _ = select_threshold(self.model.Mf, do_plot=do_write, name='learner_feature')
+            threshold_act = select_threshold(self.model.Ma, do_plot=False, do_log=False, name='learner_action')
+            threshold_f = select_threshold(self.model.Mf, do_plot=False, do_log=False, name='learner_feature')
             threshold = np.mean([threshold_act, threshold_f])
-        ps, f_out = graph_for_matrices(self.model, threshold=threshold, do_write=do_write)
+        ps, f_out = graph_for_matrices(self.model, threshold_act=threshold_act, threshold_f=threshold_f, do_write=do_write)
         return threshold, ps, f_out
 
 
