@@ -34,7 +34,7 @@ Config.decoder = @IdentityDecoder
 Config.reconstructor = @LinearReconstructor
 
 LinearModel.use_bias = False
-Config.feature_shape = (5, )
+Config.feature_shape = None
 
 Config._update_function = []
 Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1.0},}

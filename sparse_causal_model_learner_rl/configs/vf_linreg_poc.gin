@@ -13,10 +13,10 @@ import sparse_causal_model_learner_rl.trainable.fcnet
 include 'common.gin'
 
 tune_run.num_samples = 1
-tune_run.resources_per_trial = {'gpu': 0, 'cpu': 1}
+tune_run.resources_per_trial = {'gpu': 0.2, 'cpu': 1}
 
 Config.train_steps = 2000000
-Config.env_steps = 1000
+Config.env_steps = 4000
 
 Config.loss_every = 1000
 Config.graph_every = 500
@@ -24,6 +24,7 @@ Config.checkpoint_every = 10000
 Config.report_every = 100
 Config.metrics_every = 100
 Config.report_weights = False
+Config.report_weights_every = 500
 
 Config.keep_history = True
 Config.max_history_size = 1000
@@ -31,8 +32,13 @@ Config.max_history_size = 1000
 LinearDecoder.use_batchnorm = True
 LinearDecoder.use_bias = True
 
+decoder/FCNet.hidden_sizes = [50, 50, 50]
+decoder/FCNet.activation_cls = @ReLU
+ModelDecoder.model_cls = @decoder/FCNet
+ModelDecoder.use_batchnorm = True
+
 Config.model = @LinearModel
-Config.decoder = @LinearDecoder
+Config.decoder = @ModelDecoder # @LinearDecoder
 Config.reconstructor = @LinearReconstructor
 Config.value_predictor = @ModelValuePredictor
 
@@ -42,38 +48,26 @@ ModelValuePredictor.model_cls = @value/FCNet
 
 Config.feature_shape = (5, )
 
-ThresholdAnnealer.fit_threshold = 1e-4
-ThresholdAnnealer.factor = 0.3
-ThresholdAnnealer.adjust_every = 600
-ThresholdAnnealer.min_hyper = 1e-10
+Config._update_function = []
 
-Config._update_function = [@ThresholdAnnealer]
-
-reconstruction_loss_value_function_reward_to_go.value_scaler = 0.1
-
-Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1.0},
-                 'sparsity': {'fcn': @sparsity_loss, 'coeff': 1e-10},
+Config.losses = {'fit': {'fcn': @fit_loss_linreg, 'coeff': 1.0},
+                 'sparsity': {'fcn': @sparsity_loss_linreg, 'coeff': 1},
                  'reconstruction': {'fcn': @reconstruction_loss_value_function_reward_to_go, 'coeff': 1e-3}
                 }
 
-# sgd seems to be best for fit loss only with lr=1, mom=0.9
-# fit + rec also works
-opt1/Optimizer.name = 'SGD'
-opt1/Optimizer.lr = 1
-opt1/Optimizer.momentum = 0.9
+# this one actually does the work
+opt1/Optimizer.name = 'Adam'
+opt1/Optimizer.lr = 1e-4
 
-# stuck with bad fit and sparse Mf and non-sparse Ma
+# this one does not do anything, just sets the model to the new values
+# sets the value to the new computed model
 opt2/Optimizer.name = 'SGD'
 opt2/Optimizer.lr = 1
 opt2/Optimizer.momentum = 0.9
 
-opt3/Optimizer.name = 'SGD'
-opt3/Optimizer.lr = 1
-opt3/Optimizer.momentum = 0.9
-
-Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer, 'opt3': @opt3/Optimizer}
-Config.execution = {'opt1': ['fit'], 'opt2': ['reconstruction'], 'opt3': ['sparsity']}
+Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer}
+Config.execution = {'opt1': ['sparsity', 'reconstruction'], 'opt2': ['fit']}
 
 LinearModel.use_bias = False
 
-sparsity_loss.ord = 1
+sparsity_loss_linreg.ord = 1
