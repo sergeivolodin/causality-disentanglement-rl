@@ -1,0 +1,85 @@
+import sparse_causal_model_learner_rl.trainable.decoder
+import sparse_causal_model_learner_rl.trainable.reconstructor
+import sparse_causal_model_learner_rl.trainable.model
+import sparse_causal_model_learner_rl.config
+import sparse_causal_model_learner_rl.annealer.threshold
+import sparse_causal_model_learner_rl.loss.losses
+import sparse_causal_model_learner_rl.loss.optimizer
+import sparse_causal_model_learner_rl.metrics.nnz
+import sparse_causal_model_learner_rl.metrics.loss_thresholded
+import gin_tune
+import sparse_causal_model_learner_rl.trainable.value_predictor
+import sparse_causal_model_learner_rl.trainable.fcnet
+include 'common.gin'
+
+tune_run.num_samples = 1
+tune_run.resources_per_trial = {'gpu': 0, 'cpu': 1}
+
+Config.train_steps = 2000000
+Config.env_steps = 4000
+
+Config.loss_every = 1000
+Config.graph_every = 500
+Config.checkpoint_every = 1000
+Config.report_every = 100
+Config.metrics_every = 100
+Config.report_weights = True
+Config.report_weights_every = 500
+
+Config.keep_history = True
+Config.max_history_size = 1000
+
+decoder/FCNet.hidden_sizes = [50, 50, 50]
+decoder/FCNet.activation_cls = @ReLU
+ModelDecoder.model_cls = @decoder/FCNet
+
+# can't optimize linreg loss with batchnorm for some reason
+ModelDecoder.use_batchnorm = True
+
+Config.model = @LinearModel
+Config.decoder = @ModelDecoder # @LinearDecoder
+Config.reconstructor = @LinearReconstructor
+Config.value_predictor = @ModelValuePredictor
+
+value/FCNet.hidden_sizes = []
+value/FCNet.activation_cls = @ReLU
+ModelValuePredictor.model_cls = @value/FCNet
+
+Config.feature_shape = (5, )
+
+Config._update_function = []
+
+Config.losses = {'fit': {'fcn': @fit_loss_linreg, 'coeff': 1.0},
+                 'sparsity': {'fcn': @sparsity_loss_linreg, 'coeff': 1},
+                 'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 100}, # reconstruction_loss_value_function_reward_to_go
+                 'rec_bn': {'fcn': @soft_batchnorm_regul, 'coeff': 1}
+                }
+
+# this one actually does the work
+opt1/Optimizer.name = 'Adam' # works sgd 1e-4 mom=0.9
+opt1/Optimizer.lr = 1e-4
+#opt1/Optimizer.momentum = 0.9
+
+# this one does not do anything, just sets the model to the new values
+# sets the value to the new computed model
+opt2/Optimizer.name = 'SGD'
+opt2/Optimizer.lr = 1
+opt2/Optimizer.momentum = 0.9
+
+# this one is for the reconstruction loss
+opt3/Optimizer.name = 'SGD'
+opt3/Optimizer.lr = 1e-3
+opt3/Optimizer.momentum = 0.9
+
+Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer, 'opt3': @opt3/Optimizer}
+Config.execution = {'opt1': ['reconstruction', 'rec_bn'], 'opt2': ['fit'], 'opt3': []} # opt1: sparsity
+# Config.opt_iterations = {'opt3': 5}
+
+Config.metrics = {'nnz': @nnz, 'with_sparse_fit': @loss_thresholded, 'threshold_action': @threshold_action,
+                  'threshold_features': @threshold_features, 'max_element_ma': @max_element_ma, 'max_element_mf': @max_element_mf, 'fit_loss': @fit_loss}
+
+LinearModel.use_bias = False
+
+sparsity_loss_linreg.ord = 1
+
+sparsity_loss_linreg.fcn = @sparsity_per_tensor
