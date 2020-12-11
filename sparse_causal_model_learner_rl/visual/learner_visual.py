@@ -71,7 +71,7 @@ def select_threshold(array, name='exp', eps=1e-10, do_plot=True, do_log=True):
             plt.close(fig)
         res = threshold
         if do_log:
-            np.exp(threshold)
+            threshold = np.exp(threshold)
         return threshold
     except Exception as e:
         if np.isnan(array).any():
