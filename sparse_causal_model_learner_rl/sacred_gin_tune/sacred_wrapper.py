@@ -19,6 +19,7 @@ def load_config_files(config_files):
             c()
             config_names.append(str(c))
         elif isinstance(c, str):
+            c = os.path.abspath(c)
             with Path(os.path.dirname(c)):
                 gin.parse_config_file(c)
             config_names.append(os.path.basename(c)[:-4])
