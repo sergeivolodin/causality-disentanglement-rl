@@ -34,7 +34,7 @@ decoder/FCNet.activation_cls = @ReLU
 ModelDecoder.model_cls = @decoder/FCNet
 
 # can't optimize linreg loss with batchnorm for some reason
-ModelDecoder.use_batchnorm = True
+ModelDecoder.use_batchnorm = False
 
 Config.model = @LinearModel
 Config.decoder = @ModelDecoder # @LinearDecoder
@@ -48,10 +48,17 @@ ModelValuePredictor.model_cls = @value/FCNet
 Config.feature_shape = (5, )
 
 Config._update_function = []
+ThresholdAnnealer.fit_threshold = 1e-2
+ThresholdAnnealer.min_hyper = 1e-5
+ThresholdAnnealer.max_hyper = 1e3
+ThresholdAnnealer.factor = 0.5
+ThresholdAnnealer.reset_on_fail = False
+# ThresholdAnnealer.target = 'sparsity'
+
 
 Config.losses = {'fit': {'fcn': @fit_loss_linreg, 'coeff': 1.0},
                  'sparsity': {'fcn': @sparsity_loss_linreg, 'coeff': 1},
-                 'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 100}, # reconstruction_loss_value_function_reward_to_go
+                 'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 1}, # reconstruction_loss_value_function_reward_to_go
                  'rec_bn': {'fcn': @soft_batchnorm_regul, 'coeff': 1}
                 }
 
@@ -72,8 +79,11 @@ opt3/Optimizer.lr = 1e-3
 opt3/Optimizer.momentum = 0.9
 
 Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer, 'opt3': @opt3/Optimizer}
-Config.execution = {'opt1': ['sparsity', 'reconstruction', 'rec_bn'], 'opt2': ['fit'], 'opt3': []}
+Config.execution = {'opt1': ['reconstruction', 'sparsity'], 'opt2': ['fit'], 'opt3': []}
 # Config.opt_iterations = {'opt3': 5}
+
+Config.metrics = {'nnz': @nnz, 'with_sparse_fit': @loss_thresholded, 'threshold_action': @threshold_action,
+                  'threshold_features': @threshold_features, 'max_element_ma': @max_element_ma, 'max_element_mf': @max_element_mf, 'fit_loss': @fit_loss}
 
 LinearModel.use_bias = False
 

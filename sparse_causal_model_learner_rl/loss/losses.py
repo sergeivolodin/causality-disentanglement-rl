@@ -92,7 +92,7 @@ def sparsity_uniform(tensors, ord, maxval=100.):
     # maxval_torch = torch.abs(torch.tensor(torch.from_numpy(np.array(maxval, dtype=np.float32)), requires_grad=False))
     for param in tensors:
         regularization_loss += torch.norm(param.flatten(), p=ord) #torch.min(maxval_torch, torch.norm(param.flatten(), p=ord))
-    return regularization_loss
+    return regularization_loss / len(tensors)
 
 @gin.configurable
 def sparsity_per_tensor(tensors, ord, maxval=100.):
@@ -116,13 +116,15 @@ def sparsity_per_tensor(tensors, ord, maxval=100.):
 @gin.configurable
 def sparsity_loss_linreg(obs_x, obs_y, action_x, decoder, fcn=sparsity_uniform, ord=1, **kwargs):
     Mf, Ma = MfMa(obs_x, obs_y, action_x, decoder)
-    return fcn(tensors=[Mf, Ma], ord=ord)
-    # return sparsity_uniform([Mf, Ma], ord=ord)
+    #return fcn(tensors=[Mf, Ma, torch.pinverse(Mf), torch.pinverse(Ma)], ord=ord)
+    return sparsity_uniform([Mf, Ma, torch.inverse(Mf), torch.inverse(Ma)], ord=ord)
 
 @gin.configurable
 def sparsity_loss(model, ord=1, **kwargs):
     """Ensure that the model is sparse."""
-    return sparsity_per_tensor(model.parameters(), ord=ord)
+    params = list(model.parameters())
+    params_inv = [torch.inverse(p) for p in params]
+    return torch.min(sparsity_uniform(params + params_inv, ord=ord))
 
 @gin.configurable
 def soft_batchnorm_regul(decoder, **kwargs):
