@@ -122,7 +122,9 @@ def sparsity_loss_linreg(obs_x, obs_y, action_x, decoder, fcn=sparsity_uniform, 
 @gin.configurable
 def sparsity_loss(model, ord=1, **kwargs):
     """Ensure that the model is sparse."""
-    return sparsity_per_tensor(model.parameters(), ord=ord)
+    params = list(model.parameters())
+    params_inv = [torch.inverse(p) for p in params]
+    return sparsity_uniform(params + params_inv, ord=ord)
 
 @gin.configurable
 def soft_batchnorm_regul(decoder, **kwargs):
