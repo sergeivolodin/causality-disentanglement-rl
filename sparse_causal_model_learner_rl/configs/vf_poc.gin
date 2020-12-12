@@ -42,37 +42,21 @@ ModelValuePredictor.model_cls = @value/FCNet
 
 Config.feature_shape = (5, )
 
-ThresholdAnnealer.fit_threshold = 1e-4
-ThresholdAnnealer.factor = 0.3
-ThresholdAnnealer.adjust_every = 600
-ThresholdAnnealer.min_hyper = 1e-10
-
-Config._update_function = [@ThresholdAnnealer]
+Config._update_function = []
 
 reconstruction_loss_value_function_reward_to_go.value_scaler = 0.1
 
 Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1.0},
-                 'sparsity': {'fcn': @sparsity_loss, 'coeff': 1e-10},
+                 'sparsity': {'fcn': @sparsity_loss, 'coeff': 1e-2},
                  'reconstruction': {'fcn': @reconstruction_loss_value_function_reward_to_go, 'coeff': 1e-3}
                 }
 
-# sgd seems to be best for fit loss only with lr=1, mom=0.9
-# fit + rec also works
-opt1/Optimizer.name = 'SGD'
-opt1/Optimizer.lr = 1
-opt1/Optimizer.momentum = 0.9
+opt1/Optimizer.name = 'Adam'
+#opt1/Optimizer.lr = 1
+#opt1/Optimizer.momentum = 0.9
 
-# stuck with bad fit and sparse Mf and non-sparse Ma
-opt2/Optimizer.name = 'SGD'
-opt2/Optimizer.lr = 1
-opt2/Optimizer.momentum = 0.9
-
-opt3/Optimizer.name = 'SGD'
-opt3/Optimizer.lr = 1
-opt3/Optimizer.momentum = 0.9
-
-Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer, 'opt3': @opt3/Optimizer}
-Config.execution = {'opt1': ['fit'], 'opt2': ['reconstruction'], 'opt3': ['sparsity']}
+Config.optimizers = {'opt1': @opt1/Optimizer}
+Config.execution = {'opt1': ['fit', 'reconstruction', 'sparsity']}
 
 LinearModel.use_bias = False
 
