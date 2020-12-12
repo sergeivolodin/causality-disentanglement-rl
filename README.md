@@ -62,3 +62,4 @@ KeyChest environment:<br />
 ### Sanity checks
 1. Can fit raw data on vectorincrement: `python learner.py --config ../vectorincrement/config/ve5.gin --config configs/test_fit.gin --config configs/single_sample.gin --nofail`
 2. Can fit encoded data on vectorincrement: `python learner.py --config ../vectorincrement/config/ve5_linear.gin --config configs/test_fit.gin --config configs/single_sample.gin --nofail`
+3. Can get the graph on vectorincrement 5x5 from data and value fcn reconstruction loss `python3 learner.py --config ../vectorincrement/config/ve5_linear.gin --config configs/vf_poc.gin --config configs/single_sample.gin --nofail`

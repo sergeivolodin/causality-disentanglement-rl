@@ -120,11 +120,11 @@ def sparsity_loss_linreg(obs_x, obs_y, action_x, decoder, fcn=sparsity_uniform, 
     return sparsity_uniform([Mf, Ma, torch.inverse(Mf), torch.inverse(Ma)], ord=ord)
 
 @gin.configurable
-def sparsity_loss(model, ord=1, **kwargs):
+def sparsity_loss(model, ord=1, eps=1e-8, **kwargs):
     """Ensure that the model is sparse."""
     params = list(model.parameters())
-    params_inv = [torch.inverse(p) for p in params]
-    return sparsity_uniform(params + params_inv, ord=ord)
+    params_inv = [torch.inverse(p + torch.eye(p.shape[0], requires_grad=False) * eps) for p in params]
+    return torch.min(sparsity_uniform(params + params_inv, ord=ord))
 
 @gin.configurable
 def soft_batchnorm_regul(decoder, **kwargs):

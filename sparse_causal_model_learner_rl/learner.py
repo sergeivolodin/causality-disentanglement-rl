@@ -107,10 +107,14 @@ class Learner(object):
         self.trainables = {x: y.to(self.device) for x, y in self.trainables.items()}
         self.epoch_info = None
 
-        self.all_variables = [p for k in sorted(self.trainables.keys())
-                              for p in self.trainables[k].parameters()]
+        def vars_for_trainables(lst):
+            return [p for k in lst for p in self.trainables[k].parameters()]
+        self.all_variables = vars_for_trainables(self.trainables.keys())
 
-        self.optimizer_objects = {label: fcn(params=self.all_variables)
+        self.params_for_optimizers = {label: vars_for_trainables(self.config.get('optim_params', {}).get(label,
+            self.trainables.keys())) for label in self.config['optimizers'].keys()}
+        print(self.params_for_optimizers)
+        self.optimizer_objects = {label: fcn(params=self.params_for_optimizers[label])
                                   for label, fcn in self.config['optimizers'].items()}
         self._context_cache = None
 
