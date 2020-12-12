@@ -19,7 +19,7 @@ from sparse_causal_model_learner_rl.trainable.helpers import unflatten_params
 
 def plot_model(model):
     """Plot models (action and features) as a heatmap."""
-    cm = sns.diverging_palette(0, 129, l=70, s=100, n=20, center="dark")
+    cm = sns.diverging_palette(0, 129, l=70, s=100, n=500, center="dark")
 
     fig = plt.figure(figsize=(10, 5))
     fig.patch.set_facecolor('xkcd:mint green')
