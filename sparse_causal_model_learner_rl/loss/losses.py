@@ -123,8 +123,17 @@ def sparsity_loss_linreg(obs_x, obs_y, action_x, decoder, fcn=sparsity_uniform, 
 def sparsity_loss(model, ord=1, eps=1e-8, **kwargs):
     """Ensure that the model is sparse."""
     params = list(model.parameters())
-    params_inv = [torch.inverse(p + torch.eye(p.shape[0], requires_grad=False) * eps) for p in params]
-    return torch.min(sparsity_uniform(params + params_inv, ord=ord))
+
+    def inverse_or_pinverse(M, eps=eps):
+        """Get true inverse if possible, or pseudoinverse."""
+        assert len(M.shape) == 2, "Only works for matrices"
+        if M.shape[0] == M.shape[1]: # can use true inverse
+            return torch.inverse(M + torch.eye(M.shape[0], requires_grad=False) * eps)
+        else:
+            return torch.pinverse(M)
+
+    params_inv = [inverse_or_pinverse(p) for p in params]
+    return sparsity_uniform(params + params_inv, ord=ord)
 
 @gin.configurable
 def soft_batchnorm_regul(decoder, **kwargs):

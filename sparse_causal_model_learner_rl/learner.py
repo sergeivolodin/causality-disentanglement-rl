@@ -3,6 +3,7 @@ import argparse
 import matplotlib as mpl
 mpl.use('Agg')
 
+import logging
 import sys
 import ray
 import gin
@@ -103,7 +104,7 @@ class Learner(object):
         self.history = []
         self.epochs = 0
 
-        print("Using device", self.device)
+        logging.info(f"Using device {self.device}")
         self.trainables = {x: y.to(self.device) for x, y in self.trainables.items()}
         self.epoch_info = None
 
@@ -113,7 +114,10 @@ class Learner(object):
 
         self.params_for_optimizers = {label: vars_for_trainables(self.config.get('optim_params', {}).get(label,
             self.trainables.keys())) for label in self.config['optimizers'].keys()}
-        print(self.params_for_optimizers)
+
+        # opt_params_descr = {x: [p.name for p in y] for x, y in self.params_for_optimizers.items()}
+        # logging.info(f"Optimizers parameters {opt_params_descr}")
+
         self.optimizer_objects = {label: fcn(params=self.params_for_optimizers[label])
                                   for label, fcn in self.config['optimizers'].items()}
         self._context_cache = None
@@ -270,7 +274,7 @@ class Learner(object):
                 if hasattr(total_loss, 'backward'):
                     total_loss.backward()
                 else:
-                    print(f"Warning: no losses for optimizer {opt_label}")
+                    logging.warning(f"Warning: no losses for optimizer {opt_label}")
                 epoch_info['losses'][f"{opt_label}/value"] = total_loss
                 opt.step()
 
@@ -330,13 +334,13 @@ class Learner(object):
         for opt, val in optimizers_usage.items():
             assert val <= 1
             if val == 0:
-                print(f"Warning: optimizer {opt} is unused")
+                logging.warning(f"Warning: optimizer {opt} is unused")
 
         for loss, val in losses_usage.items():
             if val == 0:
-                print(f"Warning: loss {loss} is unused")
+                logging.warning(f"Warning: loss {loss} is unused")
             elif val > 1:
-                print(f"Warning: loss {loss} is used more than once")
+                logging.warning(f"Warning: loss {loss} is used more than once")
 
     def __repr__(self):
         return f"<Learner env={self.env} feature_shape={self.feature_shape} epochs={self.epochs}>"
@@ -407,7 +411,7 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
             ckpt_dir = os.path.join(base_dir, "checkpoint%05d" % epoch_info['epochs'])
             os.makedirs(ckpt_dir, exist_ok=True)
             self.checkpoint(ckpt_dir)
-            print(f"Checkpoint available: {ckpt_dir}")
+            logging.info(f"Checkpoint available: {ckpt_dir}")
 
     mpl.use('Agg')
     
@@ -423,7 +427,7 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
             if do_sacred:
                 ex.add_artifact(fn, name=("epoch_%05d_" % self.epochs) + os.path.basename(fn))
             else:
-                print(f"Artifact available: {fn}")
+                logging.info(f"Artifact available: {fn}")
 
             # export of images to tensorflow (super slow...)
             if fn.endswith('.png'):
@@ -453,7 +457,7 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
                     # img = np.expand_dims(img, 0)
                     epoch_info[os.path.basename(fn)[:-4]] = img
                 except Exception as e:
-                    print(f"Can't read image: {fn} {e} {type(e)}")
+                    logging.error(f"Can't read image: {fn} {e} {type(e)}")
                     print(traceback.format_exc())
 
         # writing figures if requested
@@ -465,21 +469,21 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
                     artifact = path_epoch / (f_out + ".png")
                     add_artifact(artifact)
                 except Exception as e:
-                    print(f"Error plotting causal graph: {self.epochs} {e} {type(e)}")
+                    logging.error(f"Error plotting causal graph: {self.epochs} {e} {type(e)}")
                     print(traceback.format_exc())
 
                 try:
                     artifact = path_epoch / "threshold_learner_feature.png"
                     add_artifact(artifact)
                 except Exception as e:
-                    print(f"Error plotting threshold for feature: {self.epochs} {e} {type(e)}")
+                    logging.error(f"Error plotting threshold for feature: {self.epochs} {e} {type(e)}")
                     print(traceback.format_exc())
 
                 try:
                     artifact = path_epoch / "threshold_learner_action.png"
                     add_artifact(artifact)
                 except Exception as e:
-                    print(f"Error plotting threshold for action: {self.epochs} {e} {type(e)}")
+                    logging.error(f"Error plotting threshold for action: {self.epochs} {e} {type(e)}")
                     print(traceback.format_exc())
 
                 try:
@@ -490,7 +494,7 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
                     plt.clf()
                     plt.close(fig)
                 except Exception as e:
-                    print(f"Error plotting model: {self.epochs} {e} {type(e)}")
+                    logging.error(f"Error plotting model: {self.epochs} {e} {type(e)}")
                     print(traceback.format_exc())
 
         if (self.epochs % self.config.get('loss_every', 100) == 0) and self.history:
@@ -505,7 +509,7 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
                             plt.clf()
                             plt.close(fig)
                 except Exception as e:
-                    print(f"Loss landscape error: {type(e)} {str(e)}")
+                    logging.error(f"Loss landscape error: {type(e)} {str(e)}")
                     print(traceback.format_exc())
 
         epoch_info['checkpoint_tune'] = None
@@ -519,7 +523,7 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
             if do_tune:
                 tune.report(**epoch_info)
             if not do_sacred and not do_tune:
-                print(f"Report ready, len={len(epoch_info)}")
+                logging.info(f"Report ready, len={len(epoch_info)}")
         else:
             if do_tune:
                 tune.report()
@@ -566,7 +570,7 @@ if __name__ == '__main__':
     cwd = os.getcwd()
     config = args.config
     config = [c if os.path.isabs(c) else os.path.join(cwd, c) for c in config]
-    print("Absolute config paths:", config)
+    logging.info(f"Absolute config paths: {config}")
 
     if args.nowrap:
         # useful for debugging/testing
