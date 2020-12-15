@@ -14,6 +14,8 @@ from causal_util.helpers import find_gin_parameter
 from causal_util import load_env
 from encoder.observation_encoder import KerasEncoderWrapper
 from encoder.observation_encoder_sb import KerasEncoderVecWrapper
+from datetime import datetime
+
 
 parser = argparse.ArgumentParser(description="Train/evaluate the model")
 parser.add_argument('--train_steps', type=int, default=250000)
@@ -41,15 +43,16 @@ if __name__ == '__main__':
     def make_env():
         return load_env()
 
-
     checkpoint_fn = f"env-config-{config_basename}"
     env = DummyVecEnv([make_env for _ in range(args.n_env)])
     if wrap_keras_encoder:
         env = KerasEncoderVecWrapper(env)
 
     print("Checkpoint path", checkpoint_fn)
+    tb_path = f"./tb_{checkpoint_fn}_{datetime.now().strftime('%Y%M%d_%H%M%S')}/"
+    print("TensorBoard path", tb_path)
 
-    model = PPO2(MlpPolicy, env, verbose=1, tensorboard_log=f"./tb_{checkpoint_fn}/")
+    model = PPO2(MlpPolicy, env, verbose=1, tensorboard_log=tb_path)
     try:
         model = PPO2.load(checkpoint_fn)
     except Exception as e:

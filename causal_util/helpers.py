@@ -54,7 +54,7 @@ def rescale(x, min_value, max_value):
     x[x < min_value] = min_value
     x[x > max_value] = max_value
     x = (x - min_value) / (max_value - min_value)
-    x = 2 * (x - 0.5)
+    # x = 2 * (x - 0.5)
     return x
 
 
@@ -71,7 +71,7 @@ def vec_heatmap(vec, min_value=-1, max_value=1, sq_side=10):
             square[:, :, 1] = vec_rescaled[i]
         elif val < 0:
             square[:, :, 0] = -vec_rescaled[i]
-    return obs
+    return np.array(obs * 255, dtype=np.uint8)
 
 
 def args_to_dict(**kwargs):

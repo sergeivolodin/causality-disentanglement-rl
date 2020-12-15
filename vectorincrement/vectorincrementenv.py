@@ -69,6 +69,9 @@ class VectorIncrementEnvironment(gym.Env):
         # the state
         self.s = np.zeros(self.n)
 
+        # enabling video recorder
+        self.metadata = {'render.modes': ['rgb_array']}
+
     @property
     def observation(self):
         return np.array(self.s, dtype=np.float32)
@@ -110,3 +113,6 @@ class VectorIncrementEnvironment(gym.Env):
 
     def __repr__(self):
         return f"VectorIncrement(n={self.n}, s={self.s})"
+
+    def render(self, mode='rgb_array'):
+        return vec_heatmap(self.s, min_value=0, max_value=self.n)
