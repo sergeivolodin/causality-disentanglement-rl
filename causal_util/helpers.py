@@ -4,6 +4,8 @@ import gin
 import gym
 import numpy as np
 import torch
+import logging
+
 
 def one_hot_encode(n, value):
     """Get a one-hot encoding of length n with a given value."""
@@ -125,3 +127,23 @@ def dict_to_sacred(ex, d, iteration, prefix=''):
             dict_to_sacred(ex, v, iteration, prefix=prefix + k + '/')
         elif isinstance(v, float) or isinstance(v, int):
             ex.log_scalar(prefix + k, v, iteration)
+
+def find_gin_parameter(target, key_list):
+    """Find index of target gin class in a list or None."""
+
+    # obtaining the value
+    try:
+        lst = gin.query_parameter(key_list)
+    except ValueError as e:
+        lst = []
+        logging.warning("Encoder ist found as one of the environment wrappers")
+
+    # searching for the value
+    for i, item in enumerate(lst):
+        # print(item.scoped_configurable_fn, target, item.scoped_configurable_fn == target,
+        #       type(item.scoped_configurable_fn), type(target))
+        if hasattr(item, 'class_name') and item.class_name() == target.class_name():
+            return i, lst
+        if hasattr(item, 'scoped_configurable_fn') and item.scoped_configurable_fn.class_name() == target.class_name():
+            return i, lst
+    return None, lst

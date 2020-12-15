@@ -4,6 +4,8 @@ import uuid
 
 import gin
 from observation_encoder import KerasEncoderWrapper
+from causal_util.helpers import find_gin_parameter
+import logging
 
 from causal_util import load_env
 
@@ -15,6 +17,12 @@ if __name__ == '__main__':
     config_basename = "none"
     if args.config:
         gin.parse_config_file(args.config)
+
+        # removing the encoder wrapper
+        idx, lst = find_gin_parameter(KerasEncoderWrapper, "load_env.wrappers")
+        del lst[idx]
+        gin.bind_parameter("load_env.wrappers", lst)
+
         gin.bind_parameter("observation_encoder.KerasEncoder.model_filename", None)
         config_basename = os.path.basename(args.config)[:-4]
     os.makedirs('encoders', exist_ok=True)
