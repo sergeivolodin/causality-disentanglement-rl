@@ -67,10 +67,8 @@ KeyChest environment:<br />
 
 
 #### KeyChest
-1. PPO on KeyChest: `python sb.py --evaluate --train_steps 5000000 --config ../keychest/
-config/5x5.gin --trainer DQN`
-2. DQN on KeyChest: `python sb.py --config ../keychest/config/5x5.gin --evaluate -
--train_steps 5000000 --train`
+1. PPO on KeyChest: `python sb.py --evaluate --train_steps 5000000 --config ../keychest/config/5x5.gin --trainer DQN`
+2. DQN on KeyChest: `python sb.py --config ../keychest/config/5x5.gin --evaluate --train_steps 5000000 --train`
 
 Success of DQN shows that the environment is Markov:
 <img src="https://github.com/sergeivolodin/causality-disentanglement-rl/blob/master/images/dqn_ppo_keychest.png" width="300" />
