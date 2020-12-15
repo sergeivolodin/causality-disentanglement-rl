@@ -20,7 +20,8 @@ if __name__ == '__main__':
 
         # removing the encoder wrapper
         idx, lst = find_gin_parameter(KerasEncoderWrapper, "load_env.wrappers")
-        del lst[idx]
+        if idx is not None:
+            del lst[idx]
         gin.bind_parameter("load_env.wrappers", lst)
 
         gin.bind_parameter("observation_encoder.KerasEncoder.model_filename", None)

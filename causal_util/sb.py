@@ -9,6 +9,7 @@ from stable_baselines import PPO2
 from stable_baselines.common.policies import MlpPolicy
 from stable_baselines.common.vec_env import DummyVecEnv
 from tqdm import tqdm
+from causal_util.helpers import find_gin_parameter
 
 from causal_util import load_env
 from encoder.observation_encoder import KerasEncoderWrapper
@@ -22,15 +23,21 @@ parser.add_argument('--evaluate', required=False, action='store_true')
 parser.add_argument('--config', type=str, default=None)
 parser.add_argument('--env', type=str, default="VectorIncrement-v0")
 parser.add_argument('--n_env', type=int, default=8)
-parser.add_argument('--wrap_keras_encoder', action='store_true')
+
 
 if __name__ == '__main__':
     args = parser.parse_args()
     config_basename = "none"
+    wrap_keras_encoder = False
     if args.config:
         gin.parse_config_file(args.config)
-        gin.bind_parameter("observation_encoder.KerasEncoder.model_callable", None)
         config_basename = os.path.basename(args.config)[:-4]
+
+        idx, lst = find_gin_parameter(KerasEncoderWrapper, "load_env.wrappers")
+        if idx is not None:
+            del lst[idx]
+            wrap_keras_encoder = True
+        gin.bind_parameter("load_env.wrappers", lst)
 
 
     def make_env():
@@ -39,7 +46,7 @@ if __name__ == '__main__':
 
     checkpoint_fn = f"env-{args.env}-config-{config_basename}"
     env = DummyVecEnv([make_env for _ in range(args.n_env)])
-    if args.wrap_keras_encoder:
+    if wrap_keras_encoder:
         env = KerasEncoderVecWrapper(env)
 
     print("Checkpoint path", checkpoint_fn)
@@ -58,7 +65,7 @@ if __name__ == '__main__':
     if args.evaluate:
         directory = "video-" + checkpoint_fn + '-' + str(uuid1())
         env = make_env()
-        if args.wrap_keras_encoder:
+        if wrap_keras_encoder:
             env = KerasEncoderWrapper(env)
         env = Monitor(env, directory=directory, force=True, video_callable=lambda v: True,
                       resume=True, write_upon_reset=False)
