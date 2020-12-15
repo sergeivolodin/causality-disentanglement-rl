@@ -64,3 +64,13 @@ KeyChest environment:<br />
 2. Can fit encoded data on vectorincrement: `python learner.py --config ../vectorincrement/config/ve5_linear.gin --config configs/test_fit.gin --config configs/single_sample.gin --nofail`
 3. Can get the graph on vectorincrement 5x5 from data and value fcn reconstruction loss `python3 learner.py --config ../vectorincrement/config/ve5_linear.gin --config configs/vf_poc.gin --config configs/single_sample.gin --nofail`
 4. Can get the graph on non-linear 5x5 -> 10x5 vectorincrement from data/vf rec loss `python3 learner.py --config ../vectorincrement/config/ve5_nonlinear.gin --config configs/vf_poc_nonlin.gin --config configs/single_sample.gin --nofail`
+
+
+#### KeyChest
+1. PPO on KeyChest: `python sb.py --evaluate --train_steps 5000000 --config ../keychest/
+config/5x5.gin --trainer DQN`
+2. DQN on KeyChest: `python sb.py --config ../keychest/config/5x5.gin --evaluate -
+-train_steps 5000000 --train`
+
+Success of DQN shows that the environment is Markov:
+<img src="https://github.com/sergeivolodin/causality-disentanglement-rl/blob/master/images/dqn_ppo_keychest.png" width="300" />
