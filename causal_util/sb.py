@@ -21,7 +21,6 @@ parser.add_argument('--eval_episodes', type=int, default=100)
 parser.add_argument('--train', required=False, action='store_true')
 parser.add_argument('--evaluate', required=False, action='store_true')
 parser.add_argument('--config', type=str, default=None)
-parser.add_argument('--env', type=str, default="VectorIncrement-v0")
 parser.add_argument('--n_env', type=int, default=8)
 
 
@@ -39,12 +38,11 @@ if __name__ == '__main__':
             wrap_keras_encoder = True
         gin.bind_parameter("load_env.wrappers", lst)
 
-
     def make_env():
-        return load_env(args.env)
+        return load_env()
 
 
-    checkpoint_fn = f"env-{args.env}-config-{config_basename}"
+    checkpoint_fn = f"env-config-{config_basename}"
     env = DummyVecEnv([make_env for _ in range(args.n_env)])
     if wrap_keras_encoder:
         env = KerasEncoderVecWrapper(env)
