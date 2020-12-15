@@ -7,6 +7,8 @@ from gym.wrappers import Monitor
 # from stable_baselines.deepq.policies import MlpPolicy
 from stable_baselines import PPO2
 from stable_baselines.common.policies import MlpPolicy
+from stable_baselines.deepq.policies import MlpPolicy as DQNMlpPolicy
+from stable_baselines import DQN
 from stable_baselines.common.vec_env import DummyVecEnv
 from tqdm import tqdm
 from causal_util.helpers import find_gin_parameter
@@ -24,10 +26,21 @@ parser.add_argument('--train', required=False, action='store_true')
 parser.add_argument('--evaluate', required=False, action='store_true')
 parser.add_argument('--config', type=str, default=None)
 parser.add_argument('--n_env', type=int, default=8)
+parser.add_argument('--trainer', type=str, default="PPO")
 
 
 if __name__ == '__main__':
     args = parser.parse_args()
+
+    # how to train the policy?
+    trainers = {'PPO': PPO2, 'DQN': DQN}
+    policies = {'PPO': MlpPolicy, 'DQN': DQNMlpPolicy}
+    vectorize = {'PPO': True, 'DQN': False}
+
+    do_vectorize = vectorize[args.trainer]
+    TrainerClass = trainers[args.trainer]
+    PolicyClass = policies[args.trainer]
+
     config_basename = "none"
     wrap_keras_encoder = False
     if args.config:
@@ -43,18 +56,25 @@ if __name__ == '__main__':
     def make_env():
         return load_env()
 
-    checkpoint_fn = f"env-config-{config_basename}"
-    env = DummyVecEnv([make_env for _ in range(args.n_env)])
-    if wrap_keras_encoder:
-        env = KerasEncoderVecWrapper(env)
+    checkpoint_fn = f"env-config-{args.trainer}-{config_basename}"
+
+    if do_vectorize:
+        env = DummyVecEnv([make_env for _ in range(args.n_env)])
+        if wrap_keras_encoder:
+            env = KerasEncoderVecWrapper(env)
+    else:
+        env = make_env()
+        if wrap_keras_encoder:
+            env = KerasEncoderWrapper(env)
 
     print("Checkpoint path", checkpoint_fn)
     tb_path = f"./tb_{checkpoint_fn}_{datetime.now().strftime('%Y%M%d_%H%M%S')}/"
     print("TensorBoard path", tb_path)
 
-    model = PPO2(MlpPolicy, env, verbose=1, tensorboard_log=tb_path)
+    model = TrainerClass(PolicyClass, env, verbose=1, tensorboard_log=tb_path)
     try:
-        model = PPO2.load(checkpoint_fn)
+        model = TrainerClass.load(checkpoint_fn)
+        model.tensorboard_log = tb_path
     except Exception as e:
         print(f"Loading failed {e}")
     model.set_env(env)
