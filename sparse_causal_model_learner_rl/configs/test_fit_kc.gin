@@ -1,0 +1,49 @@
+import sparse_causal_model_learner_rl.trainable.decoder
+import sparse_causal_model_learner_rl.trainable.reconstructor
+import sparse_causal_model_learner_rl.trainable.model
+import sparse_causal_model_learner_rl.config
+import sparse_causal_model_learner_rl.annealer.threshold
+import sparse_causal_model_learner_rl.loss.losses
+import sparse_causal_model_learner_rl.loss.optimizer
+import sparse_causal_model_learner_rl.metrics.nnz
+import sparse_causal_model_learner_rl.metrics.loss_thresholded
+import sparse_causal_model_learner_rl.metrics.max_element
+import gin_tune
+import sparse_causal_model_learner_rl.trainable.value_predictor
+import sparse_causal_model_learner_rl.trainable.fcnet
+include 'common.gin'
+
+tune_run.num_samples = 1
+tune_run.resources_per_trial = {'gpu': 0.1, 'cpu': 1}
+
+Config.train_steps = 200000
+Config.env_steps = 10000
+
+Config.loss_every = 99999999999999
+Config.graph_every = 2000
+Config.checkpoint_every = 10000
+Config.report_every = 300
+Config.metrics_every = 5000
+Config.report_weights = False
+
+Config.collect_every = 500
+
+model/FCNet.hidden_sizes = [2000, 2000, 2000, 2000]
+model/FCNet.activation_cls = @ReLU
+ModelModel.model_cls = @model/FCNet
+
+Config.keep_history = False
+Config.model = @ModelModel
+Config.decoder = @IdentityDecoder
+Config.reconstructor = @LinearReconstructor
+
+LinearModel.use_bias = False
+Config.feature_shape = None
+
+Config._update_function = []
+Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1.0},}
+Config.metrics = {}
+
+opt1/Optimizer.name = 'Adam'
+opt1/Optimizer.lr = 1e-3
+Config.execution = {'opt1': ['fit']}
