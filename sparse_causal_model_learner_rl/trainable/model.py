@@ -47,13 +47,20 @@ class LinearModel(Model):
 @gin.configurable
 class ModelModel(Model):
     """Model of the environment which uses a torch model to make predictions."""
-    def __init__(self, model_cls, skip_connection=False, **kwargs):
+    def __init__(self, model_cls, skip_connection=False, init_zeros=False, **kwargs):
         super(ModelModel, self).__init__(**kwargs)
         assert len(self.feature_shape) == 1, f"Features must be scalar: {self.feature_shape}"
         assert len(self.action_shape) == 1, f"Actions must be scalar: {self.action_shape}"
         self.model = model_cls(input_shape=(self.feature_shape[0] + self.action_shape[0], ),
                                output_shape=self.feature_shape)
         self.skip_connection = skip_connection
+        def init_weights(m):
+            if type(m) == nn.Linear:
+                torch.nn.init.constant_(m.weight, 0.0)
+        #        torch.nn.init.constant_(m.bias, 0.0)
+        if init_zeros:
+            self.model.apply(init_weights)
+
 
     def forward(self, f_t, a_t):
         fa_t = torch.cat((f_t, a_t), dim=1)

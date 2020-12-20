@@ -28,10 +28,11 @@ Config.report_weights = False
 
 Config.collect_every = 500
 
-model/FCNet.hidden_sizes = [2000, 500, 100, 100, 500, 2000]
-model/FCNet.activation_cls = @ReLU
+model/FCNet.hidden_sizes = [1000, 1000]#2000, 500, 100, 100, 500, 2000]
+model/FCNet.activation_cls = @Tanh
 ModelModel.model_cls = @model/FCNet
 ModelModel.skip_connection = True
+ModelModel.init_zeros = True
 
 Config.keep_history = False
 Config.model = @ModelModel
@@ -42,10 +43,10 @@ LinearModel.use_bias = False
 Config.feature_shape = None
 
 Config._update_function = []
-Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1.0},}
+Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1000.0},}
 Config.metrics = {}
 
 opt1/Optimizer.name = 'Adam'
-opt1/Optimizer.lr = 1e-3
+opt1/Optimizer.lr = 1e-4
 Config.optimizers = {'opt1': @opt1/Optimizer}
 Config.execution = {'opt1': ['fit']}
