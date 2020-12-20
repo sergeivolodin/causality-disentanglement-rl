@@ -59,5 +59,5 @@ class ModelModel(Model):
         fa_t = torch.cat((f_t, a_t), dim=1)
         f_t1 = self.model(fa_t)
         if self.skip_connection:
-            f_t1 += ft
+            f_t1 += f_t
         return f_t1
