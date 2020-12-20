@@ -42,10 +42,14 @@ class EnvDataCollector(Wrapper):
         self.observation_space = self.env.observation_space
         self.reward_range = self.env.reward_range
         self.metadata = self.env.metadata
+        self.clear()
+        super(EnvDataCollector, self).__init__(env)
+
+    def clear(self):
         self.rollouts = []
         self.current_rollout = []
         self.steps = 0
-        super(EnvDataCollector, self).__init__(env)
+
 
     def step(self, action):
         obs, rew, done, info = self.env.step(action)

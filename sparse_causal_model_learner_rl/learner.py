@@ -166,6 +166,10 @@ class Learner(object):
     def collect_steps(self):
         """Do one round of data collection from the RL environment."""
         # TODO: run a policy with curiosity reward instead of the random policy
+
+        # removing old data
+        self.collector.clear()
+
         # collecting data
         n_steps = self.config['env_steps']
         while self.collector.steps < n_steps:
