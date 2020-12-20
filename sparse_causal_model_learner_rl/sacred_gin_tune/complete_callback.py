@@ -20,7 +20,7 @@ class CompletesCallback(Callback):
         super(CompletesCallback, self).__init__(*args, **kwargs)
 
     def on_trial_complete(self, iteration, trials, trial, **kwargs):
-        print("Completed trial", trial)
+        #print("Completed trial", trial)
         self.completed_trials += 1
 
 
@@ -36,5 +36,5 @@ class StopOnCompletes(Stopper):
         return False
 
     def stop_all(self):
-        print("stop_all call", self.completes_callback.completed_trials, self.target_trials)
+        #print("stop_all call", self.completes_callback.completed_trials, self.target_trials)
         return self.completes_callback.completed_trials >= self.target_trials
