@@ -28,9 +28,10 @@ Config.report_weights = False
 
 Config.collect_every = 500
 
-model/FCNet.hidden_sizes = [2000, 2000, 2000, 2000]
+model/FCNet.hidden_sizes = [2000, 500, 100, 100, 500, 2000]
 model/FCNet.activation_cls = @ReLU
 ModelModel.model_cls = @model/FCNet
+ModelModel.skip_connection = True
 
 Config.keep_history = False
 Config.model = @ModelModel
@@ -46,4 +47,5 @@ Config.metrics = {}
 
 opt1/Optimizer.name = 'Adam'
 opt1/Optimizer.lr = 1e-3
+Config.optimizers = {'opt1': @opt1/Optimizer}
 Config.execution = {'opt1': ['fit']}
