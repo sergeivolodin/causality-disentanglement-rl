@@ -36,6 +36,7 @@ import numpy as np
 from sparse_causal_model_learner_rl.visual.learner_visual import plot_model, graph_for_matrices, select_threshold
 import cloudpickle as pickle
 import traceback
+from tqdm.auto import tqdm
 
 
 class Learner(object):
@@ -46,7 +47,7 @@ class Learner(object):
         self.config = config
         self.callback = callback
 
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() and not self.config.get('disable_cuda') else "cpu")
 
         # creating environment
         self.env = self.create_env()
@@ -72,34 +73,26 @@ class Learner(object):
         # self.action_shape = self.config.get('action_shape')
         # self.observation_shape = self.config.get('observation_shape')
 
-        self.model_cls = config['model']
-        assert issubclass(self.model_cls, Model), f"Please supply a valid model class: {self.model_cls}"
-        self.model = self.model_cls(feature_shape=self.feature_shape,
-                                    action_shape=self.action_shape)
+        # list of potential trainables
+        self.potential_trainables = [
+            {'name': 'model', 'superclass': Model, 'kwargs': dict(feature_shape=self.feature_shape, action_shape=self.action_shape)},
+            {'name': 'decoder', 'superclass': Decoder, 'kwargs': dict(feature_shape=self.feature_shape, observation_shape=self.observation_shape)},
+            {'name': 'reconstructor', 'superclass': Reconstructor, 'kwargs': dict(feature_shape=self.feature_shape, observation_shape=self.observation_shape)},
+            {'name': 'value_predictor', 'superclass': ValuePredictor, 'kwargs': dict(observation_shape=self.feature_shape)},
+        ]
 
-        self.decoder_cls = config['decoder']
-        assert self.decoder_cls
-        assert issubclass(self.decoder_cls, Decoder), f"Please supply a valid decoder class: {self.decoder_cls}"
-        self.decoder = self.decoder_cls(feature_shape=self.feature_shape,
-                                        observation_shape=self.observation_shape)
+        # map name -> torch model
+        self.trainables = {}
 
-        self.reconstructor_cls = config['reconstructor']
-        assert self.reconstructor_cls
-        assert issubclass(self.reconstructor_cls,
-                          Reconstructor), f"Please supply a valid reconstructor class {self.reconstructor_cls}"
-        self.reconstructor = self.reconstructor_cls(feature_shape=self.feature_shape,
-                                                    observation_shape=self.observation_shape)
-
-        self.value_predictor_cls = config.get('value_predictor', None)
-        if self.value_predictor_cls:
-            assert issubclass(self.value_predictor_cls, ValuePredictor), f"Please supply a valid value predictor class {self.value_predictor_cls}"
-            self.value_predictor = self.value_predictor_cls(observation_shape=self.feature_shape)
-
-        # creating a dictionary with all torch models
-        self.trainables = {'model': self.model, 'decoder': self.decoder,
-                           'reconstructor': self.reconstructor}
-        if hasattr(self, 'value_predictor'):
-            self.trainables['value_predictor'] = self.value_predictor
+        # creating trainables
+        for trainable in self.potential_trainables:
+            cls = config.get(trainable['name'], None)
+            setattr(self, f"{trainable['name']}_cls", cls)
+            if cls:
+                assert issubclass(cls, trainable['superclass']), f"Please supply a valid {trainable['name']}: {cls}"
+                obj = cls(**trainable['kwargs'])
+                setattr(self, trainable['name'], obj)
+                self.trainables[trainable['name']] = obj
 
         self.history = []
         self.epochs = 0
@@ -163,7 +156,7 @@ class Learner(object):
             gin.parse_config_file(self.config['env_config_file'])
         return load_env()
 
-    def collect_steps(self):
+    def collect_steps(self, do_tqdm=False):
         """Do one round of data collection from the RL environment."""
         # TODO: run a policy with curiosity reward instead of the random policy
 
@@ -172,11 +165,13 @@ class Learner(object):
 
         # collecting data
         n_steps = self.config['env_steps']
-        while self.collector.steps < n_steps:
-            done = False
-            self.collector.reset()
-            while not done:
-                _, _, done, _ = self.collector.step(self.collector.action_space.sample())
+        with tqdm(total=n_steps, disable=not do_tqdm) as pbar:
+            while self.collector.steps < n_steps:
+                done = False
+                self.collector.reset()
+                while not done:
+                    _, _, done, _ = self.collector.step(self.collector.action_space.sample())
+                    pbar.update(1)
         self.collector.flush()
 
     @property
