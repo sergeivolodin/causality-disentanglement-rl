@@ -1,0 +1,10 @@
+include 'test_fit_kc.gin'
+
+tune_run.num_samples = 1000
+tune_run.resources_per_trial = {'gpu': 0.1, 'cpu': 1}
+
+env_steps/choice.categories = [100, 1000, 10000]
+Config.env_steps = @env_steps/choice()
+
+collect_every/choice.categories = [1, 10, 100, 1000, 10000]
+Config.collect_every = @collect_every/choice()

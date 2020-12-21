@@ -16,20 +16,20 @@ include 'common.gin'
 tune_run.num_samples = 1
 tune_run.resources_per_trial = {'gpu': 0.1, 'cpu': 1}
 
-Config.train_steps = 200000
-Config.env_steps = 10000
+Config.train_steps = 100000
+Config.env_steps = 1000
 
 Config.loss_every = 99999999999999
-Config.graph_every = 2000
+Config.graph_every = 99999999999999
 Config.checkpoint_every = 10000
 Config.report_every = 300
 Config.metrics_every = 5000
 Config.report_weights = False
 
-Config.collect_every = 500
+Config.collect_every = 10
 
-model/FCNet.hidden_sizes = [1000, 1000]#2000, 500, 100, 100, 500, 2000]
-model/FCNet.activation_cls = @Tanh
+model/FCNet.hidden_sizes = [1000, 1000]
+model/FCNet.activation_cls = @ReLU
 ModelModel.model_cls = @model/FCNet
 ModelModel.skip_connection = True
 ModelModel.init_zeros = True
