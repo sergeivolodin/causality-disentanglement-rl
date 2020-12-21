@@ -1,0 +1,76 @@
+import sparse_causal_model_learner_rl.trainable.decoder
+import sparse_causal_model_learner_rl.trainable.reconstructor
+import sparse_causal_model_learner_rl.trainable.model
+import sparse_causal_model_learner_rl.config
+import sparse_causal_model_learner_rl.annealer.threshold
+import sparse_causal_model_learner_rl.loss.losses
+import sparse_causal_model_learner_rl.loss.optimizer
+import sparse_causal_model_learner_rl.metrics.nnz
+import sparse_causal_model_learner_rl.metrics.loss_thresholded
+import gin_tune
+import sparse_causal_model_learner_rl.trainable.value_predictor
+import sparse_causal_model_learner_rl.trainable.fcnet
+include 'common.gin'
+
+tune_run.num_samples = 100
+tune_run.resources_per_trial = {'gpu': 0, 'cpu': 1}
+
+Config.train_steps = 2000000
+Config.env_steps = 10000
+
+Config.loss_every = 1000
+Config.graph_every = 500
+Config.checkpoint_every = 1000
+Config.report_every = 100
+Config.metrics_every = 100
+Config.report_weights = False
+Config.collect_every = 1000
+
+Config.keep_history = True
+Config.max_history_size = 1000
+
+decoder/FCNet.hidden_sizes = [150, 150, 150]
+decoder/FCNet.activation_cls = @Tanh
+ModelDecoder.model_cls = @decoder/FCNet
+ModelDecoder.use_batchnorm = False
+
+Config.model = @LinearModel
+Config.decoder = @ModelDecoder
+Config.reconstructor = @LinearReconstructor
+Config.value_predictor = @ModelValuePredictor
+
+value/FCNet.hidden_sizes = [50, 50, 50, 50]
+value/FCNet.activation_cls = @ReLU
+ModelValuePredictor.model_cls = @value/FCNet
+
+Config.feature_shape = (32, )
+
+ThresholdAnnealer.fit_threshold = 1e-6
+ThresholdAnnealer.min_hyper = 1e-10
+ThresholdAnnealer.max_hyper = 1e3
+ThresholdAnnealer.factor = 0.5
+ThresholdAnnealer.reset_on_fail = False
+Config._update_function = [@ThresholdAnnealer]
+
+reconstruction_loss_value_function_reward_to_go.value_scaler = 1
+
+Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1.0},
+                 'sparsity': {'fcn': @sparsity_loss, 'coeff': 1e-10},
+                 'reconstruction': {'fcn': @reconstruction_loss_value_function_reward_to_go, 'coeff': 1}
+                }
+
+opt1/Optimizer.name = 'Adam'
+opt2/Optimizer.name = 'Adam'
+opt3/Optimizer.name = 'Adam'
+
+#opt1/Optimizer.lr = 1
+#opt1/Optimizer.momentum = 0.9
+
+Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer, 'opt3': @opt3/Optimizer}
+Config.execution = {'opt1': ['fit', 'reconstruction', 'sparsity'],'opt2': ['fit', 'reconstruction', 'sparsity'],'opt3': ['fit', 'reconstruction', 'sparsity']}
+Config.optim_params = {'opt1': ['model'], 'opt2': ['reconstructor'], 'opt3': ['value_predictor']}
+Config.opt_iterations = {'opt1': 2, 'opt2': 1, 'opt3': 1}
+
+LinearModel.use_bias = False
+
+sparsity_loss.ord = 1

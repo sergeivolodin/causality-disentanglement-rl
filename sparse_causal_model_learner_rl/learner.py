@@ -93,6 +93,8 @@ class Learner(object):
                 obj = cls(**trainable['kwargs'])
                 setattr(self, trainable['name'], obj)
                 self.trainables[trainable['name']] = obj
+            else:
+                logging.warning(f"No class provided for trainable {trainable['name']}")
 
         self.history = []
         self.epochs = 0
@@ -111,10 +113,20 @@ class Learner(object):
         # opt_params_descr = {x: [p.name for p in y] for x, y in self.params_for_optimizers.items()}
         # logging.info(f"Optimizers parameters {opt_params_descr}")
 
-        self.optimizer_objects = {label: fcn(params=self.params_for_optimizers[label])
-                                  for label, fcn in self.config['optimizers'].items()}
-        self._context_cache = None
+        self.optimizer_objects = {}
 
+        for label, fcn in self.config['optimizers'].items():
+            params = self.params_for_optimizers[label]
+            if params:
+                self.optimizer_objects[label] = fcn(params=params)
+            else:
+                logging.warning(f"No parameters for optimizer {label} {fcn}")
+
+
+        self._context_cache = None
+        self.shuffle_together = []
+        self.batch_index = 0
+        self.shuffle = self.config.get('shuffle', False)
         self._check_execution()
 
 
@@ -169,6 +181,7 @@ class Learner(object):
             while self.collector.steps < n_steps:
                 done = False
                 self.collector.reset()
+                pbar.update(1)
                 while not done:
                     _, _, done, _ = self.collector.step(self.collector.action_space.sample())
                     pbar.update(1)
@@ -223,11 +236,24 @@ class Learner(object):
         # for reconstruction
         assert len(obs_x) == len(obs_y)
 
+        self.shuffle_together = {['obs_x', 'obs_y', 'action_x', 'reward_to_go'],
+                                 ['obs']}
+
         context = {'obs_x': obs_x, 'obs_y': obs_y, 'action_x': act_x,
                    'obs': obs,
                    'config': self.config,
                    'trainables': self.trainables,
                    'reward_to_go': reward_to_go}
+
+        # shuffling groups
+        if self.shuffle:
+            for group in shuffle_together:
+                idx = list(range(len(context[group[0]])))
+                np.random.shuffle(idx)
+                for key in group:
+                    group[key] = group[key][idx]
+
+
         context.update(self.trainables)
 
         def possible_to_torch(x):
@@ -250,11 +276,29 @@ class Learner(object):
         if (self.epochs % self.config.get('collect_every', 1) == 0) or self._context_cache is None:
             self.collect_steps()
             context = self._context
+            self.batch_index = 0
         else:
-            context = self._context_cache
+            context = dict(self._context_cache)
+
+        n_batches = self.config.get('n_batches', 1)
+        batch_sizes = []
+        if n_batches > 1:
+            if not self.shuffle:
+                logging.warning(f"Shuffle is turned off with n_batches > 1: {n_batches}")
+
+            for group in self.shuffle_together:
+                group_len = len(context[group[0]])
+                batch_size = group_len // n_batches
+                batch_sizes.append(batch_size)
+                for item in group:
+                    context[item] = context[item][self.batch_index * batch_size : (self.batch_index + 1) * batch_size]
+
+            self.batch_index += 1
+
 
         epoch_info = {'epochs': self.epochs, 'n_samples': len(context['obs']), 'losses': {},
-                      'metrics': {}}
+                      'metrics': {'batch_index': self.batch_index,
+                                  'batch_size': np.mean(batch_sizes) if batch_sizes else -1}}
 
         # train using losses
         for opt_label in sorted(self.optimizer_objects.keys()):
