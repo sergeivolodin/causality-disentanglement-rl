@@ -203,6 +203,8 @@ class Learner(object):
         # reward-to-go
         reward_to_go = []
 
+        episode_rewards = []
+
         for episode in self.collector.raw_data:
             rew = []
             is_multistep = len(episode) > 1
@@ -225,6 +227,7 @@ class Learner(object):
                     obs_x.append(step['observation'])
 
             rew_to_go_episode = compute_reward_to_go(rew, gamma=self.vf_gamma)
+            episode_rewards.append(rew_to_go_episode[0])
             reward_to_go.extend(rew_to_go_episode)
 
         # for value function prediction
@@ -236,29 +239,30 @@ class Learner(object):
         # for reconstruction
         assert len(obs_x) == len(obs_y)
 
-        self.shuffle_together = {['obs_x', 'obs_y', 'action_x', 'reward_to_go'],
-                                 ['obs']}
+        self.shuffle_together = [['obs_x', 'obs_y', 'action_x', 'reward_to_go'],
+                                 ['obs']]
 
         context = {'obs_x': obs_x, 'obs_y': obs_y, 'action_x': act_x,
                    'obs': obs,
                    'config': self.config,
                    'trainables': self.trainables,
-                   'reward_to_go': reward_to_go}
+                   'reward_to_go': reward_to_go,
+                   'episode_rewards': episode_rewards}
 
         # shuffling groups
         if self.shuffle:
-            for group in shuffle_together:
+            for group in self.shuffle_together:
                 idx = list(range(len(context[group[0]])))
                 np.random.shuffle(idx)
                 for key in group:
-                    group[key] = group[key][idx]
+                    context[key] = np.array(context[key])[idx]
 
 
         context.update(self.trainables)
 
         def possible_to_torch(x):
             """Convert a list of inputs into an array suitable for the torch model."""
-            if isinstance(x, list):
+            if isinstance(x, list) or isinstance(x, np.ndarray):
                 x = np.array(x, dtype=np.float32)
                 if len(x.shape) == 1:
                     x = x.reshape(-1, 1)
@@ -277,29 +281,34 @@ class Learner(object):
 
         if (self.epochs % collect_every == 0) or self._context_cache is None:
             self.collect_steps()
-            context = self._context
+            context_orig = self._context
             self.batch_index = 0
         else:
-            context = dict(self._context_cache)
+            context_orig = self._context_cache
 
         batch_sizes = []
         if n_batches > 1 and self.config.get('batch_training', False):
             if not self.shuffle:
                 logging.warning(f"Shuffle is turned off with n_batches > 1: {n_batches}")
 
+            context = dict(context_orig)
+
             for group in self.shuffle_together:
-                group_len = len(context[group[0]])
+                group_len = len(context_orig[group[0]])
                 batch_size = group_len // n_batches
                 batch_sizes.append(batch_size)
                 for item in group:
-                    context[item] = context[item][self.batch_index * batch_size : (self.batch_index + 1) * batch_size]
+                    context[item] = context_orig[item][self.batch_index * batch_size : (self.batch_index + 1) * batch_size]
+                    assert len(context[item]), f"For some reason, minibatch is empty for {item} {self.epochs} {self.batch_index} {batch_size} {n_batches} {group_len}"
 
             self.batch_index += 1
+        else:
+            context = context_orig
 
-
-        epoch_info = {'epochs': self.epochs, 'n_samples': len(context['obs']), 'losses': {},
+        epoch_info = {'epochs': self.epochs, 'n_samples': len(context_orig['obs']), 'losses': {},
                       'metrics': {'batch_index': self.batch_index,
-                                  'batch_size': np.mean(batch_sizes) if batch_sizes else -1}}
+                                  'batch_size': np.mean(batch_sizes) if batch_sizes else -1},
+                                  'episode_reward': np.mean(context['episode_rewards'].detach().cpu().numpy()) if len(context['episode_rewards']) else None}
 
         # train using losses
         for opt_label in sorted(self.optimizer_objects.keys()):
