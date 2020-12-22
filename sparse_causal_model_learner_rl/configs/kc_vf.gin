@@ -16,7 +16,7 @@ tune_run.num_samples = 100
 tune_run.resources_per_trial = {'gpu': 0, 'cpu': 1}
 
 Config.train_steps = 2000000
-Config.env_steps = 10000
+Config.env_steps = 100000
 
 Config.loss_every = 1000
 Config.graph_every = 500
@@ -25,6 +25,9 @@ Config.report_every = 100
 Config.metrics_every = 100
 Config.report_weights = False
 Config.collect_every = 1000
+
+Config.shuffle = True
+Config.batch_training = True
 
 Config.keep_history = True
 Config.max_history_size = 1000

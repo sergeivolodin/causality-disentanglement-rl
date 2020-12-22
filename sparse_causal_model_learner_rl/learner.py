@@ -273,16 +273,17 @@ class Learner(object):
     def _epoch(self):
         """One training iteration."""
         # obtain data from environment
-        if (self.epochs % self.config.get('collect_every', 1) == 0) or self._context_cache is None:
+        n_batches = collect_every = self.config.get('collect_every', 1)
+
+        if (self.epochs % collect_every == 0) or self._context_cache is None:
             self.collect_steps()
             context = self._context
             self.batch_index = 0
         else:
             context = dict(self._context_cache)
 
-        n_batches = self.config.get('n_batches', 1)
         batch_sizes = []
-        if n_batches > 1:
+        if n_batches > 1 and self.config.get('batch_training', False):
             if not self.shuffle:
                 logging.warning(f"Shuffle is turned off with n_batches > 1: {n_batches}")
 
