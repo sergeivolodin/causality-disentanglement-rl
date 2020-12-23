@@ -10,7 +10,7 @@ KeyChestGymEnv.engine_constructor = @KeyChestEnvironmentRandom
 #with_fixed_seed.fcn = @KeyChestEnvironmentRandom
 
 KeyChestGymEnv.reward_dict = @helpers.reward_as_dict()
-reward_as_dict.step = -0.01
+reward_as_dict.step = 0.0
 reward_as_dict.food_collected = 0.1
 reward_as_dict.key_collected = 0.3
 reward_as_dict.chest_opened = 0.5
