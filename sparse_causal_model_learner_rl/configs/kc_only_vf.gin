@@ -24,10 +24,10 @@ Config.checkpoint_every = 10000
 Config.report_every = 100
 Config.metrics_every = 100
 Config.report_weights = False
-Config.collect_every = 1500000000000000000
+Config.collect_every = 100
 
-Config.shuffle = False
-Config.batch_training = False
+Config.shuffle = True
+Config.batch_training = True
 
 Config.keep_history = True
 Config.max_history_size = 1000
