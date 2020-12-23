@@ -14,10 +14,10 @@ import causal_util.collect_data
 include 'common.gin'
 
 tune_run.num_samples = 100
-tune_run.resources_per_trial = {'gpu': 0, 'cpu': 1}
+tune_run.resources_per_trial = {'gpu': 0.1, 'cpu': 1}
 
 Config.train_steps = 2000000
-Config.env_steps = 100000
+Config.env_steps = 65536
 
 EnvDataCollector.complete_episodes = True
 
@@ -29,8 +29,8 @@ Config.metrics_every = 100
 Config.report_weights = False
 Config.collect_every = 1000
 
-Config.shuffle = True
-Config.batch_training = True
+Config.shuffle = False
+Config.batch_training = False
 
 Config.keep_history = True
 Config.max_history_size = 1000
@@ -45,8 +45,8 @@ Config.decoder = @ModelDecoder
 Config.reconstructor = @LinearReconstructor
 Config.value_predictor = @ModelValuePredictor
 
-value/FCNet.hidden_sizes = [50, 50, 50, 50]
-value/FCNet.activation_cls = @ReLU
+value/FCNet.hidden_sizes = [64, 64]
+value/FCNet.activation_cls = @Tanh
 ModelValuePredictor.model_cls = @value/FCNet
 
 Config.feature_shape = (32, )
