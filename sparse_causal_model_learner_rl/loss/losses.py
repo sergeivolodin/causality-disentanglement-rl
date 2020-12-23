@@ -131,7 +131,7 @@ def sparsity_loss(model, device, add_reg=True, ord=1, eps=1e-8, **kwargs):
         if M.shape[0] != M.shape[1]:
             assert M.shape[1] < M.shape[0], M.shape
             # computing minimal norm of column
-            return 1. / (eps + torch.norm(M, p=2, dim=0) ** 2)
+            return 1. / (eps + torch.norm(M, p=1, dim=0))
 
         #if M.shape[0] == M.shape[1]: # can use true inverse
         return torch.inverse(M + torch.eye(M.shape[0], requires_grad=False).to(device) * eps)

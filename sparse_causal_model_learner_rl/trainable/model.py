@@ -21,13 +21,16 @@ class Model(nn.Module):
 
 @gin.configurable
 class LinearModel(Model):
-    def __init__(self, use_bias=True, **kwargs):
+    def __init__(self, use_bias=True, init_identity=False, **kwargs):
         super(LinearModel, self).__init__(**kwargs)
         self.use_bias = use_bias
         assert len(self.feature_shape) <= 1, f"Features must be scalar: {self.feature_shape}"
         assert len(self.action_shape) <= 1, f"Actions must be scalar: {self.action_shape}"
         self.fc_features = nn.Linear(self.feature_shape[0], self.feature_shape[0], bias=self.use_bias)
         self.fc_action = nn.Linear(self.action_shape[0], self.feature_shape[0], bias=False)
+        if init_identity:
+            self.fc_features.weight.data.copy_(torch.eye(self.feature_shape[0]))
+            self.fc_action.weight.data.copy_(torch.eye(self.feature_shape[0], self.action_shape[0]))
 
     def forward(self, f_t, a_t):
         f_next_f = self.fc_features(f_t)
