@@ -247,7 +247,8 @@ class Learner(object):
                    'config': self.config,
                    'trainables': self.trainables,
                    'reward_to_go': reward_to_go,
-                   'episode_rewards': episode_rewards}
+                   'episode_rewards': episode_rewards,
+                   'device': self.device}
 
         # shuffling groups
         if self.shuffle:
@@ -320,6 +321,9 @@ class Learner(object):
                 for loss_label in self.config['execution'][opt_label]:
                     loss = self.config['losses'][loss_label]
                     value = loss['fcn'](**context)
+                    if isinstance(value, dict):
+                        epoch_info['metrics'].update(value.get('metrics', {}))
+                        value = value['loss']
                     coeff = loss['coeff']
                     epoch_info['losses'][f"{opt_label}/{loss_label}/coeff"] = coeff
                     epoch_info['losses'][f"{opt_label}/{loss_label}/value"] = value

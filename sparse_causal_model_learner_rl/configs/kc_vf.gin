@@ -51,7 +51,7 @@ ModelValuePredictor.model_cls = @value/FCNet
 
 Config.feature_shape = (32, )
 
-ThresholdAnnealer.fit_threshold = 1e-6
+ThresholdAnnealer.fit_threshold = 1e-5
 ThresholdAnnealer.min_hyper = 1e-10
 ThresholdAnnealer.max_hyper = 1e3
 ThresholdAnnealer.factor = 0.5
@@ -60,7 +60,7 @@ Config._update_function = [@ThresholdAnnealer]
 
 reconstruction_loss_value_function_reward_to_go.value_scaler = 1
 
-Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1.0},
+Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 100.0},
                  'sparsity': {'fcn': @sparsity_loss, 'coeff': 1e-10},
                  'reconstruction': {'fcn': @reconstruction_loss_value_function_reward_to_go, 'coeff': 1}
                 }
@@ -72,9 +72,9 @@ opt3/Optimizer.name = 'Adam'
 #opt1/Optimizer.lr = 1
 #opt1/Optimizer.momentum = 0.9
 
-Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer, 'opt3': @opt3/Optimizer}
-Config.execution = {'opt1': ['fit', 'reconstruction', 'sparsity'],'opt2': ['fit', 'reconstruction', 'sparsity'],'opt3': ['fit', 'reconstruction', 'sparsity']}
-Config.optim_params = {'opt1': ['model'], 'opt2': ['reconstructor'], 'opt3': ['value_predictor']}
+Config.optimizers = {'opt1': @opt1/Optimizer}
+Config.execution = {'opt1': ['fit', 'reconstruction', 'sparsity']}
+Config.optim_params = {'opt1': ['model', 'decoder', 'value_predictor']}
 Config.opt_iterations = {'opt1': 2, 'opt2': 1, 'opt3': 1}
 
 LinearModel.use_bias = False

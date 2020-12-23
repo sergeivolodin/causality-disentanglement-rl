@@ -120,20 +120,29 @@ def sparsity_loss_linreg(obs_x, obs_y, action_x, decoder, fcn=sparsity_uniform, 
     return sparsity_uniform([Mf, Ma, torch.inverse(Mf), torch.inverse(Ma)], ord=ord)
 
 @gin.configurable
-def sparsity_loss(model, ord=1, eps=1e-8, **kwargs):
+def sparsity_loss(model, device, add_reg=True, ord=1, eps=1e-8, **kwargs):
     """Ensure that the model is sparse."""
     params = list(model.parameters())
 
-    def inverse_or_pinverse(M, eps=eps):
+    def inverse_or_pinverse(M, eps=eps, add_reg=add_reg):
         """Get true inverse if possible, or pseudoinverse."""
         assert len(M.shape) == 2, "Only works for matrices"
-        if M.shape[0] == M.shape[1]: # can use true inverse
-            return torch.inverse(M + torch.eye(M.shape[0], requires_grad=False) * eps)
-        else:
-            return torch.pinverse(M)
+
+        if M.shape[0] != M.shape[1]:
+            assert M.shape[1] < M.shape[0], M.shape
+            # computing minimal norm of column
+            return 1. / (eps + torch.norm(M, p=2, dim=0) ** 2)
+
+        #if M.shape[0] == M.shape[1]: # can use true inverse
+        return torch.inverse(M + torch.eye(M.shape[0], requires_grad=False).to(device) * eps)
+        #else:
+        #    return torch.pinverse(M, rcond=eps)
 
     params_inv = [inverse_or_pinverse(p) for p in params]
-    return sparsity_uniform(params + params_inv, ord=ord)
+    all_params = params + params_inv
+    values = {f"sparsity_param_{i}_{tuple(p.shape)}": sparsity_uniform([p], ord=ord) for i, p in enumerate(all_params)}
+    return {'loss': sparsity_uniform(all_params, ord=ord),
+            'metrics': values}
 
 @gin.configurable
 def soft_batchnorm_regul(decoder, **kwargs):
