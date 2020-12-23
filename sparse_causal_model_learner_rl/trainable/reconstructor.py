@@ -27,3 +27,12 @@ class LinearReconstructor(Reconstructor):
 
     def forward(self, x):
         return self.fc(x)
+
+@gin.configurable
+class ModelReconstructor(Reconstructor):
+    def __init__(self, model_cls=None, **kwargs):
+        super(LinearReconstructor, self).__init__(**kwargs)
+        self.model = model_cls(input_shape=self.feature_shape, output_shape=self.observation_shape)
+
+    def forward(self, x):
+        return self.model(x)
