@@ -10,6 +10,7 @@ import sparse_causal_model_learner_rl.metrics.loss_thresholded
 import gin_tune
 import sparse_causal_model_learner_rl.trainable.value_predictor
 import sparse_causal_model_learner_rl.trainable.fcnet
+import causal_util.collect_data
 include 'common.gin'
 
 tune_run.num_samples = 100
@@ -17,6 +18,8 @@ tune_run.resources_per_trial = {'gpu': 0, 'cpu': 1}
 
 Config.train_steps = 2000000
 Config.env_steps = 100000
+
+EnvDataCollector.complete_episodes = True
 
 Config.loss_every = 1000
 Config.graph_every = 500

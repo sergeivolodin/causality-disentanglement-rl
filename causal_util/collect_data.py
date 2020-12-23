@@ -9,6 +9,7 @@ from uuid import uuid1
 import pickle
 import gin
 from gym import Wrapper
+import logging
 
 
 def compute_reward_to_go(rewards_episode, gamma=0.95):
@@ -33,15 +34,17 @@ def compute_reward_to_go(rewards_episode, gamma=0.95):
         prev_rtg = rtg
     return reward_to_go[::-1]
 
+@gin.configurable
 class EnvDataCollector(Wrapper):
     """Collects data from the environment."""
 
-    def __init__(self, env):
+    def __init__(self, env, complete_episodes=False):
         self.env = env
         self.action_space = self.env.action_space
         self.observation_space = self.env.observation_space
         self.reward_range = self.env.reward_range
         self.metadata = self.env.metadata
+        self.complete_episodes = complete_episodes
         self.clear()
         super(EnvDataCollector, self).__init__(env)
 
@@ -60,7 +63,10 @@ class EnvDataCollector(Wrapper):
 
     def flush(self):
         if self.current_rollout:
-            self.rollouts.append(self.current_rollout)
+            if not self.complete_episodes or self.current_rollout[-1].get('done', False):
+                self.rollouts.append(self.current_rollout)
+            else:
+                logging.info("Skipping an episode because it is not complete")
             self.current_rollout = []
 
     def reset(self, **kwargs):
