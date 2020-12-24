@@ -31,7 +31,7 @@ class LinearReconstructor(Reconstructor):
 @gin.configurable
 class ModelReconstructor(Reconstructor):
     def __init__(self, model_cls=None, **kwargs):
-        super(LinearReconstructor, self).__init__(**kwargs)
+        super(ModelReconstructor, self).__init__(**kwargs)
         self.model = model_cls(input_shape=self.feature_shape, output_shape=self.observation_shape)
 
     def forward(self, x):

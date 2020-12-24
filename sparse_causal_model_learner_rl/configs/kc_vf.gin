@@ -78,10 +78,10 @@ opt1/Optimizer.lr = 1e-4
 
 Config.optimizers = {'opt1': @opt1/Optimizer}
 Config.execution = {'opt1': ['fit', 'reconstruction']}
-Config.optim_params = {'opt1': ['model', 'decoder', 'value_predictor']}
+Config.optim_params = {'opt1': ['model', 'decoder', 'reconstructor']}
 Config.opt_iterations = {'opt1': 2, 'opt2': 1, 'opt3': 1}
 
 LinearModel.use_bias = True
-LinearModel.init_identity = True
+LinearModel.init_identity = False
 
 sparsity_loss.ord = 1
