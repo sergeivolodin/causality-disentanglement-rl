@@ -209,8 +209,10 @@ class Learner(object):
             rew = []
             is_multistep = len(episode) > 1
             for i, step in enumerate(episode):
-                is_first = i == 0
-                is_last = i == len(episode) - 1
+                remaining_left = i
+                remaining_right = len(episode) - 1 - i
+                is_first = remaining_left == 0
+                is_last = remaining_right == 0
 
                 obs.append(step['observation'])
 
