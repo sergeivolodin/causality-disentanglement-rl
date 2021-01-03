@@ -5,8 +5,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-batch_size_test = 2048
-batch_size_train = 2048
+batch_size_test = 512
+batch_size_train = 512
 
 class Net(nn.Module):
     def __init__(self):
