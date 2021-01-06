@@ -157,8 +157,6 @@ class ObsModel(object):
             train_mae += torch.nn.L1Loss()(recon_batch, next_states).item()
 
         N = len(self.train_loader) * self.train_loader.batch_size
-        print('====> Average loss: {} MAE: {}'.format(
-              train_loss/N, train_mae / len(self.train_loader)))
         return {'train_loss': train_loss / N, 'train_mae': train_mae / len(self.train_loader)}
 
     def eval(self):
@@ -185,6 +183,4 @@ class ObsModel(object):
             eval_mae += torch.nn.L1Loss()(recon_batch, next_states).item()
 
         N = len(self.eval_loader) * self.eval_loader.batch_size
-        print('====> Average loss: {} MAE: {}'.format(
-              eval_loss/N, eval_mae / len(self.eval_loader)))
         return {'eval_loss': eval_loss / N, 'eval_mae': eval_mae / len(self.eval_loader)}

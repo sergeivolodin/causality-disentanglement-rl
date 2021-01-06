@@ -9,6 +9,13 @@ import numpy as np
 from matplotlib import pyplot as plt
 import torchvision
 from torch.autograd import Variable
+import os
+from PIL import Image
+
+def write_np_img(data, fn):
+    rescaled = (255.0 * data).astype(np.uint8)
+    im = Image.fromarray(rescaled)
+    im.save(fn)
 
 @gin.register
 class VAEKeyChestLearner(AbstractLearner):
@@ -19,6 +26,12 @@ class VAEKeyChestLearner(AbstractLearner):
         self.eval_loader = get_dataloader(self.config.get('eval_samples'))
         self.m = ObsModel(self.train_loader, self.eval_loader)
 
+    def __getstate__(self):
+        return {}
+
+    def __setstate__(self, z):
+        pass
+
     def _epoch(self):
         epoch_info = self.m.train()
 
@@ -27,6 +40,7 @@ class VAEKeyChestLearner(AbstractLearner):
 
         # process epoch information
         epoch_info = postprocess_info(epoch_info)
+        epoch_info['epochs'] = self.epochs
 
         # send information downstream
         if self.callback:
@@ -42,41 +56,44 @@ class VAEKeyChestLearner(AbstractLearner):
 
     def maybe_write_artifacts(self, path_epoch, add_artifact_local):
 
-        def get_images(m, loader):
-            self.model.eval()
-            _, (states, actions, next_states) = next(enumerate(loader))
-            states = Variable(states).cuda()
-            actions = Variable(actions).cuda()
-            next_states = Variable(next_states).cuda()
+        if self.epochs % self.config.get('image_every', 5) == 0:
 
-            # mnist
-            # states = next(enumerate(m.train_loader))[1][0].cuda()
-            # actions = torch.zeros((states.shape[0], 4)).cuda()
-            # next_states = states
-        
-        out, _, _ = self.m.model(states, actions)
-        out = np.rollaxis(out.detach().cpu().numpy(), 1, 4)
-        return out
+            def get_images(m, loader):
+                self.m.model.eval()
+                _, (states, actions, next_states) = next(enumerate(loader))
+                states = Variable(states).cuda()
+                actions = Variable(actions).cuda()
+                next_states = Variable(next_states).cuda()
 
-
-        train_images = get_images(self.m, self.train_loader)
-        eval_images = get_images(self.m, self.eval_loader)
-        demo_images = np.rollaxis(train_loader.dataset.tensors[0].numpy(), 1, 4)
-
-        train_image_idx = np.random.choice(range(len(train_images)))
-        eval_image_idx = np.random.choice(range(len(eval_images)))
-        demo_image_idx = np.random.choice(range(len(demo_images)))
+                # mnist
+                # states = next(enumerate(m.train_loader))[1][0].cuda()
+                # actions = torch.zeros((states.shape[0], 4)).cuda()
+                # next_states = states
+            
+                out, _, _ = self.m.model(states, actions)
+                out = np.rollaxis(out.detach().cpu().numpy(), 1, 4)
+                return out
 
 
-        train_image = train_images[train_image_idx]
-        eval_image = eval_images[eval_image_idx]
-        demo_image = demo_images[demo_image_idx]
+            train_images = get_images(self.m, self.train_loader)
+            eval_images = get_images(self.m, self.eval_loader)
+            demo_images = np.rollaxis(self.train_loader.dataset.tensors[0].numpy(), 1, 4)
 
-        with path_epoch:
-            scipy.misc.toimage(train_image, cmin=0.0, cmax=1.0).save('train_image.png')
-            scipy.misc.toimage(eval_image, cmin=0.0, cmax=1.0).save('eval_image.png')
-            scipy.misc.toimage(demo_image, cmin=0.0, cmax=1.0).save('demo_image.png')
+            train_image_idx = np.random.choice(range(len(train_images)))
+            eval_image_idx = np.random.choice(range(len(eval_images)))
+            demo_image_idx = np.random.choice(range(len(demo_images)))
 
-            add_artifact_local(path_epoch / "train_image.png")
-            add_artifact_local(path_epoch / "eval_image.png")
-            add_artifact_local(path_epoch / "demo_image.png")
+
+            train_image = train_images[train_image_idx]
+            eval_image = eval_images[eval_image_idx]
+            demo_image = demo_images[demo_image_idx]
+
+            os.makedirs(path_epoch, exist_ok=True)
+            with path_epoch:
+                write_np_img(train_image, 'train_image.png')
+                write_np_img(eval_image, 'eval_image.png')
+                write_np_img(demo_image, 'demo_image.png')
+
+                add_artifact_local(path_epoch / "train_image.png")
+                add_artifact_local(path_epoch / "eval_image.png")
+                add_artifact_local(path_epoch / "demo_image.png")
