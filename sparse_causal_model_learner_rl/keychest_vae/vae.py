@@ -124,10 +124,11 @@ class ObsNet(nn.Module):
         return BCE + KLD
 
 
+@gin.configurable
 class ObsModel(object):
     def __init__(self, train_loader, eval_loader, optimizer_cls=optim.Adam):
         self.model = ObsNet().cuda()
-        self.optimizer = optimizer_cls(self.model.parameters())
+        self.optimizer = optimizer_cls(params=self.model.parameters())
         self.train_loader = train_loader
         self.eval_loader = eval_loader
 
