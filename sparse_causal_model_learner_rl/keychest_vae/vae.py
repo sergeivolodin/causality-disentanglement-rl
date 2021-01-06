@@ -168,7 +168,7 @@ class ObsNet(nn.Module):
         assert recon_x.shape == x.shape, (recon_x.shape, x.shape)
         BCE = F.binary_cross_entropy(recon_x.reshape(-1, img_x * img_y * self.channels[0]),
                                      x.reshape(-1, img_x * img_y * self.channels[0]), size_average=False) # does not work without size_average=False???
-        KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+        KLD = -0.005 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
         loss = BCE + KLD
         mae = torch.nn.L1Loss()(recon_x, x)
         mse = torch.nn.MSELoss()(recon_x, x)
@@ -196,8 +196,10 @@ class ObsNet(nn.Module):
 class ObsModel(object):
     def __init__(self, train_loader, eval_loader, optimizer_cls=optim.Adam,
                 optimizer_dis_cls=optim.Adam, optimizer_dec_cls=optim.Adam,
-                 optimizer_enc_cls=optim.Adam):
-        self.model = ObsNet().cuda()
+                 optimizer_enc_cls=optim.Adam, device=None):
+        if device is None:
+            self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.model = ObsNet().to(device)
         self.optimizer = optimizer_cls(params=self.model.parameters())
         
         if self.model.add_gan:
@@ -234,13 +236,13 @@ class ObsModel(object):
             if len(data) == 3:
                 (states, actions, next_states) = data
                 
-                states = Variable(states).cuda()
-                next_states = Variable(next_states).cuda()
-                actions = Variable(actions).cuda()
+                states = states.to(self.device)
+                next_states = next_states.to(self.device)
+                actions = actions.to(self.device)
             
             else:
-                states = data[0].cuda()
-                actions = torch.zeros((states.shape[0], 4)).cuda()
+                states = data[0].to(self.device)
+                actions = torch.zeros((states.shape[0], 4)).to(self.device)
                 next_states = states
 
             if mode == 'eval':

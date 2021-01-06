@@ -13,6 +13,7 @@ from sparse_causal_model_learner_rl.trainable.decoder import IdentityDecoder
 import pickle
 from torch.utils.data import TensorDataset, DataLoader
 import torch
+import cv2
 
 prefix = os.path.join(os.path.dirname(__file__), '..')
 load_config_files([prefix + '/../keychest/config/5x5.gin', prefix + '/configs/common.gin'])
@@ -55,10 +56,18 @@ def obss_to_rgb(obss, engine=engine):
     obss_rgb = obss @ colors_to_rgb
     return obss_rgb
 
-def rgb_pad(obss_rgb):
+@gin.configurable
+def rgb_resize(obss_rgb, size_x=32, size_y=32, active=False):
+    if not active:
+        return obss_rgb
+    res = [cv2.resize(img, dsize=(32, 32), interpolation=cv2.INTER_NEAREST) for img in obss_rgb]
+    return np.array(res)
+
+@gin.configurable
+def rgb_pad(obss_rgb, size_x=16, size_y=8):
     b, x, y, c = obss_rgb.shape
-    x1 = max(x, 16)
-    y1 = max(y, 8)
+    x1 = max(x, size_x)
+    y1 = max(y, size_y)
     out = np.zeros((b, x1, y1, c), dtype=obss_rgb.dtype)
     out[:, :x, :y, :] = obss_rgb
     return out
@@ -78,9 +87,9 @@ def get_dataloader(steps=100000, batch_size=512):
     Xo_train, Xa_train, yo_train = get_xy_conv(steps=steps, orig_shape=True)
 
     #  see https://stackoverflow.com/questions/44429199/how-to-load-a-list-of-numpy-arrays-to-pytorch-dataset-loader
-    Xo_train_torch = torch.Tensor(np.rollaxis(rgb_pad(obss_to_rgb(Xo_train)), 3, 1))
+    Xo_train_torch = torch.Tensor(np.rollaxis(rgb_pad(rgb_resize(obss_to_rgb(Xo_train))), 3, 1))
     Xa_train_torch = torch.Tensor(Xa_train)
-    yo_train_torch = torch.Tensor(np.rollaxis(rgb_pad(obss_to_rgb(yo_train)), 3, 1))
+    yo_train_torch = torch.Tensor(np.rollaxis(rgb_pad(rgb_resize(obss_to_rgb(yo_train))), 3, 1))
 
     my_dataset = TensorDataset(Xo_train_torch, Xa_train_torch, yo_train_torch) # create your datset
     # my_dataset = TensorDataset(Xo_train_torch, Xa_train_torch, Xo_train_torch) # PURE RECONSTRUCTION
