@@ -188,6 +188,8 @@ def total_loss(learner, opt_label='opt1'):
         loss = learner.config['losses'][loss_label]
         value = loss['fcn'](**learner._context)
         coeff = loss['coeff']
+        if isinstance(value, dict):
+            value = value['loss']
         total_loss += coeff * value
 
     return total_loss.item() if hasattr(total_loss, 'item') else total_loss
