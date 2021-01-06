@@ -1,0 +1,34 @@
+import sparse_causal_model_learner_rl.keychest_vae.learner
+import sparse_causal_model_learner_rl.config
+import sparse_causal_model_learner_rl.keychest_vae.data
+import sparse_causal_model_learner_rl.keychest_vae.vae
+import gin_tune
+include 'keychest_vae.gin'
+
+Config.learner_cls = "sparse_causal_model_learner_rl.keychest_vae.learner.VAEKeyChestLearner"
+tune_run.resources_per_trial = {'cpu': 1, 'gpu': 0.35}
+tune_run.num_samples = 100
+
+bs/choice.categories = [128, 256, 512]
+
+get_dataloader.batch_size = @bs/choice()
+
+Config.train_steps = 5000
+Config.checkpoint_every = 5000
+Config.report_every = 10
+
+Config.train_samples = 100000
+Config.eval_samples  = 30000
+Config.eval_every    = 10
+Config.image_every   = 10
+
+interm/choice.categories = [128, 256]
+hid/choice.categories = [10, 20, 50]
+
+ObsNet.intermediate_size = @interm/choice()
+ObsNet.hidden_size = @hid/choice()
+
+c1/choice.categories = [3, 5]
+c2/choice.categories = [16, 32, 64]
+
+ObsNet.channels = [@c1/choice(), @c2/choice(), @c2/choice(), @c2/choice()]

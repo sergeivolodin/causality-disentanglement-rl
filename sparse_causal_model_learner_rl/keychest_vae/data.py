@@ -76,7 +76,8 @@ def plot_data(x, gx=3, gy=8, figsize=(15, 10)):
         plt.imshow(x[idx_start + i])
     return fig
 
-def get_dataloader(steps=100000):
+@gin.configurable
+def get_dataloader(steps=100000, batch_size=512):
     Xo_train, Xa_train, yo_train = get_xy_conv(steps=steps, orig_shape=True)
 
     #  see https://stackoverflow.com/questions/44429199/how-to-load-a-list-of-numpy-arrays-to-pytorch-dataset-loader
@@ -86,5 +87,5 @@ def get_dataloader(steps=100000):
 
     my_dataset = TensorDataset(Xo_train_torch, Xa_train_torch, yo_train_torch) # create your datset
     # my_dataset = TensorDataset(Xo_train_torch, Xa_train_torch, Xo_train_torch) # PURE RECONSTRUCTION
-    my_dataloader = DataLoader(my_dataset, batch_size=512, shuffle=True)#False) # create your dataloader
+    my_dataloader = DataLoader(my_dataset, batch_size=batch_size, shuffle=True)#False) # create your dataloader
     return my_dataloader

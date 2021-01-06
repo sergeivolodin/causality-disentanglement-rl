@@ -32,12 +32,13 @@ gin.enter_interactive_mode()
 @gin.configurable
 class ObsNet(nn.Module):
     """Create a network encoding observations."""
-    def __init__(self, intermediate_size=128, hidden_size=20, hidden_size2=24,
+    def __init__(self, intermediate_size=128, hidden_size=20, action_size=4,
                  input_channels=3, hid_x=8, hid_y=4, kernel_sizes=[3, 2, 3, 3],
                  strides=[1, 2, 1, 1], paddings=[1, 0, 1, 1],
                  channels=[3, 32, 32, 32]):
         super(ObsNet, self).__init__()
         # Encoder
+        hidden_size2 = action_size + hidden_size
         
         # hidden image size in the middle of the network
         self.hid_x = hid_x
