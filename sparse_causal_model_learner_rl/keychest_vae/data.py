@@ -5,7 +5,7 @@ from causal_util.collect_data import EnvDataCollector
 from matplotlib import pyplot as plt
 import os
 import sys
-from sparse_causal_model_learner_rl.learner import Learner
+from sparse_causal_model_learner_rl.learners.rl_learner import CausalModelLearnerRL as Learner
 import gin
 from sparse_causal_model_learner_rl.sacred_gin_tune.sacred_wrapper import load_config_files
 from sparse_causal_model_learner_rl.config.config import Config
@@ -14,8 +14,8 @@ import pickle
 from torch.utils.data import TensorDataset, DataLoader
 import torch
 
-
-load_config_files(['../keychest/config/5x5.gin', '../sparse_causal_model_learner_rl/configs/common.gin'])
+prefix = os.path.join(os.path.dirname(__file__), '..')
+load_config_files([prefix + '/../keychest/config/5x5.gin', prefix + '/configs/common.gin'])
 
 def get_xy_conv(steps=1000, orig_shape=True):
     """Get the dataset."""
