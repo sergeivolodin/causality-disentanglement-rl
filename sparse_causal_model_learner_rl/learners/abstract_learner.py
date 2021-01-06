@@ -41,4 +41,9 @@ class AbstractLearner(object):
             self._epoch()
 
     def _epoch(self):
-        raise NotImplementedError
+        """Train one epoch."""
+        pass
+
+    def maybe_write_artifacts(self, path_epoch, add_artifact_local):
+        """Write artifacts into path_epoch and call add_artifact_local with the path."""
+        pass

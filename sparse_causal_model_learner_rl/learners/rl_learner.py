@@ -1,5 +1,8 @@
 import argparse
 
+from matplotlib import pyplot as plt
+import traceback
+
 import matplotlib as mpl
 
 import logging
@@ -430,3 +433,58 @@ class CausalModelLearnerRL(AbstractLearner):
         ps, f_out = graph_for_matrices(self.model, threshold_act=threshold_act,
                                        threshold_f=threshold_f, do_write=do_write)
         return threshold, ps, f_out
+    
+    def maybe_write_artifacts(self, path_epoch, add_artifact_local):
+        # writing figures if requested
+        if self.epochs % self.config.get('graph_every', 5) == 0:
+            os.makedirs(path_epoch, exist_ok=True)
+            with path_epoch:
+                try:
+                    threshold, ps, f_out = self.visualize_graph(do_write=True)
+                    artifact = path_epoch / (f_out + ".png")
+                    add_artifact_local(artifact)
+                except Exception as e:
+                    logging.error(f"Error plotting causal graph: {self.epochs} {e} {type(e)}")
+                    print(traceback.format_exc())
+
+                try:
+                    artifact = path_epoch / "threshold_learner_feature.png"
+                    add_artifact_local(artifact)
+                except Exception as e:
+                    logging.error(
+                        f"Error plotting threshold for feature: {self.epochs} {e} {type(e)}")
+                    print(traceback.format_exc())
+
+                try:
+                    artifact = path_epoch / "threshold_learner_action.png"
+                    add_artifact_local(artifact)
+                except Exception as e:
+                    logging.error(
+                        f"Error plotting threshold for action: {self.epochs} {e} {type(e)}")
+                    print(traceback.format_exc())
+
+                try:
+                    fig = self.visualize_model()
+                    fig.savefig("model.png", bbox_inches="tight")
+                    artifact = path_epoch / "model.png"
+                    add_artifact_local(artifact)
+                    plt.clf()
+                    plt.close(fig)
+                except Exception as e:
+                    logging.error(f"Error plotting model: {self.epochs} {e} {type(e)}")
+                    print(traceback.format_exc())
+
+        if (self.epochs % self.config.get('loss_every', 100) == 0) and self.history:
+            os.makedirs(path_epoch, exist_ok=True)
+            with path_epoch:
+                try:
+                    for opt, (fig, ax) in self.visualize_loss_landscape().items():
+                        if self._last_loss_mode == '2d':
+                            fig.savefig(f"loss_{opt}.png", bbox_inches="tight")
+                            artifact = path_epoch / f"loss_{opt}.png"
+                            add_artifact_local(artifact)
+                            plt.clf()
+                            plt.close(fig)
+                except Exception as e:
+                    logging.error(f"Loss landscape error: {type(e)} {str(e)}")
+                    print(traceback.format_exc())
