@@ -64,9 +64,6 @@ def rgb_pad(obss_rgb):
     return out
 
 def plot_data(x, gx=3, gy=8, figsize=(15, 10)):
-    gx = 3
-    gy = 8
-
     fig = plt.figure(figsize=figsize)
 
     idx_start = np.random.choice(len(x) - gx * gy - 1)
