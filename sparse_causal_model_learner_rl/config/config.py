@@ -11,6 +11,20 @@ class Config(object):
     # this key contains variables to be set via gin
     GIN_KEY = '_gin'
 
+    # ignore these keys on pickling
+    IGNORE_PICKLE_KEYS = []
+
+    def __getstate__(self):
+        to_pickle = {
+            '_temporary_variables': self._temporary_variables,
+            '_config': {x: y for x, y in self._config.items() if x not in self.IGNORE_PICKLE_KEYS}
+        }
+        return to_pickle
+
+    def __setstate__(self, s):
+        self._config = s['_config']
+        self._temporary_variables = s['_temporary_variables']
+
     def __init__(self, config=None, **kwargs):
         """Initialize
 

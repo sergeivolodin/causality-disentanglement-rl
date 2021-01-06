@@ -9,7 +9,11 @@ import sparse_causal_model_learner_rl.metrics.nnz
 import sparse_causal_model_learner_rl.metrics.graph_threshold
 import sparse_causal_model_learner_rl.metrics.max_element
 import sparse_causal_model_learner_rl.metrics.loss_thresholded
+import sparse_causal_model_learner_rl.learners.rl_learner
 import gin_tune
+
+# a hack, does not work as a reference
+Config.learner_cls = "sparse_causal_model_learner_rl.learners.rl_learner.CausalModelLearnerRL"
 
 gin_tune_config.log_sys_usage = True
 tune_run.verbose = False

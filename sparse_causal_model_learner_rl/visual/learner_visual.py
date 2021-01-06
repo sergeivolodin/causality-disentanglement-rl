@@ -15,7 +15,48 @@ import traceback
 from causal_util.helpers import lstdct2dctlst
 from sparse_causal_model_learner_rl.trainable.helpers import params_shape, flatten_params
 from sparse_causal_model_learner_rl.trainable.helpers import unflatten_params
+import logging
+import os
+from imageio import imread
+import cv2
 
+
+def add_artifact(fn, ex, do_sacred, epochs, epoch_info):
+    if do_sacred:
+        ex.add_artifact(fn, name=("epoch_%05d_" % epochs) + os.path.basename(fn))
+    else:
+        logging.info(f"Artifact available: {fn}")
+
+    # export of images to tensorflow (super slow...)
+    if fn.endswith('.png'):
+        try:
+            # downscaling the image as ray is slow with big images...
+            img = imread(fn, pilmode='RGB')
+            x, y = img.shape[0:2]
+            factor_x, factor_y = 1, 1
+            mx, my = 150., 150.
+            if x > mx:
+                factor_x = mx / x
+            if y > my:
+                factor_y = my / y
+
+            factor = min(factor_x, factor_y)
+
+            if factor != 1:
+                new_shape = (x * factor, y * factor)
+                new_shape = tuple((int(t) for t in new_shape))[::-1]
+                img = cv2.resize(img, new_shape, interpolation=cv2.INTER_AREA)
+
+            img = np.array(img, dtype=np.float32) / 255.
+
+            img = img.swapaxes(0, 2)
+            img = img.swapaxes(1, 2)
+            # img = np.expand_dims(img, 0)
+            # img = np.expand_dims(img, 0)
+            epoch_info[os.path.basename(fn)[:-4]] = img
+        except Exception as e:
+            logging.error(f"Can't read image: {fn} {e} {type(e)}")
+            print(traceback.format_exc())
 
 def plot_model(model):
     """Plot models (action and features) as a heatmap."""

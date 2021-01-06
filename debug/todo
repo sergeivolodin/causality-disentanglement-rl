@@ -1,0 +1,7 @@
+sparse recovery on the causal graph -- guessing the graph by seeing what was there before in the prior
+
+
+1. model - optimal in some sense
+2. minimal amount of data needed to identify something
+3. find a class that is somewhat bayesian (approximate), but is still easy to compute
+   - below interpolation threshold (still fit the data, but no 'extra space')

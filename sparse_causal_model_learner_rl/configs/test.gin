@@ -10,6 +10,8 @@ import sparse_causal_model_learner_rl.metrics.loss_thresholded
 
 import gin_tune
 
+Config.learner_cls = "sparse_causal_model_learner_rl.learners.rl_learner.CausalModelLearnerRL"
+
 gin_tune_config.num_workers = 0
 gin_tune_config.log_sys_usage = True
 #tune_run.verbose = True
