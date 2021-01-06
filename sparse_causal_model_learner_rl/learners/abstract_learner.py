@@ -25,11 +25,11 @@ class AbstractLearner(object):
         self.epoch_info = None
         self.history = []
         self.epochs = 0
+        self.checkpoint_every = self.config.get('checkpoint_every', 10)
 
     def checkpoint(self, directory):
         ckpt = os.path.join(directory, "checkpoint")
         with open(ckpt, 'wb') as f:
-            pickle.dumps(self.__getstate__())
             pickle.dump(self, f, protocol=2)
 
         return ckpt

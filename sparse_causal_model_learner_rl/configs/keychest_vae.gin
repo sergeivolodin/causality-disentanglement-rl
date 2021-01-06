@@ -1,0 +1,20 @@
+import sparse_causal_model_learner_rl.keychest_vae.learner
+import sparse_causal_model_learner_rl.config
+import gin_tune
+
+Config.learner_cls = "sparse_causal_model_learner_rl.keychest_vae.learner.VAEKeyChestLearner"
+gin_tune_config.log_sys_usage = True
+tune_run.verbose = False
+tune_run.resources_per_trial = {'cpu': 1, 'gpu': 0.5}
+
+Config.train_steps = 10
+Config.checkpoint_every = 500
+Config.report_every = 10
+
+Config.train_samples = 1000
+Config.eval_samples = 1000
+Config.eval_every = 3
+
+tune_run.verbose = True
+tune_run.queue_trials = True
+

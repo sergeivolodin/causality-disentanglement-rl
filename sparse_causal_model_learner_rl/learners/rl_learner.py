@@ -40,7 +40,6 @@ class CausalModelLearnerRL(AbstractLearner):
         self.env = self.create_env()
         self.collector = EnvDataCollector(self.env)
 
-        self.checkpoint_every = self.config.get('checkpoint_every', 10)
         self.vf_gamma = self.config.get('vf_gamma', 1.0)
 
         # Discrete action -> one-hot encoding

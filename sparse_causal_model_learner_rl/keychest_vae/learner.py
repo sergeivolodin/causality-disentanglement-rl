@@ -3,6 +3,7 @@ import scipy.misc
 from sparse_causal_model_learner_rl.learners.abstract_learner import AbstractLearner
 from sparse_causal_model_learner_rl.keychest_vae.data import learner, h, w, c, engine, plot_data, get_dataloader
 from sparse_causal_model_learner_rl.keychest_vae.vae import ObsNet, ObsModel
+from causal_util.helpers import postprocess_info
 import gin
 import numpy as np
 from matplotlib import pyplot as plt
