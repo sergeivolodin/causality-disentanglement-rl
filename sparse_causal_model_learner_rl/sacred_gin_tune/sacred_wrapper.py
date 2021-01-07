@@ -37,7 +37,7 @@ def load_config_files(config_files):
     return config_names
 
 
-def sacred_experiment_with_config(config, name, main_fcn, db_name, base_dir, checkpoint_dir, sources=[]):
+def sacred_experiment_with_config(config, name, main_fcn, db_name, base_dir, checkpoint_dir, sources=[], tune_config={}):
     """Launch a sacred experiment."""
     # creating a sacred experiment
     # https://github.com/IDSIA/sacred/issues/492
@@ -53,7 +53,9 @@ def sacred_experiment_with_config(config, name, main_fcn, db_name, base_dir, che
             shutil.copy(f, f_py)
             ex.add_source_file(f_py)
 
-    ex.add_config(config=config, **dict(config))
+    export_config = dict(config)
+    export_config.update(tune_config)
+    ex.add_config(config=tune_config, **tune_config)
 
     @ex.main
     def run_train():
@@ -71,7 +73,7 @@ def inner_fcn(config, main_fcn=None, checkpoint_dir=None, **kwargs):
 
     config_ = Config()
 
-    result = sacred_experiment_with_config(config=config_, **kwargs)
+    result = sacred_experiment_with_config(config=config_, tune_config=config, **kwargs)
     return None
 
 
