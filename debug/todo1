@@ -1,0 +1,27 @@
+find external expert
+ - check requirements from epfl
+ - someone not from epfl
+ - postdoc, professor or someone from industry
+ - contact epfl about the defense date! would be non-standard because of non-standard start date
+ - presentation might be later than the defense (+4weeks??)
+
+try 8x16 -> FCNN
+ - try just fitting the hand-computed feature values (in linear spaces)
+ - try w/o objects but only health (1 hidden neuron should be sufficient)
+ - add another object that can move (-> 3 objects)
+ - 1 hidden layer with sigmoid should be enough to convert a coordinate to a 1-hot bump. other way around?
+
+next environment?
+- morris water maze
+- neuron dynamics?
+- alphafold?
+- 3d or 2d atari/
+
+breakout n x block + 1 player + ball x2 -> coordinate variables
+shooter
+categorical distribution bayesian net
+
+
+
+contact https://people.epfl.ch/luca.viano/?lang=en about predictive coding
+writeup for a workshop
