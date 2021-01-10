@@ -42,6 +42,16 @@ def inrange(x, m, M):
     return m <= x <= M
 
 
+def obss_to_rgb(obss, engine):
+    """Convert an array with observations to RGB, supporting multiple items per pixel."""
+    howmany = (1e-10 + np.sum(obss, axis=3)[:, :, :, np.newaxis])
+    print(np.max(howmany))
+    obss = obss / howmany
+    colors_to_rgb = np.array([engine.COLORS[o] for o in engine.OBJECTS]) / 255.
+    obss_rgb = obss @ colors_to_rgb
+    return obss_rgb
+
+
 def keychest_obs3d_to_obs2d(obs):
     """Convert 3d observation into a 2d text observation."""
     obs_3d = obs

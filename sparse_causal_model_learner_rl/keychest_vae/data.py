@@ -14,6 +14,7 @@ import pickle
 from torch.utils.data import TensorDataset, DataLoader
 import torch
 import cv2
+from keychest.keychestenv import obss_to_rgb as obss_to_rgb_orig
 
 prefix = os.path.join(os.path.dirname(__file__), '..')
 load_config_files([prefix + '/../keychest/config/5x5.gin', prefix + '/configs/common.gin'])
@@ -48,13 +49,7 @@ env = learner.env
 h, w, c = env.engine._observation.shape
 
 def obss_to_rgb(obss, engine=engine):
-    """Convert an array with observations to RGB, supporting multiple items per pixel."""
-    howmany = (1e-10 + np.sum(obss, axis=3)[:, :, :, np.newaxis])
-    print(np.max(howmany))
-    obss = obss / howmany
-    colors_to_rgb = np.array([engine.COLORS[o] for o in engine.OBJECTS]) / 255.
-    obss_rgb = obss @ colors_to_rgb
-    return obss_rgb
+    return obss_to_rgb_orig(obss, engine)
 
 @gin.configurable
 def rgb_resize(obss_rgb, size_x=32, size_y=32, active=False):
