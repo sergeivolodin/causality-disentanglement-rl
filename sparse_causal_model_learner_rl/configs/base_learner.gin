@@ -1,0 +1,31 @@
+# Basic config for the AbstractLearner
+import sparse_causal_model_learner_rl.config
+import gin_tune
+
+# Tune configuration
+Config.learner_cls = "sparse_causal_model_learner_rl.learners.abstract_learner.AbstractLearner"
+gin_tune_config.log_sys_usage = True
+tune_run.resources_per_trial = {'cpu': 1, 'gpu': 0}
+tune_run.verbose = True
+tune_run.queue_trials = True
+
+# Learner configuration
+Config.loss_every = 1
+Config.checkpoint_every = 1
+Config.report_every = 1
+Config.metrics_every = 1
+Config.collect_every = 1
+Config.shuffle = False
+Config.batch_training = False
+Config.keep_history = True
+Config.max_history_size = None # keep everything
+Config.train_steps = 10
+Config.report_weights = True
+Config.report_weights_every = 1
+
+Config.losses = {}
+Config.potential_trainables_list = []
+Config.metrics = {}
+Config.optimizers = {}
+Config.execution = {}
+Config.opt_iterations = {}

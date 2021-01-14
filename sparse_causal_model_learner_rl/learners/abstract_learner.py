@@ -46,8 +46,10 @@ class AbstractLearner(object):
         # arguments for trainables
         self.model_kwargs = {}
 
-        # format: [{name, superclass}]
+        # format: [{name}]
         self.potential_trainables_list = self.config.get('potential_trainables_list')
+        assert isinstance(self.potential_trainables_list, list),\
+            "List of trainables must be a list."
 
         self._context_cache = None
 
@@ -78,8 +80,7 @@ class AbstractLearner(object):
             cls = self.config.get(trainable['name'], None)
             setattr(self, f"{trainable['name']}_cls", cls)
             if cls:
-                assert issubclass(cls, trainable[
-                    'superclass']), f"Please supply a valid {trainable['name']}: got {cls}"
+                logging.info(f"Passing {cls} for {trainable['name']}")
                 obj = cls(**self.model_kwargs)
                 setattr(self, trainable['name'], obj)
                 self.trainables[trainable['name']] = obj
@@ -129,7 +130,10 @@ class AbstractLearner(object):
             self._epoch()
 
     def maybe_write_artifacts(self, path_epoch, add_artifact_local):
-        """Write artifacts into path_epoch and call add_artifact_local with the path."""
+        """Write artifacts into path_epoch and call add_artifact_local with the path.
+
+        Called by the callback.
+        """
         pass
 
     def __setstate__(self, dct, restore_gin=True):
@@ -198,7 +202,7 @@ class AbstractLearner(object):
 
         return context
 
-    def collect_steps():
+    def collect_steps(self):
         """Obtain the dataset and save it internally."""
         pass
 
@@ -242,10 +246,7 @@ class AbstractLearner(object):
         epoch_info = {'epochs': self.epochs, 'n_samples': context_orig.get('n_samples', -1),
                       'losses': {},
                       'metrics': {'batch_index': self.batch_index,
-                                  'batch_size': np.mean(batch_sizes) if batch_sizes else -1},
-                      'episode_reward': np.mean(
-                          context['episode_rewards'].detach().cpu().numpy()) if len(
-                          context['episode_rewards']) else None}
+                                  'batch_size': np.mean(batch_sizes) if batch_sizes else -1}}
 
         # train using losses
         for opt_label in sorted(self.optimizer_objects.keys()):

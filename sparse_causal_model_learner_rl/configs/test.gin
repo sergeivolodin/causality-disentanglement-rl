@@ -6,7 +6,9 @@ import sparse_causal_model_learner_rl.annealer.threshold
 import sparse_causal_model_learner_rl.loss.losses
 import sparse_causal_model_learner_rl.loss.optimizer
 import sparse_causal_model_learner_rl.metrics.nnz
+import sparse_causal_model_learner_rl.metrics.episode_reward
 import sparse_causal_model_learner_rl.metrics.loss_thresholded
+include 'common.gin'
 
 import gin_tune
 
@@ -14,7 +16,7 @@ Config.learner_cls = "sparse_causal_model_learner_rl.learners.rl_learner.CausalM
 
 gin_tune_config.num_workers = 0
 gin_tune_config.log_sys_usage = True
-#tune_run.verbose = True
+tune_run.verbose = True
 
 Config.train_steps = 100
 Config.env_steps = 1000
@@ -46,6 +48,5 @@ opt1/Optimizer.name = 'Adam'
 opt1/Optimizer.lr = 1e-3
 Config.optimizers = {'opt1': @opt1/Optimizer}
 Config.execution = {'opt1': ['reconstruction', 'fit', 'sparsity']}
-
 
 LinearModel.use_bias = False

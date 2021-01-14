@@ -85,7 +85,7 @@ class CausalModelLearnerRL(AbstractLearner):
         # x: pre time-step, y: post time-step
 
         # observations, actions, rewards-to-go, total rewards
-        obs_x, obs_y, obs, act_x, reward_to_go, episode_rewards = [], [], [], [], []
+        obs_x, obs_y, obs, act_x, reward_to_go, episode_rewards = [], [], [], [], [], []
 
         for episode in self.collector.raw_data:
             rew = []
