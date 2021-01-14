@@ -6,7 +6,7 @@ import torch
 
 @gin.configurable
 class Model(nn.Module):
-    def __init__(self, feature_shape, action_shape):
+    def __init__(self, feature_shape, action_shape, **kwargs):
         super(Model, self).__init__()
         self.feature_shape = feature_shape
         if len(self.feature_shape) == 0:

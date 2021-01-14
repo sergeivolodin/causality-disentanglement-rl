@@ -53,6 +53,13 @@ Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1.0},
                  'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 1.0}
                 }
 
+Config.potential_trainables_list = [
+    {'name': 'model', 'superclass': @Model},
+    {'name': 'decoder', 'superclass': @Decoder},
+    {'name': 'reconstructor', 'superclass': @Reconstructor},
+    {'name': 'value_predictor', 'superclass': @ValuePredictor}
+]
+
 loss_thresholded.eps = 1e-3
 loss_thresholded.loss = @fit_loss
 loss_thresholded.delta = False
