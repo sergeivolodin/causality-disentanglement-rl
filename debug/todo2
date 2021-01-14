@@ -1,0 +1,29 @@
+1. can have a remote expert
+2. can have money to fly them in
+3. try 1 channel per object (1 object per channel), then can do softmax per channel ('location of the object map')
+4. try binarizing probabilities (in 11-channel)
+5. chess is similar to the grid-world because we have different layers for objefts. dota alsoneeds preprocessing
+
+  rgb -> 1x2conv -> 11 channels (objects) -> 2x2conv -> flatten OR positional encoding H * [1...n] or [1...n]^TH
+
+grid cells? sparse coding? fc net obviously not optimal because it's brittle
+https://fietelab.mit.edu/publications/
+https://mcgovern.mit.edu/profile/ila-fiete/
+
+object-oriented RL -- reusing parts of the model, like all animals are ... and can be thirsty
+for example, genetic algorithm to learn that movement both players in a grid-world wors the same way, but actions of one only affect this player
+and not the other
+https://orlrworkshop.github.io/papers.html
+https://orlrworkshop.github.io/
+
+theory
+regret bound if we know that the model is sparse
+works fine in case if have unlimited compute (aixi)
+under what conditions sparsity of the model is superior to the sparsity of the features?
+  give an example
+find nash equilibria for 2-loss dynamics
+
+
+also need positions of the objects
+https://papers.nips.cc/paper/2019/file/4191ef5f6c1576762869ac49281130c9-Paper.pdf
+https://player.phyre.ai/
