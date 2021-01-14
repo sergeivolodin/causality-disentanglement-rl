@@ -1,0 +1,12 @@
+import sparse_causal_model_learner_rl.toy_datasets.progressbar
+include 'base_learner.gin'
+
+Config.n_samples = 'full'
+Config.learner_cls = "sparse_causal_model_learner_rl.learners.progressbar_learner.ProgressBarLearner"
+
+PB_MAXVAL = [30, 10]
+Config.pb_maxval = %PB_MAXVAL
+
+progressbar_image.colors = ['lime', 'blue']
+progressbar_image.max_values = %PB_MAXVAL
+progressbar_image.width = 10

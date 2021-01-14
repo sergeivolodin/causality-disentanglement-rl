@@ -25,9 +25,9 @@ from sparse_causal_model_learner_rl.visual.learner_visual import total_loss, los
 class CausalModelLearnerRL(AbstractLearner):
     """Learn a model for an RL environment with custom losses and parameters."""
 
-    def __init__(self, config, callback=None):
+    def __init__(self, *args, **kwargs):
 
-        super().__init__(config, callback)
+        super().__init__(*args, **kwargs)
 
         # creating environment
         self.env = self.create_env()

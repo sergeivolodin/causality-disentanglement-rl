@@ -10,9 +10,10 @@ from tqdm.auto import tqdm
 
 from causal_util.helpers import postprocess_info
 from sparse_causal_model_learner_rl.config import Config
+from abc import ABC, abstractmethod, abstractproperty
 
 
-class AbstractLearner(object):
+class AbstractLearner(ABC):
     """Train something."""
 
     def __init__(self, config, callback=None):
@@ -129,6 +130,7 @@ class AbstractLearner(object):
         for _ in tqdm_(range(self.config['train_steps'])):
             self._epoch()
 
+    @abstractmethod
     def maybe_write_artifacts(self, path_epoch, add_artifact_local):
         """Write artifacts into path_epoch and call add_artifact_local with the path.
 
@@ -163,6 +165,7 @@ class AbstractLearner(object):
         result['gin_config'] = gin.config_str()
         return result
 
+    @abstractmethod
     @property
     def _context_subclass(self):
         """Datasets/parameters/config for trainables, to be called at every iteration.
@@ -202,6 +205,7 @@ class AbstractLearner(object):
 
         return context
 
+    @abstractmethod
     def collect_steps(self):
         """Obtain the dataset and save it internally."""
         pass
@@ -326,5 +330,6 @@ class AbstractLearner(object):
             elif val > 1:
                 logging.warning(f"Warning: loss {loss} is used more than once")
 
+    @abstractmethod
     def __repr__(self):
         return f"<AbstractLearner epochs={self.epochs}>"
