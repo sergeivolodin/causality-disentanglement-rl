@@ -6,7 +6,7 @@ from torch import nn
 class Reconstructor(nn.Module):
     """"""
 
-    def __init__(self, observation_shape, feature_shape):
+    def __init__(self, observation_shape, feature_shape, **kwargs):
         self.observation_shape = observation_shape
         self.feature_shape = feature_shape
         super(Reconstructor, self).__init__()
