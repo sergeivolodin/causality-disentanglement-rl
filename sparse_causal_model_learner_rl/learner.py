@@ -7,7 +7,7 @@ mpl.use('Agg')
 import logging
 import ray
 import os
-
+import gin
 from sparse_causal_model_learner_rl.config import Config
 from sparse_causal_model_learner_rl.sacred_gin_tune.sacred_wrapper import load_config_files, main_fcn, learner_gin_sacred
 
@@ -28,6 +28,7 @@ if __name__ == '__main__':
     if args.nowrap:
         # useful for debugging/testing
         load_config_files(config)
+        gin.finalize()
         config = Config()
 
         main_fcn(config=config, ex=None, checkpoint_dir=None, do_tune=False, do_sacred=False,

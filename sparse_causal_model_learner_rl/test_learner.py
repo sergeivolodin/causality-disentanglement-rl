@@ -19,10 +19,27 @@ def test_learn_vectorincrement():
     l.train()
     gin.clear_config()
 
+
+class EmptyLearner(abstract_learner.AbstractLearner):
+
+    def maybe_write_artifacts(self, path_epoch, add_artifact_local):
+        pass
+
+    @property
+    def _context_subclass(self):
+        return {}
+
+    def collect_steps(self):
+        pass
+
+    def __repr__(self):
+        return ""
+
+
 def test_abstract_learner_create():
     f = os.path.join(os.path.dirname(abstract_learner.__file__), '..', 'configs', 'base_learner.gin')
     load_config_files([f])
-    l = abstract_learner.AbstractLearner(config.Config())
+    l = EmptyLearner(config.Config())
     l.train()
     gin.clear_config()
 

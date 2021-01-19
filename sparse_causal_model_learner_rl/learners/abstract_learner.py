@@ -165,8 +165,8 @@ class AbstractLearner(ABC):
         result['gin_config'] = gin.config_str()
         return result
 
-    @abstractmethod
     @property
+    @abstractmethod
     def _context_subclass(self):
         """Datasets/parameters/config for trainables, to be called at every iteration.
 

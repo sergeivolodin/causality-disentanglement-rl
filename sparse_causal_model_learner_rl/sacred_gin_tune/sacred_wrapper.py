@@ -80,6 +80,7 @@ def inner_fcn(config, main_fcn=None, checkpoint_dir=None, **kwargs):
 def gin_sacred(config_files, main_fcn, db_name='causal_sparse', base_dir=None):
     """launch a sacred experiment from .gin config files."""
     config_names = load_config_files(config_files)
+    gin.finalize()
 
     name = '_'.join(config_names)
     if base_dir is None:
