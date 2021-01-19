@@ -1,4 +1,8 @@
 import sparse_causal_model_learner_rl.toy_datasets.progressbar
+import sparse_causal_model_learner_rl.trainable.autoencoder
+import sparse_causal_model_learner_rl.loss.autoencoder
+import sparse_causal_model_learner_rl.loss.optimizer
+import sparse_causal_model_learner_rl.trainable.fcnet
 include 'base_learner.gin'
 
 Config.n_samples = 'full'
@@ -10,3 +14,39 @@ Config.pb_maxval = %PB_MAXVAL
 progressbar_image.colors = ['lime', 'blue']
 progressbar_image.max_values = %PB_MAXVAL
 progressbar_image.width = 10
+
+Config.autoencoder = @ModelAutoencoder
+
+HID_DIM = 2
+
+FCNet.hidden_sizes = [%HID_DIM]
+FCNet.activation_cls = @ReLU
+ModelAutoencoder.model_cls = @ae/FCNet
+
+Config.potential_trainables_list = [
+    {'name': 'autoencoder'},
+]
+
+ae_loss.loss_fcn = @pow_loss
+pow_loss.power = 2.1
+
+Config.losses = {'fit': {'fcn': @ae_loss, 'coeff': 1.0},}
+
+opt1/Optimizer.name = 'Adam'
+opt1/Optimizer.lr = 1e-3
+
+Config.optimizers = {'opt1': @opt1/Optimizer}
+Config.execution = {'opt1': ['fit']}
+
+Config.image_every = 20
+Config.checkpoint_every = 10
+Config.report_every = 10
+Config.metrics_every = 10
+Config.collect_every = 99999999999999999999999
+Config.shuffle = True
+Config.batch_training = False
+Config.keep_history = True
+Config.max_history_size = None # keep everything
+Config.train_steps = 100
+Config.report_weights = True
+Config.report_weights_every = 1

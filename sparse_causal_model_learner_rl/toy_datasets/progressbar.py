@@ -20,7 +20,8 @@ def progressbar_image(values=None, colors=None,
         height is calculated based on the max_values array.
     """
 
-    assert len(values) == len(colors) == len(max_values), "Lengths must be equal"
+    assert len(values) == len(colors) == len(max_values), ("Lengths must be equal",
+                                                           (values, colors, max_values))
     for v, mv in zip(values, max_values):
         assert 0 <= v <= mv
         assert isinstance(v, int) and isinstance(mv, int)

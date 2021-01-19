@@ -212,13 +212,13 @@ class AbstractLearner(ABC):
 
     def _epoch(self):
         """One training iteration."""
-        self.create_trainables()
 
         # obtain data from environment
         n_batches = collect_every = self.config.get('collect_every', 1)
 
         if (self.epochs % collect_every == 0) or self._context_cache is None:
             self.collect_steps()
+            self.create_trainables()
             context_orig = self._context
             self.batch_index = 0
         else:

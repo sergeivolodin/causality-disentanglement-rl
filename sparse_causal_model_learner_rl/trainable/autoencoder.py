@@ -1,5 +1,7 @@
 import gin
 from torch import nn
+import torch
+import numpy as np
 
 
 @gin.configurable
@@ -25,11 +27,20 @@ class Autoencoder(nn.Module):
 @gin.configurable
 class ModelAutoencoder(Autoencoder):
     """Torch model autoencoder."""
-    def __init__(self, model_cls, **kwargs):
+    def __init__(self, model_cls, flatten=True, **kwargs):
         super(ModelAutoencoder, self).__init__(**kwargs)
-        self.model = model_cls(input_shape=self.input_output_shape,
-                               output_shape=self.input_output_shape)
+        self.flat_shape = (np.prod(self.input_output_shape),)
+        self.flatten = flatten
+        self.net_shape = self.flat_shape if flatten else self.input_output_shape
+        self.model = model_cls(input_shape=self.net_shape,
+                               output_shape=self.net_shape)
 
 
     def forward(self, x):
-        return self.model(x)
+        if self.flatten:
+            orig_shape = x.shape
+            x = torch.flatten(x, start_dim=1)
+        x = self.model(x)
+        if self.flatten:
+            x = x.reshape(orig_shape)
+        return x
