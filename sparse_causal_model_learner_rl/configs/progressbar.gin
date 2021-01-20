@@ -19,8 +19,8 @@ Config.autoencoder = @ModelAutoencoder
 
 HID_DIM = 2
 
-FCNet.hidden_sizes = [%HID_DIM]
-FCNet.activation_cls = @ReLU
+ae/FCNet.hidden_sizes = [%HID_DIM]
+ae/FCNet.activation_cls = [None, @Sigmoid]
 ModelAutoencoder.model_cls = @ae/FCNet
 
 Config.potential_trainables_list = [
@@ -38,15 +38,17 @@ opt1/Optimizer.lr = 1e-3
 Config.optimizers = {'opt1': @opt1/Optimizer}
 Config.execution = {'opt1': ['fit']}
 
-Config.image_every = 20
-Config.checkpoint_every = 10
-Config.report_every = 10
-Config.metrics_every = 10
+Config.image_every = 100
+Config.checkpoint_every = 1000
+Config.report_every = 50
+Config.metrics_every = 50
 Config.collect_every = 99999999999999999999999
 Config.shuffle = True
 Config.batch_training = False
 Config.keep_history = True
-Config.max_history_size = None # keep everything
-Config.train_steps = 100
-Config.report_weights = True
+Config.max_history_size = 10
+Config.train_steps = 50000
+Config.report_weights = False
 Config.report_weights_every = 1
+
+tune_run.resources_per_trial = {'cpu': 1, 'gpu': 0.1}

@@ -1,54 +1,6 @@
-import sparse_causal_model_learner_rl.toy_datasets.progressbar
-import sparse_causal_model_learner_rl.trainable.autoencoder
-import sparse_causal_model_learner_rl.loss.autoencoder
-import sparse_causal_model_learner_rl.loss.optimizer
-import sparse_causal_model_learner_rl.trainable.fcnet
-include 'base_learner.gin'
-
-Config.n_samples = 'full'
-Config.learner_cls = "sparse_causal_model_learner_rl.learners.progressbar_learner.ProgressBarLearner"
-
-PB_MAXVAL = [30, 10]
-Config.pb_maxval = %PB_MAXVAL
-
-progressbar_image.colors = ['lime', 'blue']
-progressbar_image.max_values = %PB_MAXVAL
-progressbar_image.width = 10
-
-Config.autoencoder = @ModelAutoencoder
-
-HID_DIM = 2
-
-ae/FCNet.hidden_sizes = [%HID_DIM]
-ae/FCNet.activation_cls = [None, @Sigmoid]
-ModelAutoencoder.model_cls = @ae/FCNet
-
-Config.potential_trainables_list = [
-    {'name': 'autoencoder'},
-]
-
-ae_loss.loss_fcn = @pow_loss
-pow_loss.power = 2.1
-
-Config.losses = {'fit': {'fcn': @ae_loss, 'coeff': 1.0},}
-
-opt1/Optimizer.name = 'Adam'
-opt1/Optimizer.lr = 1e-3
-
-Config.optimizers = {'opt1': @opt1/Optimizer}
-Config.execution = {'opt1': ['fit']}
-
-Config.image_every = 100
-Config.checkpoint_every = 1000
-Config.report_every = 50
-Config.metrics_every = 50
-Config.collect_every = 99999999999999999999999
-Config.shuffle = True
-Config.batch_training = False
-Config.keep_history = True
-Config.max_history_size = 10
-Config.train_steps = 50000
-Config.report_weights = False
-Config.report_weights_every = 1
+include 'progressbar.gin'
 
 tune_run.resources_per_trial = {'cpu': 1, 'gpu': 0.1}
+
+#pow_loss.power = 2.1
+#opt1/Optimizer.lr = 1e-3
