@@ -9,4 +9,4 @@ tune_run.stop = @StopOnCompletes()
 tune_run.callbacks = [@cs/get_singleton()]
 
 StopOnCompletes.completes_callback = @cs/get_singleton()
-StopOnCompletes.target_trials = 4
+StopOnCompletes.target_trials = 6
