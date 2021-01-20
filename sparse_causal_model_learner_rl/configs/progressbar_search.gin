@@ -16,10 +16,11 @@ HID_DIM = @hid/choice()
 
 tune_run.num_samples = 4
 
-Config.image_every = 500
+Config.image_every = 4000
 Config.checkpoint_every = 10000
 Config.report_every = 100
 Config.metrics_every = 500
 Config.collect_every = 99999999999999999999999
 Config.shuffle = False
 Config.keep_history = False
+Config.tune_no_empty_report = True

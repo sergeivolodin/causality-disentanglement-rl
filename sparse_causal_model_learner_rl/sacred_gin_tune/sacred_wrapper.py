@@ -160,7 +160,7 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
             if not do_sacred and not do_tune:
                 logging.info(f"Report ready, len={len(epoch_info)}")
         else:
-            if do_tune:
+            if do_tune and not self.config.get('tune_no_empty_report', False):
                 tune.report()
 
     if checkpoint_dir:
