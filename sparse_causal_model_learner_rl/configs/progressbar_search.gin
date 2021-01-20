@@ -14,7 +14,7 @@ pow_loss.power = @pow/uniform()
 opt1/Optimizer.lr = @lr/loguniform()
 HID_DIM = @hid/choice()
 
-tune_run.num_samples = 6
+tune_run.num_samples = 10
 
 Config.image_every = 500
 Config.checkpoint_every = 10000
