@@ -1,0 +1,18 @@
+include 'progressbar.gin'
+
+tune_run.resources_per_trial = {'cpu': 1, 'gpu': 0}
+
+pow_loss.power = 3.5
+opt1/Optimizer.lr = 1e-2
+HID_DIM = 3
+
+tune_run.num_samples = 1
+
+Config.image_every = 500
+Config.checkpoint_every = 10000
+Config.report_every = 100
+Config.metrics_every = 500
+Config.collect_every = 99999999999999999999999
+Config.shuffle = False
+Config.keep_history = False
+Config.tune_no_empty_report = True
