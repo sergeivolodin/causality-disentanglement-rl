@@ -20,8 +20,16 @@ class FCNet(nn.Module):
         self.input_dim = input_shape[0]
         self.output_dim = output_shape[0]
         self.hidden_sizes = hidden_sizes
-        self.activation = activation_cls()
+        if callable(activation_cls):
+            self.activation = [activation_cls()] * len(self.hidden_sizes) + [None]
+        elif isinstance(activation_cls, list):
+            self.activation = [act_cls() if act_cls is not None else None
+                               for act_cls in activation_cls]
+        else:
+            raise NotImplementedError
 
+        assert len(self.activation) == len(self.hidden_sizes) + 1, (self.activation,
+                                                                    self.hidden_sizes)
         self.dims = [self.input_dim] + self.hidden_sizes + [self.output_dim]
         self.fc = []
         for i in range(1, len(self.dims)):
@@ -33,6 +41,6 @@ class FCNet(nn.Module):
     def forward(self, x):
         for i, fc in enumerate(self.fc):
             x = fc(x)
-            if i < len(self.fc) - 1:
-                x = self.activation(x)
+            if self.activation[i] is not None:
+                x = self.activation[i](x)
         return x
