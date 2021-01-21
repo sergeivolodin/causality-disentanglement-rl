@@ -1,0 +1,69 @@
+import sparse_causal_model_learner_rl.toy_datasets.dots
+import sparse_causal_model_learner_rl.trainable.autoencoder
+import sparse_causal_model_learner_rl.loss.autoencoder
+import sparse_causal_model_learner_rl.loss.optimizer
+import sparse_causal_model_learner_rl.trainable.fcnet
+import sparse_causal_model_learner_rl.metrics.context_rewrite
+include 'base_learner.gin'
+
+DIM_H = 16
+DIM_W = 8
+N_OBJ = 9
+
+image_object_positions.h = %DIM_H
+image_object_positions.w = %DIM_W
+random_coordinates.h = %DIM_H
+random_coordinates.w = %DIM_W
+random_coordinates_n.n = %N_OBJ
+
+image_object_positions.colors = ['red', 'red', 'green', 'green',
+                                 'blue', 'blue', 'orange', 'magenta', 'yellow']
+
+Config.n_samples_train = 1000
+Config.n_samples_test = 500
+Config.learner_cls = "sparse_causal_model_learner_rl.learners.dots_learner.DotsLearner"
+
+Config.autoencoder = @ModelAutoencoder
+
+HID_DIM = 10
+
+ae/FCNet.hidden_sizes = [%HID_DIM]
+ae/FCNet.activation_cls = [None, @Sigmoid]
+ModelAutoencoder.model_cls = @ae/FCNet
+
+Config.potential_trainables_list = [
+    {'name': 'autoencoder'},
+]
+
+ae_loss.loss_fcn = @pow_loss
+pow_loss.power = 3.5
+
+Config.losses = {'fit': {'fcn': @ae_loss, 'coeff': 1.0},}
+
+opt1/Optimizer.name = 'Adam'
+opt1/Optimizer.lr = 1e-2
+
+Config.optimizers = {'opt1': @opt1/Optimizer}
+Config.execution = {'opt1': ['fit']}
+
+test_loss/context_rewriter.function = @ae_loss
+test_loss/context_rewriter.rewrite = {'X': 'Xtest'}
+
+Config.metrics = {'test_loss': @test_loss/context_rewriter}
+
+Config.image_every = 100
+Config.checkpoint_every = 1000
+Config.report_every = 50
+Config.metrics_every = 50
+Config.collect_every = 99999999999999999999999
+Config.shuffle = True
+Config.batch_training = False
+Config.keep_history = True
+Config.max_history_size = 10
+Config.train_steps = 50000
+Config.report_weights = False
+Config.report_weights_every = 1
+Config.tune_no_empty_report = True
+
+
+tune_run.resources_per_trial = {'cpu': 1, 'gpu': 0}
