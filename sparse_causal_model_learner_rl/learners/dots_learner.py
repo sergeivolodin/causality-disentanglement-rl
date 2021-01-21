@@ -51,9 +51,10 @@ class DotsLearner(AbstractLearner):
                 'Xtest': self.Xtest, 'n_test': len(self.Xtest)}
 
     def collect_steps(self):
-        if self.collected:
-            return
-        self.collected = True
+        if self.config.get('collect_once', True):
+            if self.collected:
+                return
+            self.collected = True
 
         coords_fcn = self.config.get('coords_function')
 
@@ -64,7 +65,7 @@ class DotsLearner(AbstractLearner):
             [image_object_positions(positions=coords_fcn())
              for _ in range(self.config.get('n_samples_test'))])
         self.h, self.w, self.c = self.X.shape[1:]
-        print("HWC", self.h, self.w, self.c)
+        # print("HWC", self.h, self.w, self.c)
 
         self.model_kwargs['input_output_shape'] = (self.h, self.w, self.c)
 

@@ -3,6 +3,7 @@ import sparse_causal_model_learner_rl.trainable.autoencoder
 import sparse_causal_model_learner_rl.loss.autoencoder
 import sparse_causal_model_learner_rl.loss.optimizer
 import sparse_causal_model_learner_rl.trainable.fcnet
+import sparse_causal_model_learner_rl.trainable.sequential
 import sparse_causal_model_learner_rl.metrics.context_rewrite
 include 'base_learner.gin'
 
@@ -10,6 +11,7 @@ DIM_H = 5
 DIM_W = 5
 N_OBJ = 6
 HWC = 75
+HWO = 150
 
 image_object_positions.h = %DIM_H
 image_object_positions.w = %DIM_W
@@ -32,13 +34,55 @@ Config.learner_cls = "sparse_causal_model_learner_rl.learners.dots_learner.DotsL
 Config.autoencoder = @ModelAutoencoder
 
 HID_DIM = 40
-Config.collect_every = 10
+Config.collect_every = 100
+Config.collect_once = False
 Config.n_samples_train = 10000
-opt1/Optimizer.lr = 1e-3
+opt1/Optimizer.lr = 1e-2
 
-ae/FCNet.hidden_sizes = [%HID_DIM, 300]
-ae/FCNet.activation_cls = [None, @Sigmoid, @Sigmoid]
-ModelAutoencoder.model_cls = @ae/FCNet
+# CONVOLUTIONAL (ENC?DEC)
+enc/Conv2d.in_channels = 3
+enc/Conv2d.out_channels = %N_OBJ
+enc/Conv2d.kernel_size = 1
+
+dec/Conv2d.in_channels = %N_OBJ
+dec/Conv2d.out_channels = 3
+dec/Conv2d.kernel_size = 1
+
+# RESHAPE
+enc/Reshape.shape = (%HWO,)
+dec/Reshape.shape = (%N_OBJ, %DIM_H, %DIM_W)
+
+# LINEAR
+enc/Linear.in_features = %HWO
+enc/Linear.out_features = %HID_DIM
+
+dec1/Linear.in_features = %HID_DIM
+dec1/Linear.out_features = 1000
+
+dec2/Linear.in_features = 1000
+dec2/Linear.out_features = %HWO
+
+
+enc/ChannelSwap.order = 'hwc_chw'
+dec/ChannelSwap.order = 'chw_hwc'
+
+ae/Sequential.items = [
+    @enc/ChannelSwap(),
+    @enc/Conv2d(),
+    @enc/Reshape(),
+    @enc/Linear(),
+    # no activation function
+    @dec1/Linear(),
+    @Sigmoid(),
+    @dec2/Linear(),
+    @Sigmoid(),
+    @dec/Reshape(),
+    @dec/Conv2d(),
+    @dec/ChannelSwap(),
+]
+
+ModelAutoencoder.model_cls = @ae/Sequential
+ModelAutoencoder.flatten = False
 
 Config.potential_trainables_list = [
     {'name': 'autoencoder'},
