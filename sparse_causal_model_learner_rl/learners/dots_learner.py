@@ -62,6 +62,7 @@ class DotsLearner(AbstractLearner):
             [image_object_positions(positions=random_coordinates_n())
              for _ in range(self.config.get('n_samples_test'))])
         self.h, self.w, self.c = self.X.shape[1:]
+        print("HWC", self.h, self.w, self.c)
 
         self.model_kwargs['input_output_shape'] = (self.h, self.w, self.c)
 

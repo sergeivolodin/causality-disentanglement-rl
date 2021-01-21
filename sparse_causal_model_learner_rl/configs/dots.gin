@@ -9,6 +9,7 @@ include 'base_learner.gin'
 DIM_H = 16
 DIM_W = 8
 N_OBJ = 9
+HWC = 384
 
 image_object_positions.h = %DIM_H
 image_object_positions.w = %DIM_W
@@ -19,16 +20,18 @@ random_coordinates_n.n = %N_OBJ
 image_object_positions.colors = ['red', 'red', 'green', 'green',
                                  'blue', 'blue', 'orange', 'magenta', 'yellow']
 
-Config.n_samples_train = 1000
-Config.n_samples_test = 500
+Config.n_samples_test = 2000
 Config.learner_cls = "sparse_causal_model_learner_rl.learners.dots_learner.DotsLearner"
 
 Config.autoencoder = @ModelAutoencoder
 
-HID_DIM = 10
+HID_DIM = 40
+Config.collect_every = 10
+Config.n_samples_train = 10000
+opt1/Optimizer.lr = 1e-2
 
-ae/FCNet.hidden_sizes = [%HID_DIM]
-ae/FCNet.activation_cls = [None, @Sigmoid]
+ae/FCNet.hidden_sizes = [%HID_DIM, 60]
+ae/FCNet.activation_cls = [None, @Sigmoid, @Sigmoid]
 ModelAutoencoder.model_cls = @ae/FCNet
 
 Config.potential_trainables_list = [
@@ -41,7 +44,6 @@ pow_loss.power = 3.5
 Config.losses = {'fit': {'fcn': @ae_loss, 'coeff': 1.0},}
 
 opt1/Optimizer.name = 'Adam'
-opt1/Optimizer.lr = 1e-2
 
 Config.optimizers = {'opt1': @opt1/Optimizer}
 Config.execution = {'opt1': ['fit']}
@@ -55,14 +57,11 @@ Config.image_every = 100
 Config.checkpoint_every = 1000
 Config.report_every = 50
 Config.metrics_every = 50
-Config.collect_every = 99999999999999999999999
 Config.shuffle = True
-Config.batch_training = False
-Config.keep_history = True
-Config.max_history_size = 10
+Config.batch_training = True
+Config.keep_history = False
 Config.train_steps = 50000
 Config.report_weights = False
-Config.report_weights_every = 1
 Config.tune_no_empty_report = True
 
 
