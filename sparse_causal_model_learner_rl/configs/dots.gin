@@ -115,10 +115,10 @@ test_loss/context_rewriter.rewrite = {'X_chw': 'Xtest_chw'}
 
 Config.metrics = {'test_loss': @test_loss/context_rewriter}
 
-Config.image_every = 100
+Config.image_every = 300
 Config.checkpoint_every = 1000
-Config.report_every = 50
-Config.metrics_every = 50
+Config.report_every = 100
+Config.metrics_every = 100
 Config.shuffle = True
 Config.batch_training = True
 Config.keep_history = False

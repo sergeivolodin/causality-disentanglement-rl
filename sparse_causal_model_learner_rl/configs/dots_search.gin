@@ -1,0 +1,11 @@
+include 'dots.gin'
+
+hid/choice.categories = [10, 12, 14, 16, 20, 25, 30, 35, 40, 45, 50, 60]
+hid2/choice.categories = [100, 200, 300, 400]
+colevery/choice.categories = [100, 200, 500]
+
+HID_DIM = @hid/choice()
+HID2 = @hid2/choice()
+Config.collect_every = @colevery/choice()
+
+tune_run.num_samples = 4
