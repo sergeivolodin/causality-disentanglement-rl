@@ -11,17 +11,21 @@ Sigmoid = gin.external_configurable(nn.Sigmoid)
 @gin.configurable
 class Scaler(nn.Module):
     """Scale output with learnable weights."""
-    def __init__(self, units):
+    def __init__(self, shape):
         super().__init__()
 
-        self.scale = nn.Parameter(torch.Tensor(units,))
-        self.loc = nn.Parameter(torch.Tensor(units,))
+        self.scale = nn.Parameter(torch.Tensor(*shape))
+        self.loc = nn.Parameter(torch.Tensor(*shape))
+        self.shape = shape
 
         torch.nn.init.ones_(self.scale)
         torch.nn.init.zeros_(self.loc)
 
     def forward(self, x):
         return x * self.scale + self.loc
+
+    def __repr__(self):
+        return f"Scaler({self.shape})"
 
 
 @gin.configurable
@@ -56,7 +60,7 @@ class FCNet(nn.Module):
             setattr(self, f'fc%02d' % i, self.fc[-1])
 
         if add_scaler:
-            self.scaler = Scaler(units=self.output_dim)
+            self.scaler = Scaler(shape=output_shape)
 
     def forward(self, x):
         for i, fc in enumerate(self.fc):

@@ -15,7 +15,13 @@ class Sequential(nn.Module):
         super(Sequential, self).__init__()
         assert isinstance(items, list), f"items must be a list {items}"
 
+        def init(m):
+            if type(m) == nn.Linear:
+                torch.nn.init.xavier_normal_(m.weight)
+                m.bias.data.fill_(0)
+
         self.seq = nn.Sequential(*items)
+        self.seq.apply(init)
 
     def forward(self, x):
         return self.seq(x)
@@ -62,4 +68,7 @@ class Reshape(nn.Module):
         self.shape = shape
 
     def forward(self, x):
-        return x.reshape((-1, *self.shape))
+        return x.reshape((x.shape[0], *self.shape))
+
+    def __repr__(self):
+        return f"Reshape({self.shape})"

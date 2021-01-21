@@ -39,6 +39,9 @@ Config.collect_once = False
 Config.n_samples_train = 10000
 opt1/Optimizer.lr = 1e-2
 
+HID2 = 1000
+TOTAL_IMG = %HWO
+
 # CONVOLUTIONAL (ENC?DEC)
 enc/Conv2d.in_channels = 3
 enc/Conv2d.out_channels = %N_OBJ
@@ -49,26 +52,28 @@ dec/Conv2d.out_channels = 3
 dec/Conv2d.kernel_size = 1
 
 # RESHAPE
-enc/Reshape.shape = (%HWO,)
-dec/Reshape.shape = (%N_OBJ, %DIM_H, %DIM_W)
+enc/Reshape.shape = (%HWC,)#TOTAL_IMG,)
+dec/Reshape.shape = (3, %DIM_H, %DIM_W)#(%N_OBJ, %DIM_H, %DIM_W)
 
 # LINEAR
-enc/Linear.in_features = %HWO
+enc/Linear.in_features = %HWC#%TOTAL_IMG
 enc/Linear.out_features = %HID_DIM
 
 dec1/Linear.in_features = %HID_DIM
-dec1/Linear.out_features = 1000
+dec1/Linear.out_features = %HID2
 
-dec2/Linear.in_features = 1000
-dec2/Linear.out_features = %HWO
-
+dec2/Linear.in_features = %HID2
+dec2/Linear.out_features = %HWC#%TOTAL_IMG
 
 enc/ChannelSwap.order = 'hwc_chw'
 dec/ChannelSwap.order = 'chw_hwc'
 
+Scaler.shape = (%HWC,)#(%TOTAL_IMG,)
+
 ae/Sequential.items = [
     # @enc/ChannelSwap(),
-    @enc/Conv2d(),
+    # @enc/Conv2d(),
+    @Sigmoid(),
     @enc/Reshape(),
     @enc/Linear(),
     # no activation function
@@ -76,13 +81,19 @@ ae/Sequential.items = [
     @Sigmoid(),
     @dec2/Linear(),
     @Sigmoid(),
+    # @Scaler(),
     @dec/Reshape(),
-    @dec/Conv2d(),
+    # @dec/Conv2d(),
     # @dec/ChannelSwap(),
 ]
 
 ModelAutoencoder.model_cls = @ae/Sequential
 ModelAutoencoder.flatten = False
+
+# ae/FCNet.hidden_sizes = [%HID_DIM, 300]
+# ae/FCNet.add_scaler = True
+# ae/FCNet.activation_cls = [None, @Sigmoid, @Sigmoid]
+# ModelAutoencoder.model_cls = @ae/FCNet
 
 Config.potential_trainables_list = [
     {'name': 'autoencoder'},
