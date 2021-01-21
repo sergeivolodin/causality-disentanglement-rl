@@ -55,11 +55,13 @@ class DotsLearner(AbstractLearner):
             return
         self.collected = True
 
+        coords_fcn = self.config.get('coords_function')
+
         self.X = np.array(
-            [image_object_positions(positions=random_coordinates_n())
+            [image_object_positions(positions=coords_fcn())
              for _ in range(self.config.get('n_samples_train'))])
         self.Xtest = np.array(
-            [image_object_positions(positions=random_coordinates_n())
+            [image_object_positions(positions=coords_fcn())
              for _ in range(self.config.get('n_samples_test'))])
         self.h, self.w, self.c = self.X.shape[1:]
         print("HWC", self.h, self.w, self.c)

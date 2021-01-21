@@ -1,6 +1,7 @@
 import gin
 import numpy as np
 import matplotlib
+from itertools import product
 
 
 @gin.configurable
@@ -37,3 +38,11 @@ def random_coordinates(h, w):
 def random_coordinates_n(n):
     """Get many random coordinates."""
     return [random_coordinates() for _ in range(n)]
+
+@gin.configurable
+def random_coordinates_n_no_overlap(h, w, n):
+    """Generate random coordinates, without overlap."""
+    all_pairs = list(product(range(h), range(w)))
+    assert len(all_pairs) >= n, f"Too few pairs {all_pairs} {n} {h} {w}"
+    idxes = np.random.choice(range(len(all_pairs)), n)
+    return [all_pairs[idx] for idx in idxes]

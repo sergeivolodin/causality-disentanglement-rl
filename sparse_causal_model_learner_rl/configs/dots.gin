@@ -6,19 +6,25 @@ import sparse_causal_model_learner_rl.trainable.fcnet
 import sparse_causal_model_learner_rl.metrics.context_rewrite
 include 'base_learner.gin'
 
-DIM_H = 16
-DIM_W = 8
-N_OBJ = 9
-HWC = 384
+DIM_H = 5
+DIM_W = 5
+N_OBJ = 6
+HWC = 75
 
 image_object_positions.h = %DIM_H
 image_object_positions.w = %DIM_W
 random_coordinates.h = %DIM_H
 random_coordinates.w = %DIM_W
 random_coordinates_n.n = %N_OBJ
+random_coordinates_n_no_overlap.n = %N_OBJ
+random_coordinates_n_no_overlap.h = %DIM_H
+random_coordinates_n_no_overlap.w = %DIM_W
 
-image_object_positions.colors = ['red', 'red', 'green', 'green',
-                                 'blue', 'blue', 'orange', 'magenta', 'yellow']
+
+Config.coords_function = @random_coordinates_n_no_overlap
+
+image_object_positions.colors = ['red', 'green', 'blue',
+                                 'orange', 'magenta', 'white']
 
 Config.n_samples_test = 2000
 Config.learner_cls = "sparse_causal_model_learner_rl.learners.dots_learner.DotsLearner"
@@ -28,9 +34,9 @@ Config.autoencoder = @ModelAutoencoder
 HID_DIM = 40
 Config.collect_every = 10
 Config.n_samples_train = 10000
-opt1/Optimizer.lr = 1e-2
+opt1/Optimizer.lr = 1e-3
 
-ae/FCNet.hidden_sizes = [%HID_DIM, 60]
+ae/FCNet.hidden_sizes = [%HID_DIM, 300]
 ae/FCNet.activation_cls = [None, @Sigmoid, @Sigmoid]
 ModelAutoencoder.model_cls = @ae/FCNet
 
@@ -65,4 +71,4 @@ Config.report_weights = False
 Config.tune_no_empty_report = True
 
 
-tune_run.resources_per_trial = {'cpu': 1, 'gpu': 0}
+tune_run.resources_per_trial = {'cpu': 1, 'gpu': 0.1}
