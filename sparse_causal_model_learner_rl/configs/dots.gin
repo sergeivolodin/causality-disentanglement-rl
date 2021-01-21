@@ -39,8 +39,9 @@ Config.collect_once = False
 Config.n_samples_train = 10000
 opt1/Optimizer.lr = 1e-2
 
-HID2 = 1000
-TOTAL_IMG = %HWO
+HID2 = 300
+TOTAL_IMG = %HWC
+NCH = 3
 
 # CONVOLUTIONAL (ENC?DEC)
 enc/Conv2d.in_channels = 3
@@ -52,28 +53,28 @@ dec/Conv2d.out_channels = 3
 dec/Conv2d.kernel_size = 1
 
 # RESHAPE
-enc/Reshape.shape = (%HWC,)#TOTAL_IMG,)
-dec/Reshape.shape = (3, %DIM_H, %DIM_W)#(%N_OBJ, %DIM_H, %DIM_W)
+enc/Reshape.shape = (%TOTAL_IMG,)
+dec/Reshape.shape = (%NCH, %DIM_H, %DIM_W)
 
 # LINEAR
-enc/Linear.in_features = %HWC#%TOTAL_IMG
+enc/Linear.in_features = %TOTAL_IMG
 enc/Linear.out_features = %HID_DIM
 
 dec1/Linear.in_features = %HID_DIM
 dec1/Linear.out_features = %HID2
 
 dec2/Linear.in_features = %HID2
-dec2/Linear.out_features = %HWC#%TOTAL_IMG
+dec2/Linear.out_features = %TOTAL_IMG
 
 enc/ChannelSwap.order = 'hwc_chw'
 dec/ChannelSwap.order = 'chw_hwc'
 
-Scaler.shape = (%HWC,)#(%TOTAL_IMG,)
+Scaler.shape = (%TOTAL_IMG,)
 
 ae/Sequential.items = [
     # @enc/ChannelSwap(),
     # @enc/Conv2d(),
-    @Sigmoid(),
+    #@Sigmoid(),
     @enc/Reshape(),
     @enc/Linear(),
     # no activation function
@@ -81,7 +82,7 @@ ae/Sequential.items = [
     @Sigmoid(),
     @dec2/Linear(),
     @Sigmoid(),
-    # @Scaler(),
+    @Scaler(),
     @dec/Reshape(),
     # @dec/Conv2d(),
     # @dec/ChannelSwap(),
