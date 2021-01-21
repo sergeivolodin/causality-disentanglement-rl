@@ -18,8 +18,8 @@ def pow_loss(X, X_true, power=2, **kwargs):
 
 
 @gin.configurable
-def ae_loss(autoencoder, X, loss_fcn, **kwargs):
+def ae_loss(autoencoder, X_chw, loss_fcn, **kwargs):
     """Vanilla autoencoder loss."""
-    reconstructed = autoencoder(X)
-    value = loss_fcn(X, reconstructed)
+    reconstructed = autoencoder(X_chw)
+    value = loss_fcn(X_chw, reconstructed)
     return value

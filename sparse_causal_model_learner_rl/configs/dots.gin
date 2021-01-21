@@ -67,7 +67,7 @@ enc/ChannelSwap.order = 'hwc_chw'
 dec/ChannelSwap.order = 'chw_hwc'
 
 ae/Sequential.items = [
-    @enc/ChannelSwap(),
+    # @enc/ChannelSwap(),
     @enc/Conv2d(),
     @enc/Reshape(),
     @enc/Linear(),
@@ -78,7 +78,7 @@ ae/Sequential.items = [
     @Sigmoid(),
     @dec/Reshape(),
     @dec/Conv2d(),
-    @dec/ChannelSwap(),
+    # @dec/ChannelSwap(),
 ]
 
 ModelAutoencoder.model_cls = @ae/Sequential
@@ -99,7 +99,7 @@ Config.optimizers = {'opt1': @opt1/Optimizer}
 Config.execution = {'opt1': ['fit']}
 
 test_loss/context_rewriter.function = @ae_loss
-test_loss/context_rewriter.rewrite = {'X': 'Xtest'}
+test_loss/context_rewriter.rewrite = {'X_chw': 'Xtest_chw'}
 
 Config.metrics = {'test_loss': @test_loss/context_rewriter}
 
