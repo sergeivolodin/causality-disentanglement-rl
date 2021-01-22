@@ -155,6 +155,15 @@ class AbstractLearner(ABC):
                 self.config[entry] = new_config._config[entry]
                 logging.info("Config entry found in new config but not in old config: " + entry)
 
+        try:
+            self.collect_steps()
+        except Exception as e:
+            logging.error(f"Cannot collect data {e}")
+        try:
+            self.create_trainables()
+        except Exception as e:
+            logging.error(f"Cannot create trainables {e}")
+
         # restoring trainables
         for key in set(self.trainables.keys()).intersection(dct['trainables_weights'].keys()):
             self.trainables[key].load_state_dict(dct['trainables_weights'][key])

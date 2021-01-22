@@ -113,7 +113,17 @@ Config.execution = {'opt1': ['fit']}
 test_loss/context_rewriter.function = @ae_loss
 test_loss/context_rewriter.rewrite = {'X_chw': 'Xtest_chw'}
 
-Config.metrics = {'test_loss': @test_loss/context_rewriter}
+mae_loss/context_rewriter.function = @mae/ae_loss
+mae_loss/context_rewriter.rewrite = {'X_chw': 'Xtest_chw'}
+
+mae/ae_loss.loss_fcn = @mae/pow_loss
+mae/pow_loss.power = 1.0
+
+Config.metrics = {
+  'test_loss': @test_loss/context_rewriter,
+  'test_mae': @mae/context_rewriter,
+  'train_mae': @mae/ae_loss,
+}
 
 Config.image_every = 300
 Config.checkpoint_every = 1000
