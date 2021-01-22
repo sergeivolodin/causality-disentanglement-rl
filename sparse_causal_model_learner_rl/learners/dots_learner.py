@@ -78,5 +78,7 @@ class DotsLearner(AbstractLearner):
 
         self.model_kwargs['input_output_shape'] = (self.h, self.w, self.c)
 
+        print("COLLECTING DATA!!!")
+
     def __repr__(self):
         return f"<DotsLearner>"

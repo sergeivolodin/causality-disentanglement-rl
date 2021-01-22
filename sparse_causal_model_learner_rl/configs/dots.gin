@@ -35,7 +35,7 @@ Config.autoencoder = @ModelAutoencoder
 
 HID_DIM = 40
 Config.collect_every = 100
-Config.collect_once = False
+Config.collect_once = True
 Config.n_samples_train = 10000
 opt1/Optimizer.lr = 1e-2
 
@@ -82,7 +82,7 @@ ae/Sequential.items = [
     @Sigmoid(),
     @dec2/Linear(),
     @Sigmoid(),
-    @Scaler(),
+    # @Scaler(),
     @dec/Reshape(),
     # @dec/Conv2d(),
     # @dec/ChannelSwap(),
@@ -113,9 +113,8 @@ Config.execution = {'opt1': ['fit']}
 test_loss/context_rewriter.function = @ae_loss
 test_loss/context_rewriter.rewrite = {'X_chw': 'Xtest_chw'}
 
-mae_loss/context_rewriter.function = @mae/ae_loss
-mae_loss/context_rewriter.rewrite = {'X_chw': 'Xtest_chw'}
-
+mae/context_rewriter.function = @mae/ae_loss
+mae/context_rewriter.rewrite = {'X_chw': 'Xtest_chw'}
 mae/ae_loss.loss_fcn = @mae/pow_loss
 mae/pow_loss.power = 1.0
 
@@ -130,7 +129,7 @@ Config.checkpoint_every = 1000
 Config.report_every = 100
 Config.metrics_every = 100
 Config.shuffle = True
-Config.batch_training = True
+Config.batch_training = False
 Config.keep_history = False
 Config.train_steps = 50000
 Config.report_weights = False
