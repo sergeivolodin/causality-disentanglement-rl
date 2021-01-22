@@ -1,10 +1,14 @@
 from time import time
-
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = "-1"
+import torch
 import gym
 import numpy as np
 import pytest
+import gin
 
 from keychest.keychestenv import KeyChestGymEnv, KeyChestEnvironmentRandom, KeyChestEnvironmentFixedMap
+from keychest.keychestenv import split_images, unsplit_images_np
 
 
 def test_hardcoded_env_behavior():
@@ -229,3 +233,18 @@ def test_wrong_action():
     with pytest.raises(KeyError) as excinfo:
         env.step(222)
     assert str(excinfo.value) == '222'
+
+
+def test_image_split_unsplit():
+    gin.bind_parameter('KeyChestEnvironment.flatten_observation', False)
+    gin.bind_parameter('KeyChestEnvironment.return_rgb', True)
+    gin.bind_parameter('obss_to_rgb.ignore_empty', True)
+
+    env = KeyChestGymEnv(engine_constructor=KeyChestEnvironmentRandom,
+                         initial_health=15, food_efficiency=10)
+    obss = torch.from_numpy(np.array([env.reset(), env.reset(), env.reset()]))
+    top, bot = split_images(env.engine, obss)
+    obss_unsplit = unsplit_images_np(env.engine, top.numpy(), bot.numpy())
+    assert np.allclose(obss_unsplit, obss.numpy())
+
+    gin.clear_config()

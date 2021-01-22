@@ -21,6 +21,10 @@ KeyChestEnvironmentRandom.n_keys = 1
 KeyChestEnvironmentRandom.n_chests = 1
 KeyChestEnvironmentRandom.n_food = 1
 
-KeyChestEnvironment.flatten_observation = True
+KeyChestEnvironment.flatten_observation = False
+KeyChestEnvironment.return_rgb = True
+
 KeyChestEnvironment.initial_health = 8
 KeyChestEnvironment.food_efficiency = 8
+
+obss_to_rgb.ignore_empty = True

@@ -42,12 +42,19 @@ def inrange(x, m, M):
     return m <= x <= M
 
 
-def obss_to_rgb(obss, engine):
+@gin.configurable
+def obss_to_rgb(obss, engine, ignore_empty=False):
     """Convert an array with observations to RGB, supporting multiple items per pixel."""
+
+    obss = np.array(obss)
+    assert engine.OBJECTS[0] == 'empty', "First object must be empty."
+    idx_start = 1 if ignore_empty else 0
+    obss = obss[:, :, :, idx_start:]
+
     howmany = (1e-10 + np.sum(obss, axis=3)[:, :, :, np.newaxis])
-    print(np.max(howmany))
+    # print(np.max(howmany))
     obss = obss / howmany
-    colors_to_rgb = np.array([engine.COLORS[o] for o in engine.OBJECTS]) / 255.
+    colors_to_rgb = np.array([engine.COLORS[o] for o in engine.OBJECTS[idx_start:]]) / 255.
     obss_rgb = obss @ colors_to_rgb
     return obss_rgb
 
@@ -91,7 +98,7 @@ class KeyChestEnvironment(object):
     SYMBOLS = {'wall': '#', 'player': 'P', 'key': '<', 'chest': '>', 'food': '@', 'button': 'B',
                'lamp_on': 'L', 'lamp_off': 'l', 'empty': ' ', 'health': '@', 'keys_collected': '<'}
     INNER_OBJECTS = ['empty', 'wall', 'key', 'chest', 'food', 'button', 'lamp_on', 'lamp_off', 'player']
-    COLORS = {'empty': (191, 191, 191), 'wall': (0, 0, 0), 'key': (0, 0, 255), 'chest': (255, 200, 0),
+    COLORS = {'empty': (0, 0, 0), 'wall': (191, 191, 191), 'key': (0, 0, 255), 'chest': (255, 200, 0),
               'lamp_on': (255, 255, 255),
               'lamp_off': (94, 94, 94), 'food': (0, 255, 0), 'player': (255, 0, 0), 'health': (0, 255, 0),
               'keys_collected': (0, 0, 255), 'button': (252, 3, 244)}
@@ -100,7 +107,7 @@ class KeyChestEnvironment(object):
 
     def __init__(self, labyrinth_maps, initial_health, food_efficiency,
                  food_rows=None, keys_rows=None, callback=None,
-                 flatten_observation=False):
+                 flatten_observation=False, return_rgb=False):
         """Environment with keys and chests."""
         self.initial_maps = deepcopy(labyrinth_maps)
         self.maps = deepcopy(labyrinth_maps)
@@ -120,6 +127,7 @@ class KeyChestEnvironment(object):
         self.callback_ = callback
         self.enabled = True
         self.flatten_observation = flatten_observation
+        self.return_rgb = return_rgb
 
         # to see if everything fits
         self.render()
@@ -227,6 +235,9 @@ class KeyChestEnvironment(object):
     @property
     def observation(self):
         result = self._observation
+
+        if self.return_rgb:
+            result = obss_to_rgb([result], self)[0]
 
         if self.flatten_observation:
             result = result.flatten()
@@ -527,3 +538,23 @@ class KeyChestGymEnv(gym.Env):
     def render(self, mode='rgb_array'):
         frame = self.engine.render(mode)
         return frame
+
+
+def split_images(engine, obss):
+    """Split images into top (health+keys) and bottom (playing field)."""
+    top_n = engine.food_rows + engine.keys_rows
+    top = obss[:, :top_n, :]
+    bot = obss[:, top_n + 1:-1, 1:-1]
+    return top, bot
+
+
+def unsplit_images_np(engine, top, bot):
+    """Get observations back from top, bot."""
+    top_n = engine.food_rows + engine.keys_rows
+    assert top.shape[0] == bot.shape[0]
+    obss = np.zeros((top.shape[0], top.shape[1] + bot.shape[1] + 2,
+                     top.shape[2], top.shape[3]))
+    obss[:, :, :] = np.array(engine.COLORS['wall']) / 255.
+    obss[:, :top_n] = top
+    obss[:, top_n + 1:-1, 1:-1] = bot
+    return obss
