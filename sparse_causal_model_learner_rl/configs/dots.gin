@@ -5,6 +5,7 @@ import sparse_causal_model_learner_rl.loss.optimizer
 import sparse_causal_model_learner_rl.trainable.fcnet
 import sparse_causal_model_learner_rl.trainable.sequential
 import sparse_causal_model_learner_rl.metrics.context_rewrite
+import sparse_causal_model_learner_rl.metrics.grad_norm
 include 'base_learner.gin'
 
 DIM_H = 5
@@ -35,7 +36,7 @@ Config.autoencoder = @ModelAutoencoder
 
 HID_DIM = 40
 Config.collect_every = 100
-Config.collect_once = True
+Config.collect_once = False
 Config.n_samples_train = 10000
 opt1/Optimizer.lr = 1e-2
 
@@ -122,6 +123,7 @@ Config.metrics = {
   'test_loss': @test_loss/context_rewriter,
   'test_mae': @mae/context_rewriter,
   'train_mae': @mae/ae_loss,
+  'grad_norm': @grad_norm,
 }
 
 Config.image_every = 300
