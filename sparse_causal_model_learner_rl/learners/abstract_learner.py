@@ -192,6 +192,10 @@ class AbstractLearner(ABC):
                         'device': self.device})
         context.update(self.trainables)
 
+        # context transformation
+        for fcn in self.config.get('context_transforms', []):
+            fcn(context)
+
         # shuffling groups
         if self.shuffle:
             for group in self.shuffle_together:

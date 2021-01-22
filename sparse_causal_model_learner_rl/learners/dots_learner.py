@@ -27,10 +27,12 @@ class DotsLearner(AbstractLearner):
             return img
 
         fig = plt.figure()
-        plt.subplot(1, 2, 1)
+        plt.subplot(1, 3, 1)
         plt.imshow(chw_hwc(img))
-        plt.subplot(1, 2, 2)
+        plt.subplot(1, 3, 2)
         plt.imshow(chw_hwc(pred))
+        plt.subplot(1, 3, 3)
+        plt.imshow(np.abs(chw_hwc(img - pred)))
         return fig
 
 
