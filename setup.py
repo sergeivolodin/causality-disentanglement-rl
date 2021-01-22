@@ -17,7 +17,7 @@ setup(
     license = "BSD",
     keywords = "reinforcement learning causality gridworld gym",
     url = "https://causalrlworkshop.github.io/program/cldm_8.html",
-    packages=['keychest', 'vectorincrement', 'sparse_causal_model_learner_rl', 'causal_util', 'encoder'],
+    packages=['keychest', 'vectorincrement', 'sparse_causal_model_learner_rl', 'causal_util', 'encoder', 'causal_analysis'],
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Topic :: Utilities",

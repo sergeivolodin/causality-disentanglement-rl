@@ -2,7 +2,25 @@ import json
 import numpy as np
 from tqdm.auto import tqdm
 import numbers
+import torch
 import pandas as pd
+import pickle
+import io
+
+
+class CPU_Unpickler(pickle.Unpickler):
+    """Unpickle cuda tensors in a cpu-only environment.
+    
+    Taken from https://github.com/pytorch/pytorch/issues/16797
+    
+    Usage:
+        f = open(...)
+        learner = CPU_Unpickler(f).load()
+    """
+    def find_class(self, module, name):
+        if module == 'torch.storage' and name == '_load_from_bytes':
+            return lambda b: torch.load(io.BytesIO(b), map_location='cpu')
+        else: return super().find_class(module, name)
 
 
 def flatten_dict_keys(dct, prefix='', separator='/'):
