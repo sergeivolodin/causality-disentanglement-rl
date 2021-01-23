@@ -21,8 +21,8 @@ Config.collect_every = 100
 Config.loss_every = 1000
 Config.graph_every = 500
 Config.checkpoint_every = 1000
-Config.report_every = 100
-Config.metrics_every = 100
+Config.report_every = 20
+Config.metrics_every = 20
 Config.report_weights = False
 
 Config.keep_history = True
@@ -78,3 +78,4 @@ Config.execution = {'opt1': ['fit', 'reconstruction', 'sparsity']}#,'opt2': ['fi
 
 sparsity_loss.ord = 1
 sparsity_loss.add_inv = False
+loss_thresholded.use_gnn = True

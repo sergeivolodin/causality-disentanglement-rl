@@ -83,6 +83,7 @@ class ManyNetworkModel(Model):
         for mname in self.models:
             m = getattr(self, mname)
             name, w = list(m.named_parameters())[0]
+            name = mname + '.' + name
             assert name.find('weight') >= 0
             assert w.shape[1] == self.n_features + self.n_actions
             yield (name, w)

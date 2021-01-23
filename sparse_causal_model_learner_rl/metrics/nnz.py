@@ -6,9 +6,11 @@ from sparse_causal_model_learner_rl.metrics.graph_threshold import threshold_fea
 @gin.configurable
 def nnz(model, eps=1e-3, **kwargs):
     val = 0
-    thresholds = {'fc_features.weight': threshold_features(model),
-                  'fc_action.weight': threshold_action(model)}
+    thresholds = {'f': threshold_features(model),
+                  'a': threshold_action(model)}
 
-    for n, p in model.named_parameters():
-        val += np.sum(np.abs(p.detach().cpu().numpy()) > thresholds.get(n, eps))
+    val = 0
+    val += np.sum(model.Mf > thresholds.get('f', eps))
+    val += np.sum(model.Ma > thresholds.get('a', eps))
+
     return val

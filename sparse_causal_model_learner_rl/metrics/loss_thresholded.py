@@ -6,11 +6,20 @@ import gin
 
 @gin.configurable
 def loss_thresholded(loss, trainables, model: nn.Module, context, eps=1e-3,
-                     eps_out=1e-15, delta=False, **kwargs):
+                     eps_out=1e-15, delta=False, use_gnn=False, **kwargs):
     """Compute a loss when models weights are thresholded."""
 
-    def threshold(param, val=eps):
-        param[torch.abs(param) < val] = eps_out
+    def threshold(param, thresholds, param_name):
+
+        if use_gnn:
+            n_features = model.n_features
+            param[:, :n_features][
+                torch.abs(param[:, :n_features]) < thresholds.get('fc_features.weight', eps)] = eps_out
+            param[:, n_features:][
+                torch.abs(param[:, n_features:]) < thresholds.get('fc_action.weight', eps)] = eps_out
+        else:
+            param[torch.abs(param) < thresholds.get(param_name, eps)] = eps_out
+
         return param
 
     value_orig = loss(**context).item() if delta else 0
@@ -19,9 +28,13 @@ def loss_thresholded(loss, trainables, model: nn.Module, context, eps=1e-3,
         thresholds = {'fc_features.weight': threshold_features(**context),
                       'fc_action.weight': threshold_action(**context)}
 
-        dct = model.state_dict()
-        dct = {x: threshold(y, thresholds.get(x, eps)) for x, y in dct.items()}
-        model.load_state_dict(dct)
+        if use_gnn:
+            dct = dict(model.sparsify_tensors())
+            dct = {x: y.detach().cpu() for x, y in dct.items()}
+        else:
+            dct = model.state_dict()
+        dct = {x: threshold(y, thresholds, x) for x, y in dct.items()}
+        model.load_state_dict(dct, strict=not use_gnn)
 
         value = loss(**context).item()
 
