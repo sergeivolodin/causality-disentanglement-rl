@@ -40,7 +40,7 @@ ModelReconstructor.model_cls = @reconstructor/FCNet
 model_gnn/FCNet.hidden_sizes = [50, 25]
 model_gnn/FCNet.activation_cls = @Tanh
 
-ManyNetworkModel.skip_connection = True
+ManyNetworkModel.skip_connection = False#True
 ManyNetworkModel.model_cls = @model_gnn/FCNet
 ManyNetworkModel.sparse_do_max = True
 
@@ -59,8 +59,8 @@ Config._update_function = [@ThresholdAnnealer]
 
 reconstruction_loss_value_function_reward_to_go.value_scaler = 0.1
 
-Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1},
-                 'sparsity': {'fcn': @sparsity_loss, 'coeff': 0},
+Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 100},
+                 'sparsity': {'fcn': @sparsity_loss, 'coeff': 1e-10},
                  'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 1}
                 }
 

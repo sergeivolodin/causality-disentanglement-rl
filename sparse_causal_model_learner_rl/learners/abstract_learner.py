@@ -295,11 +295,14 @@ class AbstractLearner(ABC):
                 epoch_info['metrics'][metric_label] = metric(**context, context=context,
                                                              prev_epoch_info=self.epoch_info)
 
-        if self.config.get('report_weights', True) and (
-                (self.epochs - 1) % self.config.get('report_weights_every', 1) == 0):
-            epoch_info['weights'] = {label + '/' + param_name: np.copy(param.detach().cpu().numpy())
+        def get_weights():
+            return {label + '/' + param_name: np.copy(param.detach().cpu().numpy())
                                      for label, trainable in self.trainables.items()
                                      for param_name, param in trainable.named_parameters()}
+
+        if self.config.get('report_weights', True) and (
+                (self.epochs - 1) % self.config.get('report_weights_every', 1) == 0):
+            epoch_info['weights'] = get_weights()
 
         # process epoch information
         epoch_info = postprocess_info(epoch_info)
@@ -310,6 +313,8 @@ class AbstractLearner(ABC):
 
         if self.config.get('keep_history'):
             self.history.append(epoch_info)
+            if 'weights' not in self.history[-1]:
+                self.history[-1]['weights'] = get_weights()
 
         if self.config.get('max_history_size'):
             mhistsize = int(self.config.get('max_history_size'))
