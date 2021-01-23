@@ -19,6 +19,45 @@ class Model(nn.Module):
         return NotImplementedError
 
 
+class ManyNetworkModel(nn.Module):
+    """Instantiate many networks, each modelling one feature."""
+    def __init__(self, skip_connection=True, model_cls=None, **kwargs):
+        super(ManyNetworkModel, self).__init__(**kwargs)
+        assert len(self.feature_shape) == 1, f"Features must be scalar: {self.feature_shape}"
+        assert len(self.action_shape) == 1, f"Actions must be scalar: {self.action_shape}"
+
+        self.n_features = self.feature_shape[0]
+        self.n_actions = self.action_shape[0]
+        self.model_cls = model_cls
+
+        self.models = [model_cls(input_shape=(self.n_features + self.n_actions,),
+                                 output_shape=(1,)) for _ in range(self.n_features)]
+        self.skip_connection = skip_connection
+
+    def forward(self, f_t, a_t):
+        assert f_t.shape[1] == self.n_features, f"Wrong f_t shape {f_t.shape}"
+        assert a_t.shape[1] == self.n_actions, f"Wrong a_t shape {a_t.shape}"
+        assert f_t.shape[0] == a_t.shape[0], f"Wrong batches {f_t.shape} {a_t.shape}"
+
+        # features and actions together
+        fa_t = torch.cat((f_t, a_t), dim=1)
+
+        # all models on data
+        f_t1 = [m(fa_t) for m in self.models]
+
+        # predictions as a tensor
+        f_t1 = torch.cat(f_t1, dim=1)
+
+        # sanity check for output
+        assert f_t1.shape[1] == self.n_features, f"Must return n_features {f_t1.shape}"
+        assert f_t1.shape[0] == f_t.shape[0], f"Wrong out batches {f_t.shape} {f_t1.shape}"
+
+        if self.skip_connection:
+            f_t1 += f_t
+
+        return f_t1
+
+
 @gin.configurable
 class LinearModel(Model):
     def __init__(self, use_bias=True, init_identity=False, **kwargs):
