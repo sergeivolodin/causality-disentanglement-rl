@@ -272,7 +272,7 @@ class AbstractLearner(ABC):
             for _ in range(self.config.get('opt_iterations', {}).get(opt_label, 1)):
                 opt.zero_grad()
                 total_loss = 0
-                for loss_label in self.config['execution'][opt_label]:
+                for loss_label in self.config['execution'].get(opt_label, []):
                     loss = self.config['losses'][loss_label]
                     value = loss['fcn'](**context)
                     if isinstance(value, dict):

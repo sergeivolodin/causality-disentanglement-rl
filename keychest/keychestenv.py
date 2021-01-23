@@ -4,6 +4,8 @@ from copy import deepcopy
 import gin
 import gym
 import numpy as np
+from .helpers import fill_n
+from .features_xy import dict_to_arr, obs_features_handcoded
 
 
 class DelayedExecutor(object):
@@ -90,18 +92,6 @@ def keychest_obs2d_to_image(obs, scale=15):
     return np.array(out_arr * 255, dtype=np.uint8)
 
 
-def fill_n(arr, offset_x, value, symbol=True):
-    """Fill cells of arr starting from row offset_x with value in unary counting."""
-    value_left = value
-    width = arr.shape[1]
-    current_row = offset_x
-    while value_left:
-        add_this_iter = min(width, value_left)
-        arr[current_row, :add_this_iter] = [symbol] * add_this_iter
-        current_row += 1
-        value_left -= add_this_iter
-
-
 @gin.configurable
 class KeyChestEnvironment(object):
     # class constants
@@ -119,7 +109,8 @@ class KeyChestEnvironment(object):
 
     def __init__(self, labyrinth_maps, initial_health, food_efficiency,
                  food_rows=None, keys_rows=None, callback=None,
-                 flatten_observation=False, return_rgb=False):
+                 flatten_observation=False, return_rgb=False,
+                 return_features_xy=False):
         """Environment with keys and chests."""
         self.initial_maps = deepcopy(labyrinth_maps)
         self.maps = deepcopy(labyrinth_maps)
@@ -140,6 +131,7 @@ class KeyChestEnvironment(object):
         self.enabled = True
         self.flatten_observation = flatten_observation
         self.return_rgb = return_rgb
+        self.return_features_xy = return_features_xy
 
         self.n_keys_init = np.sum(self.maps['key'])
         self.n_chests_init = np.sum(self.maps['chest'])
@@ -240,6 +232,9 @@ class KeyChestEnvironment(object):
     @property
     def observation(self):
         result = self._observation
+
+        if self.return_features_xy:
+            return dict_to_arr(obs_features_handcoded(self, result))
 
         if self.return_rgb:
             result = obss_to_rgb([result], self)[0]
