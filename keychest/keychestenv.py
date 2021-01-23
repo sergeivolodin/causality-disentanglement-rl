@@ -90,6 +90,18 @@ def keychest_obs2d_to_image(obs, scale=15):
     return np.array(out_arr * 255, dtype=np.uint8)
 
 
+def fill_n(arr, offset_x, value, symbol=True):
+    """Fill cells of arr starting from row offset_x with value in unary counting."""
+    value_left = value
+    width = arr.shape[1]
+    current_row = offset_x
+    while value_left:
+        add_this_iter = min(width, value_left)
+        arr[current_row, :add_this_iter] = [symbol] * add_this_iter
+        current_row += 1
+        value_left -= add_this_iter
+
+
 @gin.configurable
 class KeyChestEnvironment(object):
     # class constants
@@ -128,6 +140,10 @@ class KeyChestEnvironment(object):
         self.enabled = True
         self.flatten_observation = flatten_observation
         self.return_rgb = return_rgb
+
+        self.n_keys_init = np.sum(self.maps['key'])
+        self.n_chests_init = np.sum(self.maps['chest'])
+        self.n_food_init = np.sum(self.maps['food'])
 
         # to see if everything fits
         self.render()
@@ -192,17 +208,6 @@ class KeyChestEnvironment(object):
         dx1 = 1 + self.food_rows + self.keys_rows
         dx2 = 1
         dx = dx1 + dx2
-
-        def fill_n(arr, offset_x, value, symbol=True):
-            """Fill cells of arr starting from row offset_x with value in unary counting."""
-            value_left = value
-            width = arr.shape[1]
-            current_row = offset_x
-            while value_left:
-                add_this_iter = min(width, value_left)
-                arr[current_row, :add_this_iter] = [symbol] * add_this_iter
-                current_row += 1
-                value_left -= add_this_iter
 
         shape = (sx + dx, sy + dy)
         out = {obj: np.full(fill_value=False, shape=shape, dtype=np.bool)

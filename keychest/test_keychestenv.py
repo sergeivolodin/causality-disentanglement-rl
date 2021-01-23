@@ -9,6 +9,7 @@ import gin
 
 from keychest.keychestenv import KeyChestGymEnv, KeyChestEnvironmentRandom, KeyChestEnvironmentFixedMap
 from keychest.keychestenv import split_images, unsplit_images_np
+from keychest.features_xy import dict_to_arr, arr_to_dict, obs_features_handcoded, reconstruct_image_from_features
 
 
 def test_hardcoded_env_behavior():
@@ -246,5 +247,36 @@ def test_image_split_unsplit():
     top, bot = split_images(env.engine, obss)
     obss_unsplit = unsplit_images_np(env.engine, top.numpy(), bot.numpy())
     assert np.allclose(obss_unsplit, obss.numpy())
+
+    gin.clear_config()
+
+def test_features_xy():
+    gin.bind_parameter('KeyChestEnvironment.flatten_observation', False)
+    gin.bind_parameter('KeyChestEnvironment.return_rgb', False)
+
+    env = KeyChestGymEnv(engine_constructor=KeyChestEnvironmentRandom,
+                         initial_health=15, food_efficiency=10)
+
+
+    obss = []
+    for _ in range(10):
+        obss.append(env.reset())
+        done = False
+        while not done:
+            obs, rew, done, info = env.step(env.action_space.sample())
+            obss.append(obs)
+
+    features_dicts = [obs_features_handcoded(obs=obs, engine=env.engine) for obs in obss]
+    features_vect = [dict_to_arr(f) for f in features_dicts]
+    features_dicts_rec = [arr_to_dict(arr=x, keys=features_dicts[0].keys()) for x in features_vect]
+    obss_reconstruct = [reconstruct_image_from_features(env.engine, f) for f in features_dicts_rec]
+
+    print(len(obss_reconstruct))
+
+    assert len(obss_reconstruct) == len(obss)
+    assert len(obss) > 0
+
+    for o1, o2 in zip(obss, obss_reconstruct):
+        assert np.allclose(o1, o2)
 
     gin.clear_config()
