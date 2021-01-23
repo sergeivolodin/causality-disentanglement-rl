@@ -18,10 +18,14 @@ class Model(nn.Module):
     def forward(self, f_t, a_t):
         return NotImplementedError
 
+    def sparsify_me(self):
+        """List of (name, tensor) to sparsify in some way."""
+        return []
+
 
 class ManyNetworkModel(nn.Module):
     """Instantiate many networks, each modelling one feature."""
-    def __init__(self, skip_connection=True, model_cls=None, **kwargs):
+    def __init__(self, skip_connection=True, model_cls=None, sparse_do_max=True, **kwargs):
         super(ManyNetworkModel, self).__init__(**kwargs)
         assert len(self.feature_shape) == 1, f"Features must be scalar: {self.feature_shape}"
         assert len(self.action_shape) == 1, f"Actions must be scalar: {self.action_shape}"
@@ -33,6 +37,48 @@ class ManyNetworkModel(nn.Module):
         self.models = [model_cls(input_shape=(self.n_features + self.n_actions,),
                                  output_shape=(1,)) for _ in range(self.n_features)]
         self.skip_connection = skip_connection
+        self.sparse_do_max = sparse_do_max
+
+    @property
+    def Mf(self):
+        """Return features model."""
+
+        weights = [x[1][:self.n_features].detach().cpu().numpy()
+                   for x in self.sparsify_me(sparse_do_max=True)]
+        weights = np.array(weights)
+        assert weights.shape == (self.n_features, self.n_features)
+        return weights
+
+    @property
+    def Ma(self):
+        """Return action model."""
+        weights = [x[1][self.n_features:].detach().cpu().numpy()
+                   for x in self.sparsify_me(sparse_do_max=True)]
+        weights = np.array(weights)
+        assert weights.shape == (self.n_features, self.n_actions)
+        return weights
+
+    def sparsify_me(self, sparse_do_max=None):
+        """List of sparsifiable (name, tensor), max-ed over output dimension."""
+        if sparse_do_max is None:
+            sparse_do_max = self.sparse_do_max
+        for name, w in self.sparsify_tensors():
+            if sparse_do_max:
+                wmax = torch.max(torch.abs(w), dim=0)
+                assert wmax.shape[0] == self.n_features + self.n_actions
+                yield name, wmax
+            else:
+                yield name, w
+
+
+    def sparsify_tensors(self):
+        """List of named tensors to sparsify."""
+        for m in self.models:
+            name, w = list(m.named_parameters())[0]
+            assert name.find('weight') >= 0
+            assert w.shape[1] == self.n_features + self.n_actions
+            yield (name, w)
+
 
     def forward(self, f_t, a_t):
         assert f_t.shape[1] == self.n_features, f"Wrong f_t shape {f_t.shape}"
@@ -75,6 +121,10 @@ class LinearModel(Model):
         f_next_f = self.fc_features(f_t)
         f_next_a = self.fc_action(a_t)
         return f_next_f + f_next_a
+
+    def sparsify_me(self):
+        """List of sparsifiable (name, tensor), max-ed over output dimension."""
+        return self.named_parameters()
 
     @property
     def Mf(self):

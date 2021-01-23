@@ -120,9 +120,10 @@ def sparsity_loss_linreg(obs_x, obs_y, action_x, decoder, fcn=sparsity_uniform, 
     return sparsity_uniform([Mf, Ma, torch.inverse(Mf), torch.inverse(Ma)], ord=ord)
 
 @gin.configurable
-def sparsity_loss(model, device, add_reg=True, ord=1, eps=1e-8, **kwargs):
+def sparsity_loss(model, device, add_reg=True, ord=1, eps=1e-8, add_inv=True,
+                  **kwargs):
     """Ensure that the model is sparse."""
-    params = list(model.parameters())
+    params = [x[1] for x in model.sparsify_me()]
 
     def inverse_or_pinverse(M, eps=eps, add_reg=add_reg):
         """Get true inverse if possible, or pseudoinverse."""
@@ -138,8 +139,10 @@ def sparsity_loss(model, device, add_reg=True, ord=1, eps=1e-8, **kwargs):
         #else:
         #    return torch.pinverse(M, rcond=eps)
 
-    params_inv = [inverse_or_pinverse(p) for p in params]
-    all_params = params + params_inv
+    all_params = params
+    if add_inv:
+        params_inv = [inverse_or_pinverse(p) for p in params]
+        all_params += params_inv
     values = {f"sparsity_param_{i}_{tuple(p.shape)}": sparsity_uniform([p], ord=ord) for i, p in enumerate(all_params)}
     return {'loss': sparsity_uniform(all_params, ord=ord),
             'metrics': values}
