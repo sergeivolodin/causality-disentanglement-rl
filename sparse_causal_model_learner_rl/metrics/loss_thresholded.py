@@ -22,7 +22,12 @@ def loss_thresholded(loss, trainables, model: nn.Module, context, eps=1e-3,
 
         return param
 
-    value_orig = loss(**context).item() if delta else 0
+    def maybe_unpack_dict(l):
+        if isinstance(l, dict):
+            return l['loss']
+        return l
+
+    value_orig = maybe_unpack_dict(loss(**context)).item() if delta else 0
 
     with WeightRestorer(models=list(trainables.values())):
         thresholds = {'fc_features.weight': threshold_features(**context),
@@ -36,7 +41,7 @@ def loss_thresholded(loss, trainables, model: nn.Module, context, eps=1e-3,
         dct = {x: threshold(y, thresholds, x) for x, y in dct.items()}
         model.load_state_dict(dct, strict=not use_gnn)
 
-        value = loss(**context).item()
+        value = maybe_unpack_dict(loss(**context)).item()
 
     result = value - value_orig
 
