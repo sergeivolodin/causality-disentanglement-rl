@@ -23,7 +23,8 @@ class Model(nn.Module):
         return []
 
 
-class ManyNetworkModel(nn.Module):
+@gin.configurable
+class ManyNetworkModel(Model):
     """Instantiate many networks, each modelling one feature."""
     def __init__(self, skip_connection=True, model_cls=None, sparse_do_max=True, **kwargs):
         super(ManyNetworkModel, self).__init__(**kwargs)
@@ -34,8 +35,14 @@ class ManyNetworkModel(nn.Module):
         self.n_actions = self.action_shape[0]
         self.model_cls = model_cls
 
-        self.models = [model_cls(input_shape=(self.n_features + self.n_actions,),
-                                 output_shape=(1,)) for _ in range(self.n_features)]
+        self.models = []
+        for f in range(self.n_features):
+            m = model_cls(input_shape=(self.n_features + self.n_actions,),
+                          output_shape=(1,))
+            m_name = 'model_fout_%04d' % f
+            setattr(self, m_name, m)
+            self.models.append(m_name)
+
         self.skip_connection = skip_connection
         self.sparse_do_max = sparse_do_max
 
@@ -64,7 +71,7 @@ class ManyNetworkModel(nn.Module):
             sparse_do_max = self.sparse_do_max
         for name, w in self.sparsify_tensors():
             if sparse_do_max:
-                wmax = torch.max(torch.abs(w), dim=0)
+                wmax, _ = torch.max(torch.abs(w), dim=0)
                 assert wmax.shape[0] == self.n_features + self.n_actions
                 yield name, wmax
             else:
@@ -73,7 +80,8 @@ class ManyNetworkModel(nn.Module):
 
     def sparsify_tensors(self):
         """List of named tensors to sparsify."""
-        for m in self.models:
+        for mname in self.models:
+            m = getattr(self, mname)
             name, w = list(m.named_parameters())[0]
             assert name.find('weight') >= 0
             assert w.shape[1] == self.n_features + self.n_actions
@@ -89,7 +97,7 @@ class ManyNetworkModel(nn.Module):
         fa_t = torch.cat((f_t, a_t), dim=1)
 
         # all models on data
-        f_t1 = [m(fa_t) for m in self.models]
+        f_t1 = [getattr(self, m)(fa_t) for m in self.models]
 
         # predictions as a tensor
         f_t1 = torch.cat(f_t1, dim=1)

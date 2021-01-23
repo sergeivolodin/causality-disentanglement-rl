@@ -35,6 +35,7 @@ if __name__ == '__main__':
 
     if args.nowrap:
         # useful for debugging/testing
+        logging.basicConfig(level=logging.DEBUG)
         load_config_files(config)
         gin.finalize()
         config = Config()

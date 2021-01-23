@@ -53,6 +53,8 @@ class CausalModelLearnerRL(AbstractLearner):
                              'action_shape': self.action_shape,
                              'observation_shape': self.observation_shape}
 
+        logging.info(self.model_kwargs)
+
     def create_env(self):
         """Create the RL environment."""
         """Create an environment according to config."""

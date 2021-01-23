@@ -1,4 +1,4 @@
-from keychest.keychestenv import fill_n
+from keychest.helpers import fill_n
 import numpy as np
 
 
