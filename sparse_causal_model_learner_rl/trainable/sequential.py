@@ -72,3 +72,6 @@ class Reshape(nn.Module):
 
     def __repr__(self):
         return f"Reshape({self.shape})"
+
+class PointDetector():
+    pass

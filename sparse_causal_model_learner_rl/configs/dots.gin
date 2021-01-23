@@ -102,7 +102,7 @@ Config.potential_trainables_list = [
 ]
 
 ae_loss.loss_fcn = @pow_loss
-pow_loss.power = 3.5
+pow_loss.power = 2.0
 
 Config.losses = {'fit': {'fcn': @ae_loss, 'coeff': 1.0},}
 
@@ -114,14 +114,17 @@ Config.execution = {'opt1': ['fit']}
 test_loss/context_rewriter.function = @ae_loss
 test_loss/context_rewriter.rewrite = {'X_chw': 'Xtest_chw'}
 
-mae/context_rewriter.function = @mae/ae_loss
-mae/context_rewriter.rewrite = {'X_chw': 'Xtest_chw'}
+mae_test/context_rewriter.function = @mae_test/ae_loss
+mae_test/context_rewriter.rewrite = {'X_chw': 'Xtest_chw'}
+mae_test/ae_loss.loss_fcn = @mae_test/pow_loss
+mae_test/pow_loss.power = 1.0
+
 mae/ae_loss.loss_fcn = @mae/pow_loss
 mae/pow_loss.power = 1.0
 
 Config.metrics = {
   'test_loss': @test_loss/context_rewriter,
-  'test_mae': @mae/context_rewriter,
+  'test_mae': @mae_test/context_rewriter,
   'train_mae': @mae/ae_loss,
   'grad_norm': @grad_norm,
 }
