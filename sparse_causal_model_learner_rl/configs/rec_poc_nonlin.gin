@@ -1,0 +1,59 @@
+import sparse_causal_model_learner_rl.trainable.decoder
+import sparse_causal_model_learner_rl.trainable.reconstructor
+import sparse_causal_model_learner_rl.trainable.model
+import sparse_causal_model_learner_rl.config
+import sparse_causal_model_learner_rl.annealer.threshold
+import sparse_causal_model_learner_rl.loss.losses
+import sparse_causal_model_learner_rl.loss.optimizer
+import sparse_causal_model_learner_rl.metrics.nnz
+import sparse_causal_model_learner_rl.metrics.loss_thresholded
+import gin_tune
+import sparse_causal_model_learner_rl.trainable.value_predictor
+import sparse_causal_model_learner_rl.trainable.fcnet
+include 'common.gin'
+
+tune_run.num_samples = 1
+tune_run.resources_per_trial = {'gpu': 0, 'cpu': 1}
+
+Config.train_steps = 2000000
+Config.env_steps = 1000
+
+Config.loss_every = 1000
+Config.graph_every = 500
+Config.checkpoint_every = 1000
+Config.report_every = 100
+Config.metrics_every = 100
+Config.report_weights = False
+Config.collect_every = 100
+
+Config.keep_history = True
+Config.max_history_size = 1000
+
+Config._update_function = []
+
+
+decoder/FCNet.hidden_sizes = [150, 150, 150]
+decoder/FCNet.activation_cls = @Tanh
+ModelDecoder.model_cls = @decoder/FCNet
+ModelDecoder.use_batchnorm = False
+
+rec/FCNet.hidden_sizes = [150, 150, 150]
+rec/FCNet.activation_cls = @Tanh
+ModelReconstructor.model_cls = @rec/FCNet
+
+Config.model = @LinearModel
+Config.decoder = @ModelDecoder
+Config.reconstructor = @ModelReconstructor
+
+Config.feature_shape = (10, )
+
+Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1.0},
+                 'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 1.0}
+                }
+
+opt1/Optimizer.name = 'Adam'
+
+Config.optimizers = {'opt1': @opt1/Optimizer}
+Config.execution = {'opt1': ['fit', 'reconstruction']}
+
+LinearModel.use_bias = False
