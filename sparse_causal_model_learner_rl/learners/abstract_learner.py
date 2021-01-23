@@ -315,6 +315,7 @@ class AbstractLearner(ABC):
             self.history.append(epoch_info)
             if 'weights' not in self.history[-1]:
                 self.history[-1]['weights'] = get_weights()
+                self.history[-1] = postprocess_info(self.history[-1])
 
         if self.config.get('max_history_size'):
             mhistsize = int(self.config.get('max_history_size'))
