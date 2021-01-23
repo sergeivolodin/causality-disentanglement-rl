@@ -52,7 +52,12 @@ def fit_loss(obs_x, obs_y, action_x, decoder, model, **kwargs):
     """Ensure that the model fits the features data."""
     mse = torch.nn.MSELoss()
     # detaching second part like in q-learning makes the loss jitter
-    return mse(model(decoder(obs_x), action_x), decoder(obs_y))
+    f_t1 = decoder(obs_y)
+    loss = mse(model(decoder(obs_x), action_x), f_t1)
+    metrics = {'mean_feature': torch.mean(torch.abs(f_t1)).item()}
+
+    return {'loss': loss,
+            'metrics': metrics}
 
 def linreg(X, Y):
     """Return weights for linear regression as a differentiable equation."""
