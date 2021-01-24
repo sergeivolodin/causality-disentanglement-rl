@@ -262,6 +262,7 @@ class AbstractLearner(ABC):
 
         epoch_info = {'epochs': self.epochs, 'n_samples': context_orig.get('n_samples', -1),
                       'losses': {},
+                      'grads': {},
                       'metrics': {'batch_index': self.batch_index,
                                   'batch_size': np.mean(batch_sizes) if batch_sizes else -1}}
 
@@ -284,6 +285,13 @@ class AbstractLearner(ABC):
                     total_loss += coeff * value
                 if hasattr(total_loss, 'backward'):
                     total_loss.backward()
+
+                    # computing gradient values
+                    grad_norms = [torch.mean(torch.abs(p.grad.detach())).item()
+                                  for p in self.params_for_optimizers[opt_label]]
+
+                    epoch_info['grads'][f"{opt_label}/grad_total_l1"] = np.mean(grad_norms)
+
                 else:
                     logging.warning(f"Warning: no losses for optimizer {opt_label}")
                 epoch_info['losses'][f"{opt_label}/value"] = total_loss
