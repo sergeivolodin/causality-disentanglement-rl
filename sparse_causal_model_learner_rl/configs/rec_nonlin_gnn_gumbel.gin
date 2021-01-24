@@ -23,6 +23,8 @@ model_gnn/FCNet.activation_cls = @Sigmoid
 
 model_gnn/WithInputSwitch.model_cls = @model_gnn/FCNet
 
+LearnableSwitch.sample_many = True
+
 ManyNetworkModel.skip_connection = False
 ManyNetworkModel.model_cls = @model_gnn/WithInputSwitch
 ManyNetworkModel.sparse_do_max = False
