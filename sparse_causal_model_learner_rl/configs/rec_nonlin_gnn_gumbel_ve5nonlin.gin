@@ -33,7 +33,7 @@ Config.shuffle = True
 decoder/FCNet.hidden_sizes = [150, 150]
 decoder/FCNet.activation_cls = @Tanh
 ModelDecoder.model_cls = @decoder/FCNet
-ModelDecoder.use_batchnorm = False
+ModelDecoder.use_batchnorm = True
 
 reconstructor/FCNet.hidden_sizes = [150, 150]
 reconstructor/FCNet.activation_cls = @Tanh
