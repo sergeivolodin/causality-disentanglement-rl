@@ -42,9 +42,11 @@ Config.feature_shape = (5, )
 # normalize input data
 Config.context_transforms = []
 
-opt1/Optimizer.lr = 5e-3
+opt1/Optimizer.lr = 1e-2
 
 # using vanilla fit loss
-Config.metrics = {'nnz': @nnz, 'with_sparse_fit': @fit_loss, 'threshold_action': @threshold_action,
+Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
                   'threshold_features': @threshold_features, 'max_element_ma': @max_element_ma, 'max_element_mf': @max_element_mf,
                   'episode_reward': @episode_reward}
+
+ThresholdAnnealer.source_metric_key = 'fit/value'
