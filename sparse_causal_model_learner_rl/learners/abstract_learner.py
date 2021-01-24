@@ -11,6 +11,7 @@ from tqdm.auto import tqdm
 from causal_util.helpers import postprocess_info
 from sparse_causal_model_learner_rl.config import Config
 from abc import ABC, abstractmethod, abstractproperty
+from torch.nn.utils.clip_grad import clip_grad_norm_
 
 
 class AbstractLearner(ABC):
@@ -285,6 +286,10 @@ class AbstractLearner(ABC):
                     total_loss += coeff * value
                 if hasattr(total_loss, 'backward'):
                     total_loss.backward()
+
+                    if self.config.get('grad_clip_value', None) is not None:
+                        clip_grad_norm_(self.params_for_optimizers[opt_label],
+                                        self.config.get('grad_clip_value'))
 
                     # computing gradient values
                     grad_norms = [torch.mean(torch.abs(p.grad.detach())).item()
