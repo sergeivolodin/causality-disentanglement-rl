@@ -22,14 +22,16 @@ def ThresholdAnnealer(config, epoch_info, temp,
                       max_hyper=100,
                       adjust_every=100,
                       reset_on_fail=False,
+                      source_metric_key='with_sparse_fit',
                       factor=0.5, **kwargs):
     """Increase sparsity if fit loss is low, decrease otherwise."""
 
     try:
-        fit_loss = find_value(epoch_info, 'with_sparse_fit')
+        fit_loss = find_value(epoch_info, source_metric_key)
         # logging.warning("Cannot find loss with sparsity, defaulting to fit loss")
-        logging.info(f"Annealer found loss {fit_loss} with_sparsity_fit")
+        logging.info(f"Annealer found loss {fit_loss} {source_metric_key}")
     except AssertionError as e:
+        logging.warning(f"Annealer source metric not found: {source_metric_key}, {e}")
         return config
         # fit_loss = find_value(epoch_info, '/fit/value')
 
