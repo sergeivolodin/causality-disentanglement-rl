@@ -17,7 +17,7 @@ class LearnableSwitch(nn.Module):
         self.logits = torch.nn.Parameter(torch.ones(2, *shape))
 
     def softmaxed(self):
-        return torch.nn.Softmax(1)(self.logits)[1]
+        return torch.nn.Softmax(0)(self.logits)[1]
 
     def sparsify_me(self):
         return [('proba_on', self.softmaxed())]
