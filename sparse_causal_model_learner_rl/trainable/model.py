@@ -26,7 +26,8 @@ class Model(nn.Module):
 @gin.configurable
 class ManyNetworkModel(Model):
     """Instantiate many networks, each modelling one feature."""
-    def __init__(self, skip_connection=True, model_cls=None, sparse_do_max=True, **kwargs):
+    def __init__(self, skip_connection=True, model_cls=None, sparse_do_max=True,
+                 sparse_do_max_mfma=True, **kwargs):
         super(ManyNetworkModel, self).__init__(**kwargs)
         assert len(self.feature_shape) == 1, f"Features must be scalar: {self.feature_shape}"
         assert len(self.action_shape) == 1, f"Actions must be scalar: {self.action_shape}"
@@ -36,6 +37,11 @@ class ManyNetworkModel(Model):
         self.model_cls = model_cls
 
         self.models = []
+
+        self.skip_connection = skip_connection
+        self.sparse_do_max = sparse_do_max
+        self.sparse_do_max_mfma = sparse_do_max_mfma
+
         for f in range(self.n_features):
             m = model_cls(input_shape=(self.n_features + self.n_actions,),
                           output_shape=(1,))
@@ -43,15 +49,13 @@ class ManyNetworkModel(Model):
             setattr(self, m_name, m)
             self.models.append(m_name)
 
-        self.skip_connection = skip_connection
-        self.sparse_do_max = sparse_do_max
 
     @property
     def Mf(self):
         """Return features model."""
 
         weights = [x[1][:self.n_features].detach().cpu().numpy()
-                   for x in self.sparsify_me(sparse_do_max=True)]
+                   for x in self.sparsify_me(sparse_do_max=self.sparse_do_max_mfma)]
         weights = np.array(weights)
         assert weights.shape == (self.n_features, self.n_features)
         return weights
@@ -60,7 +64,7 @@ class ManyNetworkModel(Model):
     def Ma(self):
         """Return action model."""
         weights = [x[1][self.n_features:].detach().cpu().numpy()
-                   for x in self.sparsify_me(sparse_do_max=True)]
+                   for x in self.sparsify_me(sparse_do_max=self.sparse_do_max_mfma)]
         weights = np.array(weights)
         assert weights.shape == (self.n_features, self.n_actions)
         return weights
@@ -69,6 +73,7 @@ class ManyNetworkModel(Model):
         """List of sparsifiable (name, tensor), max-ed over output dimension."""
         if sparse_do_max is None:
             sparse_do_max = self.sparse_do_max
+
         for name, w in self.sparsify_tensors():
             if sparse_do_max:
                 wmax, _ = torch.max(torch.abs(w), dim=0)
@@ -86,7 +91,7 @@ class ManyNetworkModel(Model):
                 # Gumbel-Softmax model
                 for name, w in m.sparsify_me():
                     name = mname + '.' + name
-                    assert w.shape[1] == self.n_features + self.n_actions
+                    assert w.shape[0] == self.n_features + self.n_actions
                     yield (name, w)
 
             else:

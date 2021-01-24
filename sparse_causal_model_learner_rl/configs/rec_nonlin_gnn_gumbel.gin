@@ -38,6 +38,7 @@ model_gnn/WithInputSwitch.model_cls = @model_gnn/FCNet
 ManyNetworkModel.skip_connection = False
 ManyNetworkModel.model_cls = @model_gnn/WithInputSwitch
 ManyNetworkModel.sparse_do_max = False
+ManyNetworkModel.sparse_do_max_mfma = False
 
 Config.model = @ManyNetworkModel
 Config.decoder = @IdentityDecoder
@@ -77,3 +78,8 @@ loss_thresholded.use_gnn = True
 
 # normalize input data
 Config.context_transforms = []
+
+# using vanilla fit loss
+Config.metrics = {'nnz': @nnz, 'with_sparse_fit': @fit_loss, 'threshold_action': @threshold_action,
+                  'threshold_features': @threshold_features, 'max_element_ma': @max_element_ma, 'max_element_mf': @max_element_mf,
+                  'episode_reward': @episode_reward}
