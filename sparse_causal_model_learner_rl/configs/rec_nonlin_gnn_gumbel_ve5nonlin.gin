@@ -1,0 +1,63 @@
+import sparse_causal_model_learner_rl.trainable.decoder
+import sparse_causal_model_learner_rl.trainable.reconstructor
+import sparse_causal_model_learner_rl.trainable.model
+import sparse_causal_model_learner_rl.trainable.gumbel_switch
+import sparse_causal_model_learner_rl.config
+import sparse_causal_model_learner_rl.annealer.threshold
+import sparse_causal_model_learner_rl.loss.losses
+import sparse_causal_model_learner_rl.loss.optimizer
+import sparse_causal_model_learner_rl.metrics.nnz
+import sparse_causal_model_learner_rl.metrics.loss_thresholded
+import gin_tune
+import sparse_causal_model_learner_rl.trainable.value_predictor
+import sparse_causal_model_learner_rl.trainable.fcnet
+import sparse_causal_model_learner_rl.learners.input_normalizer
+include 'rec_nonlin_gnn.gin'
+
+tune_run.num_samples = 1
+
+Config.loss_every = 1000000000000000
+
+model_gnn/FCNet.hidden_sizes = [5]
+model_gnn/FCNet.activation_cls = @Sigmoid
+
+model_gnn/WithInputSwitch.model_cls = @model_gnn/FCNet
+
+LearnableSwitch.sample_many = False
+
+Config.env_steps = 1000
+Config.collect_every = 100
+Config.batch_training = True
+Config.shuffle = True
+
+decoder/FCNet.hidden_sizes = [150, 150]
+decoder/FCNet.activation_cls = @Tanh
+ModelDecoder.model_cls = @decoder/FCNet
+ModelDecoder.use_batchnorm = False
+
+reconstructor/FCNet.hidden_sizes = [150, 150]
+reconstructor/FCNet.activation_cls = @Tanh
+ModelReconstructor.model_cls = @reconstructor/FCNet
+
+ManyNetworkModel.skip_connection = False
+ManyNetworkModel.model_cls = @model_gnn/WithInputSwitch
+ManyNetworkModel.sparse_do_max = False
+ManyNetworkModel.sparse_do_max_mfma = False
+
+Config.model = @ManyNetworkModel
+Config.decoder = @ModelDecoder
+Config.reconstructor = @ModelReconstructor
+
+Config.feature_shape = (6, )
+
+# normalize input data
+Config.context_transforms = []
+
+opt1/Optimizer.lr = 1e-2
+
+# using vanilla fit loss
+Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
+                  'threshold_features': @threshold_features, 'max_element_ma': @max_element_ma, 'max_element_mf': @max_element_mf,
+                  'episode_reward': @episode_reward}
+
+ThresholdAnnealer.source_metric_key = 'fit/value'

@@ -65,6 +65,9 @@ KeyChest environment:<br />
 3. Can get the graph on vectorincrement 5x5 from data and value fcn reconstruction loss `python3 learner.py --config ../vectorincrement/config/ve5_linear.gin --config configs/vf_poc.gin --config configs/single_sample.gin --nofail`
 4. Can get the graph on non-linear 5x5 -> 10x5 vectorincrement from data/vf rec loss `python3 learner.py --config ../vectorincrement/config/ve5_nonlinear.gin --config configs/vf_poc_nonlin.gin --config configs/single_sample.gin --nofail`
 
+Gumbel model on ve5 (features raw):
+`python -m sparse_causal_model_learner_rl.learner --config vectorincrement/config/ve5_nonlinear.gin --config sparse_causal_model_learner_rl/configs/rec_nonlin_gnn_gumbel
+ --nofail --n_gpus 0 --n_cpus 1`
 
 #### KeyChest
 1. PPO on KeyChest: `python sb.py --evaluate --train_steps 5000000 --config ../keychest/config/5x5.gin --trainer DQN`
