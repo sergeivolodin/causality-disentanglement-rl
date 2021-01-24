@@ -30,12 +30,12 @@ Config.collect_every = 100
 Config.batch_training = True
 Config.shuffle = True
 
-decoder/FCNet.hidden_sizes = [150, 150]
+decoder/FCNet.hidden_sizes = [150, 150, 150]
 decoder/FCNet.activation_cls = @Tanh
 ModelDecoder.model_cls = @decoder/FCNet
-ModelDecoder.use_batchnorm = True
+ModelDecoder.use_batchnorm = False#True
 
-reconstructor/FCNet.hidden_sizes = [150, 150]
+reconstructor/FCNet.hidden_sizes = [150, 150, 150]
 reconstructor/FCNet.activation_cls = @Tanh
 ModelReconstructor.model_cls = @reconstructor/FCNet
 
