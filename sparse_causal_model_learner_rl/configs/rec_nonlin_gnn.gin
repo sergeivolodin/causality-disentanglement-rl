@@ -37,8 +37,8 @@ reconstructor/FCNet.hidden_sizes = [150, 150]
 reconstructor/FCNet.activation_cls = @Tanh
 ModelReconstructor.model_cls = @reconstructor/FCNet
 
-model_gnn/FCNet.hidden_sizes = [10, 5]
-model_gnn/FCNet.activation_cls = @Tanh
+model_gnn/FCNet.hidden_sizes = [20, 10, 10]
+model_gnn/FCNet.activation_cls = @ReLU
 
 ManyNetworkModel.skip_connection = False#True
 ManyNetworkModel.model_cls = @model_gnn/FCNet
@@ -48,7 +48,7 @@ Config.model = @ManyNetworkModel
 Config.decoder = @IdentityDecoder#ModelDecoder
 Config.reconstructor = @IdentityReconstructor#ModelReconstructor
 
-Config.feature_shape = (20, )
+Config.feature_shape = (17, )
 
 ThresholdAnnealer.fit_threshold = 1e-5
 ThresholdAnnealer.min_hyper = 1e-10
@@ -59,7 +59,7 @@ Config._update_function = [@ThresholdAnnealer]
 
 reconstruction_loss_value_function_reward_to_go.value_scaler = 0.1
 
-Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 100},
+Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1},
                  'sparsity': {'fcn': @sparsity_loss, 'coeff': 1e-10},
                  'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 1}
                 }

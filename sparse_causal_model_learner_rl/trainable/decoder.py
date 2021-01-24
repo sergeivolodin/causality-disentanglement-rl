@@ -38,7 +38,7 @@ class LinearDecoder(Decoder):
 class IdentityDecoder(Decoder):
     def __init__(self, **kwargs):
         super(IdentityDecoder, self).__init__(**kwargs)
-        assert self.observation_shape == self.feature_shape
+        assert self.observation_shape == self.feature_shape, (self.observation_shape, self.feature_shape)
 
     def forward(self, x):
         return x
