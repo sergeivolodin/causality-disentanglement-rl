@@ -194,7 +194,7 @@ class AbstractLearner(ABC):
 
         # context transformation
         for fcn in self.config.get('context_transforms', []):
-            fcn(context)
+            fcn(self, context)
 
         # shuffling groups
         if self.shuffle:

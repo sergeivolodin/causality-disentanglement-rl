@@ -10,6 +10,7 @@ import sparse_causal_model_learner_rl.metrics.loss_thresholded
 import gin_tune
 import sparse_causal_model_learner_rl.trainable.value_predictor
 import sparse_causal_model_learner_rl.trainable.fcnet
+import sparse_causal_model_learner_rl.learners.input_normalizer
 include 'common.gin'
 
 tune_run.num_samples = 4
@@ -79,3 +80,9 @@ Config.execution = {'opt1': ['fit', 'reconstruction', 'sparsity']}#,'opt2': ['fi
 sparsity_loss.ord = 1
 sparsity_loss.add_inv = False
 loss_thresholded.use_gnn = True
+
+# normalize input data
+normalize_context_transform.once = True
+normalize_context_transform.normalize_context_lst = ['obs_x', 'obs_y',
+                                                     'action_x', 'obs', 'reward_to_go']
+Config.context_transforms = [@normalize_context_transform]
