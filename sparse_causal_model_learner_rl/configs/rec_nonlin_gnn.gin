@@ -17,8 +17,8 @@ tune_run.num_samples = 4
 tune_run.resources_per_trial = {'gpu': 0, 'cpu': 1}
 
 Config.train_steps = 2000000
-Config.env_steps = 10000
-Config.collect_every = 1000
+Config.env_steps = 1000
+Config.collect_every = 100
 Config.loss_every = 1000
 Config.graph_every = 200
 Config.checkpoint_every = 10000
