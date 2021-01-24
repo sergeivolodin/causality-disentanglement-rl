@@ -46,6 +46,6 @@ def normalize_context_transform(self, context, normalize_context_dct=None):
             assert norm_which in context, f"To-normalize which item {norm_which} not in context"
             assert isinstance(context[norm_which], np.ndarray), f"To-normalize which item {norm_which} is" \
                                                                " not a numpy array"
-            context[norm_which] = self.normalizers[norm_with].maybe_normalize(context[norm_with])
+            context[norm_which] = self.normalizers[norm_with].maybe_normalize(context[norm_which])
 
     return context
