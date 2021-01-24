@@ -23,7 +23,12 @@ model_gnn/FCNet.activation_cls = @Sigmoid
 
 model_gnn/WithInputSwitch.model_cls = @model_gnn/FCNet
 
-LearnableSwitch.sample_many = True
+LearnableSwitch.sample_many = False
+
+Config.env_steps = 10000
+Config.collect_every = 1000
+Config.batch_training = True
+Config.shuffle = True
 
 ManyNetworkModel.skip_connection = False
 ManyNetworkModel.model_cls = @model_gnn/WithInputSwitch
@@ -37,7 +42,7 @@ Config.feature_shape = (5, )
 # normalize input data
 Config.context_transforms = []
 
-opt1/Optimizer.lr = 1e-3
+opt1/Optimizer.lr = 5e-3
 
 # using vanilla fit loss
 Config.metrics = {'nnz': @nnz, 'with_sparse_fit': @fit_loss, 'threshold_action': @threshold_action,

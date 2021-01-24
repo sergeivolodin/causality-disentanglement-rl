@@ -1,6 +1,7 @@
 import gin
 from torch import nn
 import torch
+import numpy as np
 
 
 @gin.configurable
@@ -14,7 +15,13 @@ class LearnableSwitch(nn.Module):
         super(LearnableSwitch, self).__init__()
         self.shape = shape
         # 1-st component is for ACTIVE
-        self.logits = torch.nn.Parameter(torch.ones(2, *shape))
+
+        # init_0 = np.ones(shape) * -1
+        # init_1 = np.ones(shape) * 1
+        # init = np.array([init_0, init_1])
+        init = np.array(np.ones((2, *shape)), dtype=np.float32)
+
+        self.logits = torch.nn.Parameter(torch.from_numpy(init))
         self.sample_many = sample_many
 
     def logits_batch(self, n_batch):
