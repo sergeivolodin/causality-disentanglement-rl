@@ -29,6 +29,15 @@ class LinearReconstructor(Reconstructor):
         return self.fc(x)
 
 @gin.configurable
+class IdentityReconstructor(Reconstructor):
+    def __init__(self, **kwargs):
+        super(IdentityReconstructor, self).__init__(**kwargs)
+        assert self.observation_shape == self.feature_shape, (self.observation_shape, self.feature_shape)
+
+    def forward(self, x):
+        return x
+
+@gin.configurable
 class ModelReconstructor(Reconstructor):
     def __init__(self, model_cls=None, **kwargs):
         super(ModelReconstructor, self).__init__(**kwargs)
