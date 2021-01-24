@@ -10,7 +10,8 @@ import gin
 from keychest.keychestenv import KeyChestGymEnv, KeyChestEnvironmentRandom, KeyChestEnvironmentFixedMap
 from keychest.keychestenv import split_images, unsplit_images_np
 from keychest.features_xy import dict_to_arr, arr_to_dict, obs_features_handcoded, reconstruct_image_from_features
-
+import keychest.keychestenv as kcenv_module
+from .gofa_model import manual_model_features
 
 def test_hardcoded_env_behavior():
     def random_reward():
@@ -278,5 +279,49 @@ def test_features_xy():
 
     for o1, o2 in zip(obss, obss_reconstruct):
         assert np.allclose(o1, o2)
+
+    gin.clear_config()
+
+def test_gofa_model():
+    gin.parse_config_file(os.path.join(os.path.dirname(kcenv_module.__file__), 'config', '5x5_1f1c1k.gin'))
+    gin.bind_parameter('KeyChestEnvironment.flatten_observation', False)
+    gin.bind_parameter('KeyChestEnvironment.return_rgb', False)
+    gin.bind_parameter('KeyChestEnvironment.return_features_xy', False)
+
+
+    env = KeyChestGymEnv()
+
+    obs_x = []
+    obs_y = []
+    act_x = []
+    for _ in range(10):
+        obs_x.append(env.reset())
+        done = False
+        while not done:
+            a = env.action_space.sample()
+            obs, rew, done, info = env.step(a)
+            a_1hot = np.zeros(4)
+            a_1hot[a] = 1
+            act_x.append(a_1hot)
+            if not done:
+                obs_x.append(obs)
+            obs_y.append(obs)
+
+    f_x = [obs_features_handcoded(obs=obs, engine=env.engine) for obs in obs_x]
+    f_y = [obs_features_handcoded(obs=obs, engine=env.engine) for obs in obs_y]
+
+    f_t1 = [manual_model_features(f, a, env.engine) for f, a in zip(f_x, act_x)]
+
+    keys_differ = {}
+    for ft1_correct, ft1 in zip(f_y, f_t1):
+        for key in f_x[0].keys():
+            if ft1_correct[key] != ft1[key]:
+                if key not in keys_differ:
+                    keys_differ[key] = []
+                if len(keys_differ[key]) < 10:
+                    keys_differ[key].append({'correct': ft1_correct[key],
+                                             'given': ft1[key]})
+
+    assert not keys_differ, keys_differ
 
     gin.clear_config()
