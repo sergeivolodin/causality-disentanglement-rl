@@ -314,7 +314,7 @@ class AbstractLearner(ABC):
                                      for param_name, param in trainable.named_parameters()}
 
         if self.config.get('report_weights', True) and (
-                (self.epochs - 1) % self.config.get('report_weights_every', 1) == 0):
+                (self.epochs) % self.config.get('report_weights_every', 1) == 0):
             epoch_info['weights'] = get_weights()
 
         # process epoch information

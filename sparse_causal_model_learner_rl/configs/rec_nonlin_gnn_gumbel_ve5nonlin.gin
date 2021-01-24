@@ -28,7 +28,7 @@ LearnableSwitch.sample_many = False
 Config.env_steps = 1000
 
 Config.report_weights = True
-Config.report_weights_every = 100
+Config.report_weights_every = 20
 
 Config.collect_every = 100
 Config.batch_training = True
