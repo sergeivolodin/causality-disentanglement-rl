@@ -82,11 +82,19 @@ class ManyNetworkModel(Model):
         """List of named tensors to sparsify."""
         for mname in self.models:
             m = getattr(self, mname)
-            name, w = list(m.named_parameters())[0]
-            name = mname + '.' + name
-            assert name.find('weight') >= 0
-            assert w.shape[1] == self.n_features + self.n_actions
-            yield (name, w)
+            if hasattr(m, 'sparsify_me'):
+                # Gumbel-Softmax model
+                for name, w in m.sparsify_me():
+                    name = mname + '.' + name
+                    assert w.shape[1] == self.n_features + self.n_actions
+                    yield (name, w)
+
+            else:
+                name, w = list(m.named_parameters())[0]
+                name = mname + '.' + name
+                assert name.find('weight') >= 0
+                assert w.shape[1] == self.n_features + self.n_actions
+                yield (name, w)
 
 
     def forward(self, f_t, a_t):
