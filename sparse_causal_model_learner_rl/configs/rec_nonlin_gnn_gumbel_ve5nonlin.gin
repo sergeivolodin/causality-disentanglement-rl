@@ -53,6 +53,16 @@ Config.feature_shape = (6, )
 # normalize input data
 Config.context_transforms = []
 
+Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1},
+                 'sparsity': {'fcn': @sparsity_loss, 'coeff': 1e-10},
+                 'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 1},
+                 'sbn': {'fcn': @soft_batchnorm_dec_out, 'coeff': 1.0}
+                }
+
+
+Config.execution = {'opt1': ['fit', 'reconstruction', 'sparsity', 'sbn']}#,'opt2': ['fit', 'reconstruction', 'sparsity'],'opt3': ['fit', 'reconstruction', 'sparsity']}
+
+
 opt1/Optimizer.lr = 1e-2
 
 # using vanilla fit loss

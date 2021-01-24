@@ -153,6 +153,14 @@ def sparsity_loss(model, device, add_reg=True, ord=1, eps=1e-8, add_inv=True,
             'metrics': values}
 
 @gin.configurable
+def soft_batchnorm_dec_out(decoder, obs, **kwargs):
+    f = decoder(obs)
+    lm0 = f.mean(0).pow(2).mean()
+    ls1 = (f.std(0) - 1.0).pow(2).mean()
+
+    return lm0 + ls1
+
+@gin.configurable
 def soft_batchnorm_regul(decoder, **kwargs):
     mse = torch.nn.MSELoss()
     if not hasattr(decoder, 'bn'):
