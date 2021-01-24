@@ -82,7 +82,8 @@ sparsity_loss.add_inv = False
 loss_thresholded.use_gnn = True
 
 # normalize input data
-normalize_context_transform.once = True
+Normalizer.once = True
+Normalizer.dim = 0
 normalize_context_transform.normalize_context_lst = ['obs_x', 'obs_y',
                                                      'action_x', 'obs', 'reward_to_go']
 Config.context_transforms = [@normalize_context_transform]

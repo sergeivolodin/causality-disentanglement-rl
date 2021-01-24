@@ -16,7 +16,7 @@ class Normalizer(object):
             self.mean = np.mean(inp, axis=self.dim)
             self.std = np.std(inp, axis=self.dim)
 
-        return (self.inp - self.mean) / (eps + self.std)
+        return (inp - self.mean) / (eps + self.std)
 
 
 @gin.configurable

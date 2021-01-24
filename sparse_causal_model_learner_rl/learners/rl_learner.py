@@ -128,6 +128,12 @@ class CausalModelLearnerRL(AbstractLearner):
         self.shuffle_together = [['obs_x', 'obs_y', 'action_x', 'reward_to_go'],
                                  ['obs']]
 
+        obs_x = np.array(obs_x)
+        obs_y = np.array(obs_y)
+        obs = np.array(obs)
+        act_x = np.array(act_x)
+        reward_to_go = np.array(reward_to_go)
+
         context = {'obs_x': obs_x, 'obs_y': obs_y, 'action_x': act_x,
                    'obs': obs,
                    'reward_to_go': reward_to_go,
