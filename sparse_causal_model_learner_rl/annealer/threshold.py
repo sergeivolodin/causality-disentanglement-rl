@@ -31,7 +31,7 @@ def ThresholdAnnealer(config, epoch_info, temp,
         # logging.warning("Cannot find loss with sparsity, defaulting to fit loss")
         logging.info(f"Annealer found loss {fit_loss} {source_metric_key}")
     except AssertionError as e:
-        logging.warning(f"Annealer source metric not found: {source_metric_key}, {e}")
+        #logging.warning(f"Annealer source metric not found: {source_metric_key}, {e}")
         return config
         # fit_loss = find_value(epoch_info, '/fit/value')
 
