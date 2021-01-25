@@ -46,6 +46,8 @@ class FCNet(nn.Module):
         elif isinstance(activation_cls, list):
             self.activation = [act_cls() if act_cls is not None else None
                                for act_cls in activation_cls]
+        elif activation_cls is None:
+            self.activation = [None] * (len(self.hidden_sizes) + 1)
         else:
             raise NotImplementedError
 

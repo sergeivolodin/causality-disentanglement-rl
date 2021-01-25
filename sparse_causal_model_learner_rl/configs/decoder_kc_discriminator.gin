@@ -27,9 +27,14 @@ ModelDecoder.use_batchnorm = False
 dec_agg/FCNet.hidden_sizes = [50, 50, 50]
 dec_agg/FCNet.activation_cls = @Tanh
 
+net_f/FCNet.hidden_sizes = []
+net_f/FCNet.activation_cls = None
+
 DecoderDiscriminator.observation_embedding_dim = 50
 DecoderDiscriminator.feature_embedding_dim = 50
-DecoderDiscriminator.input_embedder_cls = @decoder/FCNet
+DecoderDiscriminator.input_embedder_cls = {'o_t': @decoder/FCNet,
+                                           'f_t': @net_f/FCNet,}
+
 DecoderDiscriminator.aggregator_cls = @dec_agg/FCNet
 
 Config.env_steps = 5000
@@ -60,3 +65,6 @@ Config.losses = {'discriminate': {'fcn': @decoder_discriminator_loss, 'coeff': 1
 Config.optim_params = {'opt1': ['decoder'], 'opt2': ['decoder_discriminator']}
 
 Config._update_function = []
+
+Config.loss_every = 99999999999999
+Config.graph_every = 99999999999999

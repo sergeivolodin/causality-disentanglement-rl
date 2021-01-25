@@ -40,8 +40,7 @@ class ModelDiscriminator(Discriminator):
         self.input_embedder_cls = input_embedder_cls
         self.aggregator_cls = aggregator_cls
         self.input_embedding_dims = input_embedding_dims
-        self.total_embedding_dim = sum(self.input_embedding_dims)
-        self.inputs = self.input_shapes_dict
+        self.total_embedding_dim = sum(self.input_embedding_dims.values())
 
         for inp_name, inp_shape in self.input_shapes_dict.items():
             assert inp_name in self.input_embedder_cls
@@ -61,13 +60,16 @@ class ModelDiscriminator(Discriminator):
     def model(self, **kwargs):
         embeddings = [self.models[inp_name](kwargs[inp_name]) for inp_name in self.inputs]
         embeddings = torch.cat(embeddings, dim=1)
+        # print("EMB", embeddings, kwargs[self.inputs[0]].shape, self.inputs[0])
         assert embeddings.shape[1] == self.total_embedding_dim
-        assert embeddings.shape[0] == kwargs[self.inputs[0]].shape[0]
+        assert embeddings.shape[0] == kwargs[self.inputs[0]].shape[0],\
+            (embeddings.shape, kwargs[self.inputs[0]].shape)
         out = self.agg(embeddings)
         # out = nn.Sigmoid()(out) # OUTPUTS LOGITS
         return out
 
 
+@gin.configurable
 class CausalFeatureModelDiscriminator(ModelDiscriminator):
     """Discriminate between correct next features and wrong next features."""
 
@@ -82,6 +84,7 @@ class CausalFeatureModelDiscriminator(ModelDiscriminator):
                       **kwargs)
 
 
+@gin.configurable
 class DecoderDiscriminator(ModelDiscriminator):
     """Discriminate between correct features and wrong features for observations."""
 
@@ -98,7 +101,7 @@ class DecoderDiscriminator(ModelDiscriminator):
                 'o_t': self.observation_shape,
                 'f_t': self.feature_shape
             },
-            input_embedding_dim={
+            input_embedding_dims={
                 'o_t': self.observation_embedding_dim,
                 'f_t': self.feature_embedding_dim
             },
