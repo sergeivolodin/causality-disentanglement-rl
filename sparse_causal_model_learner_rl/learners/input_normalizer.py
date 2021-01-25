@@ -5,18 +5,30 @@ import numpy as np
 @gin.configurable
 class Normalizer(object):
     """"Normalize numpy data."""
-    def __init__(self, once=True, dim=0):
+    def __init__(self, once=True, dim=0, type_='minmax'):
         self.mean = None
         self.std = None
+
+        self.computed = False
+        self.type_ = type_
+
         self.once = once
         self.dim = dim
 
     def maybe_normalize(self, inp, eps=1e-8):
-        if self.mean is None or not self.once:
+        if not self.computed or not self.once:
             self.mean = np.mean(inp, axis=self.dim)
             self.std = np.std(inp, axis=self.dim)
+            self.min = np.min(inp, axis=self.dim)
+            self.max = np.max(inp, axis=self.dim)
+            self.computed = True
 
-        return (inp - self.mean) / (eps + self.std)
+        if self.type_ == 'meanstd':
+            return (inp - self.mean) / (eps + self.std)
+        elif self.type_ == 'minmax':
+            return 2 * ((inp - self.min) / (self.max - self.min) - 0.5)
+        else:
+            raise NotImplementedError(f"Wrong type {self.type_}")
 
 
 @gin.configurable
