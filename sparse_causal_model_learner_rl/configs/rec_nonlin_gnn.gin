@@ -99,5 +99,9 @@ Normalizer.once = True
 Normalizer.dim = 0
 normalize_context_transform.normalize_context_dct = {'obs': ['obs_x', 'obs_y', 'obs'],
                                                      'action_x': ['action_x'],
-                                                     'reward_to_go': ['reward_to_go']}
+                                                     'reward_to_go': ['reward_to_go'],
+                                                     'rew_y': ['rew_y'],
+                                                     'done_y': ['done_y']}
 Config.context_transforms = [@normalize_context_transform]
+
+Config.additional_feature_keys = ['rew_y', 'done_y']

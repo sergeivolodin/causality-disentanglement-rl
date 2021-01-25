@@ -18,8 +18,8 @@ tune_run.num_samples = 1
 
 Config.loss_every = 1000000000000000
 
-model_gnn/FCNet.hidden_sizes = [5]
-model_gnn/FCNet.activation_cls = @Sigmoid
+model_gnn/FCNet.hidden_sizes = [60, 60]
+model_gnn/FCNet.activation_cls = @ReLU
 
 model_gnn/WithInputSwitch.model_cls = @model_gnn/FCNet
 
@@ -38,9 +38,6 @@ ManyNetworkModel.sparse_do_max_mfma = False
 Config.model = @ManyNetworkModel
 
 Config.feature_shape = (5, )
-
-# normalize input data
-Config.context_transforms = []
 
 opt1/Optimizer.lr = 1e-2
 

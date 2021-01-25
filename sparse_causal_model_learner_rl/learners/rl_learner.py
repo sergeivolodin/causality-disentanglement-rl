@@ -49,9 +49,13 @@ class CausalModelLearnerRL(AbstractLearner):
         if self.feature_shape is None:
             self.feature_shape = self.observation_shape
 
+        self.additional_feature_keys = self.config.get('additional_feature_keys', [])
+        self.additional_feature_shape = (len(self.additional_feature_keys),)
+
         self.model_kwargs = {'feature_shape': self.feature_shape,
                              'action_shape': self.action_shape,
-                             'observation_shape': self.observation_shape}
+                             'observation_shape': self.observation_shape,
+                             'additional_feature_shape': self.additional_feature_shape}
 
         logging.info(self.model_kwargs)
 
@@ -88,6 +92,7 @@ class CausalModelLearnerRL(AbstractLearner):
 
         # observations, actions, rewards-to-go, total rewards
         obs_x, obs_y, obs, act_x, reward_to_go, episode_rewards = [], [], [], [], [], []
+        done_y, rew_y = [], []
 
         for episode in self.collector.raw_data:
             rew = []
@@ -104,6 +109,9 @@ class CausalModelLearnerRL(AbstractLearner):
                     action = step['action']
                     if self.to_onehot:
                         action = one_hot_encode(self.action_shape[0], action)
+
+                    rew_y.append(step['reward'])
+                    done_y.append(is_last)
 
                     obs_y.append(step['observation'])
                     act_x.append(action)
@@ -125,7 +133,7 @@ class CausalModelLearnerRL(AbstractLearner):
         # for reconstruction
         assert len(obs_x) == len(obs_y)
 
-        self.shuffle_together = [['obs_x', 'obs_y', 'action_x', 'reward_to_go'],
+        self.shuffle_together = [['obs_x', 'obs_y', 'action_x', 'reward_to_go', 'rew_y', 'done_y'],
                                  ['obs']]
 
         obs_x = np.array(obs_x)
@@ -133,12 +141,16 @@ class CausalModelLearnerRL(AbstractLearner):
         obs = np.array(obs)
         act_x = np.array(act_x)
         reward_to_go = np.array(reward_to_go)
+        done_y = np.array(done_y)
+        rew_y = np.array(done_y)
 
         context = {'obs_x': obs_x, 'obs_y': obs_y, 'action_x': act_x,
+                   'rew_y': rew_y, 'done_y': done_y,
                    'obs': obs,
                    'reward_to_go': reward_to_go,
                    'episode_rewards': episode_rewards,
-                   'n_samples': len(obs_x)}
+                   'n_samples': len(obs_x),
+                   'additional_feature_keys': self.additional_feature_keys}
 
         return context
 
@@ -149,7 +161,7 @@ class CausalModelLearnerRL(AbstractLearner):
 
     def __repr__(self):
         return f"<RLLearner env={self.env} feature_shape={self.feature_shape} " \
-               f"epochs={self.epochs}>"
+               f"epochs={self.epochs} additional_feature_shape={self.additional_feature_shape}>"
 
     def visualize_loss_landscape(self, steps_skip=10, scale=5, n=20, mode='2d'):
         """Plot loss landscape in PCA space with the descent curve."""
