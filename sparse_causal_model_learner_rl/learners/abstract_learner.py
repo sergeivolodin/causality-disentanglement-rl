@@ -314,10 +314,16 @@ class AbstractLearner(ABC):
                                         self.config.get('grad_clip_value'))
 
                     # computing gradient values
-                    grad_norms = [torch.mean(torch.abs(p.grad.detach())).item()
+                    grad_norms1 = [torch.mean(torch.abs(p.grad.detach())).item()
                                   for p in self.params_for_optimizers[opt_label]]
 
-                    epoch_info['grads'][f"{opt_label}/grad_total_l1"] = np.mean(grad_norms)
+                    grad_norms2 = [p.grad.data.norm(2).item() ** 2
+                                   for p in self.params_for_optimizers[opt_label]]
+
+
+                    epoch_info['grads'][f"{opt_label}/grad_total_l1mean"] = np.mean(grad_norms1)
+                    epoch_info['grads'][f"{opt_label}/grad_total_l2sum"] = np.sum(grad_norms2) ** 0.5
+
 
                 else:
                     logging.warning(f"Warning: no losses for optimizer {opt_label}")
