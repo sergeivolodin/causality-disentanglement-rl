@@ -4,15 +4,16 @@ from ray import tune
 import ray
 from sparse_causal_model_learner_rl.live_parameters.server import run_communicator
 from uuid import uuid1
+from copy import deepcopy
 
 
-def param_flatten_dict_keys(dct, separator='/'):
+def param_flatten_dict_keys(dct, separator='//'):
     """Flatten dictionary."""
     flat_dict = {}
 
     for key, value in dct.items():
         if key.find(separator) >= 0:
-            logging.warning(f"Config key {key} contains '/', skipping the key...")
+            logging.warning(f"Config key {key} contains '{separator}', skipping the key...")
             continue
 
         if isinstance(value, dict):
@@ -23,13 +24,15 @@ def param_flatten_dict_keys(dct, separator='/'):
 
     return flat_dict
 
-def param_update_from_flat(dct, update_key, update_value, separator='/'):
+def param_update_from_flat(dct, update_key, update_value, separator='//'):
     """Update dictionary values based on flattened keys."""
     sep_key = update_key.split(separator)
     if len(sep_key) > 1:
         sk0 = sep_key[0]
         sk_other = sep_key[1:]
         param_update_from_flat(dct[sk0], separator.join(sk_other), update_value)
+    else:
+        dct[sep_key[0]] = update_value
 
 
 @gin.configurable
@@ -61,13 +64,27 @@ class Config(object):
         if self.communicator is None:
             return
 
-        updates = ray.get(self.communicator.get_clear_updates.remote())
-        for k, v in updates:
-            logging.info(f"Updating parameter {k}: {v}")
-            param_update_from_flat(self._config, k, v)
+        config_backup = deepcopy(self._config)
 
-        self.communicator.set_current_parameters.remote(param_flatten_dict_keys(self._config))
-        self.set_gin_variables()
+        try:
+            gin_queries = ray.get(self.communicator.get_clean_gin_queries.remote())
+
+            for q in gin_queries:
+                val = gin.query_parameter(q)
+                self.communicator.add_msg.remote(f"Gin value {q}: {val}")
+
+            updates = ray.get(self.communicator.get_clear_updates.remote())
+            for k, v in updates:
+                self.communicator.add_msg.remote(f"Updating parameter {k}: {v}")
+                logging.info(f"Updating parameter {k}: {v}")
+                param_update_from_flat(self._config, k, v)
+
+            self.communicator.set_current_parameters.remote(param_flatten_dict_keys(self._config))
+            self.set_gin_variables()
+        except Exception as e:
+            self.communicator.add_msg.remote("Error: " + str(e))
+            logging.warning(f"Remote parameter update failed {e}")
+            self._config = config_backup
 
     def __getstate__(self):
         to_pickle = {
@@ -92,6 +109,8 @@ class Config(object):
         assert isinstance(config, dict), "Please supply a dictionary"
         self._config = config
         self._config.update(kwargs)
+        if self.GIN_KEY not in self._config:
+            self._config[self.GIN_KEY] = {}
 
         # temporary variables for the update function
         self._temporary_variables = {}
@@ -116,6 +135,7 @@ class Config(object):
             gin_dict = self._config[self.GIN_KEY]
             assert isinstance(gin_dict, dict), f"Gin entry must be a dict {gin_dict}"
             for key, value in gin_dict.items():
+                logging.info(f"Binding gin {key} -> {value}")
                 gin.bind_parameter(key, value)
 
     @property

@@ -17,15 +17,48 @@ if __name__ == '__main__':
         questions = [
             inquirer.List('command',
                           message="What do you want to do?",
-                          choices=['Edit parameters', 'Exit'],
+                          choices=['Edit parameters', 'Set gin values', 'Get gin values', 'Get messages', 'Exit'],
                           ),
         ]
         answers = inquirer.prompt(questions)
         if not answers:
-            continue
+            break
 
         if answers['command'] == 'Exit':
             break
+        if answers['command'] == 'Get messages':
+            data = ray.get(communicator.get_clear_msgs.remote())
+            for error_message in data:
+                print(error_message)
+        elif answers['command'] == 'Get gin values':
+            questions = [
+                inquirer.Text('parameter', message="gin configurable"),
+            ]
+            answers = inquirer.prompt(questions)
+            if not answers:
+                continue
+            communicator.gin_query.remote(answers['parameter'])
+        elif answers['command'] == 'Set gin values':
+            questions = [
+                inquirer.Text('parameter', message="gin configurable"),
+                inquirer.Text('value', message="New value"),
+                inquirer.Text('type', message="Basic type (str/int/float)")
+            ]
+            answers = inquirer.prompt(questions)
+            if not answers:
+                continue
+
+            type_map = {'str': str, 'int': int, 'float': float}
+            param_name = f"_gin/{answers['parameter']}"
+            new_value = answers['value']
+            if answers['type'] not in type_map:
+                print(f"Invalue type: {answers['type']}")
+                continue
+            new_value = type_map[answers['type']](new_value)
+
+            ray.get(communicator.update_parameter.remote(param_name, new_value))
+            print(f"Parameter {param_name} set to {new_value}")
+
         elif answers['command'] == 'Edit parameters':
             current_parameters = ray.get(communicator.get_current_parameters.remote())
 
