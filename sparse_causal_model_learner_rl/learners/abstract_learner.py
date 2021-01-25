@@ -108,11 +108,20 @@ class AbstractLearner(ABC):
         # logging.info(f"Optimizers parameters {opt_params_descr}")
 
         self.optimizer_objects = {}
+        self.scheduler_objects = {}
 
         for label, fcn in self.config['optimizers'].items():
             params = self.params_for_optimizers[label]
             if params:
-                self.optimizer_objects[label] = fcn(params=params)
+                opt = fcn(params=params)
+                self.optimizer_objects[label] = opt
+
+                sch_cls = self.config['schedulers'].get(label, None)
+                if sch_cls:
+                    sch = sch_cls(optimizer=opt)
+                    self.scheduler_objects[label] = sch
+                    logging.info(f"Creating scheduler for {label}: {sch_cls} {sch}")
+
             else:
                 logging.warning(f"No parameters for optimizer {label} {fcn}")
 
@@ -303,6 +312,10 @@ class AbstractLearner(ABC):
                     logging.warning(f"Warning: no losses for optimizer {opt_label}")
                 epoch_info['losses'][f"{opt_label}/value"] = total_loss
                 opt.step()
+
+                if hasattr(total_loss, 'backward') and opt_label in self.scheduler_objects:
+                    self.scheduler_objects[opt_label].step(total_loss)
+                    epoch_info['metrics'][f"{opt_label}/scheduler_lr"] = self.scheduler_objects[opt_label]._last_lr[0]
 
         if self.epochs % self.config.get('metrics_every', 1) == 0:
             # compute metrics
