@@ -25,7 +25,7 @@ model_gnn/WithInputSwitch.model_cls = @model_gnn/FCNet
 
 LearnableSwitch.sample_many = False
 
-Config.env_steps = 1000
+Config.env_steps = 5000
 Config.collect_every = 10
 Config.batch_training = False
 Config.shuffle = False
@@ -39,7 +39,7 @@ Config.model = @ManyNetworkModel
 
 Config.feature_shape = (17, )
 
-opt1/Optimizer.lr = 1e-3
+opt1/Optimizer.lr = 1e-4
 
 # using vanilla fit loss
 Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
@@ -48,3 +48,5 @@ Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
                   'episode_reward': @episode_reward}
 
 ThresholdAnnealer.source_metric_key = 'fit/value'
+
+Config.schedulers = {}
