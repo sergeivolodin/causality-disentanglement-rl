@@ -42,3 +42,13 @@ def decoder_discriminator_loss(obs, decoder, decoder_discriminator, **kwargs):
     return {'loss': loss_correct + loss_incorrect,
             'metrics': {'disc_correct': loss_correct.item(),
                         'disc_incorrect': loss_incorrect.item()}}
+
+@gin.configurable
+def siamese_feature_discriminator(obs, decoder, causal_feature_model_discriminator, **kwargs):
+    def fcn(pair_a, pair_b):
+        return causal_feature_model_discriminator(f_t=pair_a, f_t1=pair_b)
+
+    loss_correct, loss_incorrect = contrastive_loss_permute(decoder(obs), decoder(obs), fcn)
+    return {'loss': loss_correct + loss_incorrect,
+            'metrics': {'disc_siam_correct': loss_correct.item(),
+                        'disc_siam_incorrect': loss_incorrect.item()}}
