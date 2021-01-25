@@ -27,7 +27,7 @@ def contrastive_loss_permute(pair_a, pair_b, fcn):
     loss_correct = criterion(logits_true_correct.view(-1), target_correct)
     loss_incorrect = criterion(logits_true_incorrect.view(-1), target_incorrect)
 
-    return loss_correct + loss_incorrect
+    return loss_correct, loss_incorrect
 
 
 @gin.configurable
@@ -38,4 +38,7 @@ def decoder_discriminator_loss(obs, decoder, decoder_discriminator, **kwargs):
         # pair_a == obs
         return decoder_discriminator(o_t=pair_a, f_t=pair_b)
 
-    return contrastive_loss_permute(obs, decoder(obs), fcn)
+    loss_correct, loss_incorrect = contrastive_loss_permute(obs, decoder(obs), fcn)
+    return {'loss': loss_correct + loss_incorrect,
+            'metrics': {'disc_correct': loss_correct.item(),
+                        'disc_incorrect': loss_incorrect.item()}}
