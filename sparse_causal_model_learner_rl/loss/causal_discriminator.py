@@ -17,7 +17,7 @@ def contrastive_loss_permute(pair_a, pair_b, fcn):
 
     # correct pairs for contrastive loss
     logits_true_correct = fcn(pair_a=pair_a, pair_b=pair_b)
-    target_correct = torch.ones([batch_dim, ], dtype=torch.float32)
+    target_correct = torch.ones([batch_dim, ], dtype=torch.float32).to(pair_a.device)
 
     # incorrect pairs, contrastive loss
     logits_true_incorrect = fcn(pair_a=pair_a_shuffled, pair_b=pair_b)

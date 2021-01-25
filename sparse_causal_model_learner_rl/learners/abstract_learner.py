@@ -14,6 +14,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from torch.nn.utils.clip_grad import clip_grad_norm_
 
 
+
 class AbstractLearner(ABC):
     """Train something."""
 
@@ -70,8 +71,12 @@ class AbstractLearner(ABC):
         # do not convert these to pytorch
         self.no_convert_torch = self.config.get('no_torch', [])
 
+        self.config.maybe_start_communicator()
+        self.config.update_communicator()
+
     # attributes to save to pickle files
     PICKLE_DIRECTLY = ['history', 'epochs', 'epoch_info', 'config']
+
 
     def create_trainables(self):
         """Create the trainables, must be called by the subclass/or on first epoch."""
@@ -142,6 +147,7 @@ class AbstractLearner(ABC):
         tqdm_ = tqdm if do_tqdm else (lambda x: x)
         for _ in tqdm_(range(self.config['train_steps'])):
             self._epoch()
+            self.config.update_communicator()
 
     @abstractmethod
     def maybe_write_artifacts(self, path_epoch, add_artifact_local):

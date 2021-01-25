@@ -1,4 +1,35 @@
 import gin
+import logging
+from ray import tune
+import ray
+from sparse_causal_model_learner_rl.live_parameters.server import run_communicator
+from uuid import uuid1
+
+
+def param_flatten_dict_keys(dct, separator='/'):
+    """Flatten dictionary."""
+    flat_dict = {}
+
+    for key, value in dct.items():
+        if key.find(separator) >= 0:
+            logging.warning(f"Config key {key} contains '/', skipping the key...")
+            continue
+
+        if isinstance(value, dict):
+            for subkey, subval in param_flatten_dict_keys(value).items():
+                flat_dict[f"{key}{separator}{subkey}"] = subval
+        else:
+            flat_dict[key] = value
+
+    return flat_dict
+
+def param_update_from_flat(dct, update_key, update_value, separator='/'):
+    """Update dictionary values based on flattened keys."""
+    sep_key = update_key.split(separator)
+    if len(sep_key) > 1:
+        sk0 = sep_key[0]
+        sk_other = sep_key[1:]
+        param_update_from_flat(dct[sk0], separator.join(sk_other), update_value)
 
 
 @gin.configurable
@@ -13,6 +44,30 @@ class Config(object):
 
     # ignore these keys on pickling
     IGNORE_PICKLE_KEYS = []
+
+    def maybe_start_communicator(self):
+        if self.config.get('run_communicator', True):
+            name = tune.get_trial_name()
+            if name is None:
+                name = str(uuid1())
+                print(f"Selecting name {name}")
+            if not ray.is_initialized():
+                ray.init('auto')
+            logging.info(f"Starting parameter communicator with name {name}")
+            self.communicator = run_communicator(name)
+
+    def update_communicator(self):
+        """Set current parameters and update existing ones."""
+        if self.communicator is None:
+            return
+
+        updates = ray.get(self.communicator.get_clear_updates.remote())
+        for k, v in updates:
+            logging.info(f"Updating parameter {k}: {v}")
+            param_update_from_flat(self._config, k, v)
+
+        self.communicator.set_current_parameters.remote(param_flatten_dict_keys(self._config))
+        self.set_gin_variables()
 
     def __getstate__(self):
         to_pickle = {
@@ -40,6 +95,8 @@ class Config(object):
 
         # temporary variables for the update function
         self._temporary_variables = {}
+
+        self.communicator = None
 
     def update(self, **kwargs):
         if self.UPDATE_KEY in self._config:
