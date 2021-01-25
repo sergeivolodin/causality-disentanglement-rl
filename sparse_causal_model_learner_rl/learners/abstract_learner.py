@@ -116,7 +116,7 @@ class AbstractLearner(ABC):
                 opt = fcn(params=params)
                 self.optimizer_objects[label] = opt
 
-                sch_cls = self.config['schedulers'].get(label, None)
+                sch_cls = self.config.get('schedulers', {}).get(label, None)
                 if sch_cls:
                     sch = sch_cls(optimizer=opt)
                     self.scheduler_objects[label] = sch
