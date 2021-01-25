@@ -142,7 +142,7 @@ class CausalModelLearnerRL(AbstractLearner):
         act_x = np.array(act_x)
         reward_to_go = np.array(reward_to_go)
         done_y = np.array(done_y)
-        rew_y = np.array(done_y)
+        rew_y = np.array(rew_y)
 
         context = {'obs_x': obs_x, 'obs_y': obs_y, 'action_x': act_x,
                    'rew_y': rew_y, 'done_y': done_y,
