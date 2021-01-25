@@ -55,7 +55,12 @@ opt1/Optimizer.lr = 1e-3
 opt2/Optimizer.lr = 1e-3
 
 Config.metrics = {'episode_reward': @episode_reward,}
-Config.schedulers = {}
+sch/Scheduler.name = 'ReduceLROnPlateau'
+sch/Scheduler.patience = 150
+sch/Scheduler.verbose = True
+sch/Scheduler.factor = 0.5
+
+Config.schedulers = {'opt1': @sch/Scheduler,}
 
 Config.optimizers = {'opt1': @opt1/Optimizer}#, 'opt2': @opt2/Optimizer}
 Config.execution = {'opt1': ['discriminate_siamese']}#, 'opt2': ['discriminate']}
