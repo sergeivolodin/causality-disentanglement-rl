@@ -1,6 +1,7 @@
 import ray
 import argparse
 import inquirer
+from sparse_causal_model_learner_rl.config.config import separator
 
 
 parser = argparse.ArgumentParser(description="Change parameters for running trials")
@@ -49,7 +50,7 @@ if __name__ == '__main__':
                 continue
 
             type_map = {'str': str, 'int': int, 'float': float}
-            param_name = f"_gin/{answers['parameter']}"
+            param_name = f"_gin{separator}{answers['parameter']}"
             new_value = answers['value']
             if answers['type'] not in type_map:
                 print(f"Invalue type: {answers['type']}")

@@ -77,3 +77,4 @@ Config.keep_history = False
 Config.checkpoint_every = 500
 
 Config.grad_clip_value = 1e-2
+Config.run_communicator = True

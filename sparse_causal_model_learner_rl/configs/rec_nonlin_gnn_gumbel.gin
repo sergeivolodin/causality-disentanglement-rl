@@ -55,3 +55,4 @@ ThresholdAnnealer.source_metric_key = 'fit/value'
 entropy_np.return_distribution = True
 
 Config.schedulers = {}
+Config.checkpoint_every = 1000

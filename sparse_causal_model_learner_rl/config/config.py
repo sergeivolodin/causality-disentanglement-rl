@@ -7,7 +7,11 @@ from uuid import uuid1
 from copy import deepcopy
 
 
-def param_flatten_dict_keys(dct, separator='//'):
+# flatten keys separator
+separator = '//'
+
+
+def param_flatten_dict_keys(dct):
     """Flatten dictionary."""
     flat_dict = {}
 
@@ -24,7 +28,7 @@ def param_flatten_dict_keys(dct, separator='//'):
 
     return flat_dict
 
-def param_update_from_flat(dct, update_key, update_value, separator='//'):
+def param_update_from_flat(dct, update_key, update_value):
     """Update dictionary values based on flattened keys."""
     sep_key = update_key.split(separator)
     if len(sep_key) > 1:
@@ -49,7 +53,7 @@ class Config(object):
     IGNORE_PICKLE_KEYS = []
 
     def maybe_start_communicator(self):
-        if self.config.get('run_communicator', True):
+        if self.config.get('run_communicator', False):
             name = tune.get_trial_name()
             if name is None:
                 name = str(uuid1())

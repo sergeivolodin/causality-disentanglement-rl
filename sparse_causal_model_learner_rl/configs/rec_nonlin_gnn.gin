@@ -105,3 +105,4 @@ normalize_context_transform.normalize_context_dct = {'obs': ['obs_x', 'obs_y', '
 Config.context_transforms = [@normalize_context_transform]
 
 Config.additional_feature_keys = ['rew_y', 'done_y']
+Config.run_communicator = True
