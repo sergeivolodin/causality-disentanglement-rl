@@ -8,6 +8,7 @@ import sparse_causal_model_learner_rl.loss.losses
 import sparse_causal_model_learner_rl.loss.optimizer
 import sparse_causal_model_learner_rl.metrics.nnz
 import sparse_causal_model_learner_rl.metrics.loss_thresholded
+import sparse_causal_model_learner_rl.metrics.model_entropy
 import gin_tune
 import sparse_causal_model_learner_rl.trainable.value_predictor
 import sparse_causal_model_learner_rl.trainable.fcnet
@@ -45,7 +46,9 @@ opt1/Optimizer.lr = 1e-4
 Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
                   'threshold_features': @threshold_features, 'max_element_ma': @max_element_ma,
                   'max_element_mf': @max_element_mf,
-                  'episode_reward': @episode_reward}
+                  'episode_reward': @episode_reward,
+                  'graph_entropy_ma': @entropy_action,
+                  'graph_entropy_mf': @entropy_features,}
 
 ThresholdAnnealer.source_metric_key = 'fit/value'
 
