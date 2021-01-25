@@ -200,6 +200,8 @@ class AbstractLearner(ABC):
         # shuffling groups
         if self.shuffle:
             for group in self.shuffle_together:
+                lens = [len(context[g_item]) for g_item in group]
+                assert all([l == lens[0] for l in lens])
                 idx = list(range(len(context[group[0]])))
                 np.random.shuffle(idx)
                 for key in group:

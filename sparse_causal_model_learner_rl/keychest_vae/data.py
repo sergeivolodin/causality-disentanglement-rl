@@ -31,9 +31,10 @@ def get_xy_conv(steps=1000, orig_shape=True):
     gin.bind_parameter('Config.disable_cuda', True)
     learner = Learner(Config())
     learner.collect_steps(do_tqdm=True)
-    obs_x = learner._context.get('obs_x').cpu().numpy()
-    obs_y = learner._context.get('obs_y').cpu().numpy()
-    act_x = learner._context.get('action_x').cpu().numpy()
+    ctx = learner._context
+    obs_x = ctx.get('obs_x').cpu().numpy()
+    obs_y = ctx.get('obs_y').cpu().numpy()
+    act_x = ctx.get('action_x').cpu().numpy()
     
     if orig_shape:
         return obs_x, act_x, obs_y

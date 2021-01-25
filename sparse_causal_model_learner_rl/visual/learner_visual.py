@@ -186,7 +186,9 @@ def total_loss(learner, opt_label='opt1'):
     total_loss = 0
     for loss_label in learner.config['execution'][opt_label]:
         loss = learner.config['losses'][loss_label]
-        value = loss['fcn'](**learner._context)
+        if learner._context_cache is None:
+            learner._context
+        value = loss['fcn'](**learner._context_cache)
         coeff = loss['coeff']
         if isinstance(value, dict):
             value = value['loss']

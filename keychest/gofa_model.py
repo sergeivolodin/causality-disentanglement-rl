@@ -26,6 +26,7 @@ def manual_model_features(f_t, a_t, engine):
     assert a_t.shape == (4,)
 
     f_t = dict(f_t)
+    f_t = {x: round(y) for x, y in f_t.items()}
 
     f_t['health'] -= 1
 
