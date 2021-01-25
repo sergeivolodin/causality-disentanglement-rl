@@ -3,7 +3,8 @@ import numpy as np
 import logging
 
 
-def entropy_np(W):
+@gin.configurable
+def entropy_np(W, return_distribution=False):
     """Compute entropy for a softmax distribution."""
 
     # W: shape (n_out, n_in)
@@ -15,7 +16,11 @@ def entropy_np(W):
 
     try:
         entropy = np.log(p_plus) * p_plus + p_minus * np.log(p_minus)
-        return entropy
+        entropy = -entropy
+        if return_distribution:
+            return entropy
+        else:
+            return np.mean(entropy)
     except Exception as e:
         logging.warning(f"Cannot compute entropy for {W}: {e}")
         return -1

@@ -40,7 +40,7 @@ Config.model = @ManyNetworkModel
 
 Config.feature_shape = (17, )
 
-opt1/Optimizer.lr = 1e-4
+opt1/Optimizer.lr = 1e-3
 
 # using vanilla fit loss
 Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
@@ -51,5 +51,7 @@ Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
                   'graph_entropy_mf': @entropy_features,}
 
 ThresholdAnnealer.source_metric_key = 'fit/value'
+
+entropy_np.return_distribution = True
 
 Config.schedulers = {}
