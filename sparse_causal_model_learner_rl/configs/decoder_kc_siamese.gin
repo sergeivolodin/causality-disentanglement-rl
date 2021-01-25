@@ -69,3 +69,4 @@ Config.loss_every = 99999999999999
 Config.graph_every = 99999999999999
 Config.report_weights = False
 Config.keep_history = False
+Config.checkpoint_every = 500
