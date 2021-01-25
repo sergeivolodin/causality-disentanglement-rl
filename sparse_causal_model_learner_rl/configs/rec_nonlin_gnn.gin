@@ -13,15 +13,15 @@ import sparse_causal_model_learner_rl.trainable.fcnet
 import sparse_causal_model_learner_rl.learners.input_normalizer
 include 'common.gin'
 
-tune_run.num_samples = 4
+tune_run.num_samples = 2
 tune_run.resources_per_trial = {'gpu': 0, 'cpu': 1}
 
 Config.train_steps = 2000000
-Config.env_steps = 1000
+Config.env_steps = 10000
 Config.collect_every = 100
-Config.batch_training = True
+Config.batch_training = False
 Config.shuffle = True
-Config.loss_every = 1000
+Config.loss_every = 10000000000000000
 Config.graph_every = 200
 Config.checkpoint_every = 10000
 Config.report_every = 20
@@ -40,8 +40,8 @@ reconstructor/FCNet.hidden_sizes = [150, 150]
 reconstructor/FCNet.activation_cls = @Tanh
 ModelReconstructor.model_cls = @reconstructor/FCNet
 
-model_gnn/FCNet.hidden_sizes = [20, 10]
-model_gnn/FCNet.activation_cls = @Sigmoid
+model_gnn/FCNet.hidden_sizes = [60, 60, 60]
+model_gnn/FCNet.activation_cls = @ReLU
 
 ManyNetworkModel.skip_connection = False#True
 ManyNetworkModel.model_cls = @model_gnn/FCNet
@@ -71,7 +71,7 @@ opt1/Optimizer.name = 'Adam'
 opt2/Optimizer.name = 'Adam'
 opt3/Optimizer.name = 'Adam'
 
-opt1/Optimizer.lr = 1e-2
+opt1/Optimizer.lr = 5e-3
 #opt1/Optimizer.momentum = 0.9
 
 Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer, 'opt3': @opt3/Optimizer}
