@@ -20,22 +20,32 @@ class Normalizer(object):
 
 
 @gin.configurable
-def normalize_context_transform(self, context, normalize_context_lst=None):
+def normalize_context_transform(self, context, normalize_context_dct=None):
     """Normalize context variables"""
 
-    if normalize_context_lst is None:
-        normalize_context_lst = []
+    if normalize_context_dct is None:
+        normalize_context_dct = {}
 
     # cached input normalizer objects
     if not hasattr(self, 'normalizers'):
         self.normalizers = {}
 
-    for norm_item in normalize_context_lst:
-        assert norm_item in context, f"To-normalize item {norm_item} not in context"
-        assert isinstance(context[norm_item], np.ndarray), f"To-normalize item {norm_item} is" \
+    for norm_with, norm_whiches in normalize_context_dct.items():
+        assert norm_with in context, f"To-normalize with item {norm_with} not in context"
+        assert isinstance(context[norm_with], np.ndarray), f"To-normalize with item {with_item} is" \
                                                            " not a numpy array"
-        if norm_item not in self.normalizers:
-            self.normalizers[norm_item] = Normalizer()
-        context[norm_item] = self.normalizers[norm_item].maybe_normalize(context[norm_item])
+        assert isinstance(norm_whiches, list), f"norm_whiches must be a list {norm_whiches} for key {norm_with}"
+
+        if norm_with not in self.normalizers:
+            self.normalizers[norm_with] = Normalizer()
+
+            # computing the first statistics
+            self.normalizers[norm_with].maybe_normalize(context[norm_with])
+
+        for norm_which in norm_whiches:
+            assert norm_which in context, f"To-normalize which item {norm_which} not in context"
+            assert isinstance(context[norm_which], np.ndarray), f"To-normalize which item {norm_which} is" \
+                                                               " not a numpy array"
+            context[norm_which] = self.normalizers[norm_with].maybe_normalize(context[norm_which])
 
     return context
