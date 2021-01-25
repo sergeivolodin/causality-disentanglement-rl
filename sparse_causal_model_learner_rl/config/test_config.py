@@ -10,7 +10,7 @@ def gin_function(x):
 
 def test_config_create():
     c = Config()
-    assert c.config == {}
+    assert c.config == {c.GIN_KEY: {}}
 
 
 def test_config_get():
