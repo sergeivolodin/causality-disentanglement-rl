@@ -62,7 +62,9 @@ Config.potential_trainables_list = [
     {'name': 'model'},
     {'name': 'decoder'},
     {'name': 'reconstructor'},
-    {'name': 'value_predictor'}
+    {'name': 'value_predictor'},
+    {'name': 'causal_feature_model_discriminator'},
+    {'name': 'decoder_discriminator'},
 ]
 
 loss_thresholded.eps = 1e-3

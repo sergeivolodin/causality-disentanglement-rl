@@ -5,7 +5,7 @@ from torch import nn
 
 @gin.configurable
 class Discriminator(nn.Module):
-    """Discriminate between inputs."""
+    """Discriminate between inputs. Outputs LOGITS!"""
 
     def __init__(self, input_shapes_dict, **kwargs):
         super(Discriminator, self).__init__()
@@ -64,7 +64,7 @@ class ModelDiscriminator(Discriminator):
         assert embeddings.shape[1] == self.total_embedding_dim
         assert embeddings.shape[0] == kwargs[self.inputs[0]].shape[0]
         out = self.agg(embeddings)
-        out = nn.Sigmoid(out)
+        # out = nn.Sigmoid()(out) # OUTPUTS LOGITS
         return out
 
 
