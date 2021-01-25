@@ -111,7 +111,7 @@ class CausalModelLearnerRL(AbstractLearner):
                         action = one_hot_encode(self.action_shape[0], action)
 
                     rew_y.append(step['reward'])
-                    done_y.append(is_last)
+                    done_y.append(1. * is_last)
 
                     obs_y.append(step['observation'])
                     act_x.append(action)

@@ -29,3 +29,5 @@ Config.metrics = {}
 Config.optimizers = {}
 Config.execution = {}
 Config.opt_iterations = {}
+
+Config.no_torch = ['additional_feature_keys']

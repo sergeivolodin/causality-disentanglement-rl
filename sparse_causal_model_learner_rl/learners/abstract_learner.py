@@ -67,6 +67,9 @@ class AbstractLearner(ABC):
         # were the trainables already created?
         self.trainables_created = False
 
+        # do not convert these to pytorch
+        self.no_convert_torch = self.config.get('no_torch', [])
+
     # attributes to save to pickle files
     PICKLE_DIRECTLY = ['history', 'epochs', 'epoch_info', 'config']
 
@@ -216,16 +219,24 @@ class AbstractLearner(ABC):
                 for key in group:
                     context[key] = np.array(context[key])[idx]
 
-        def possible_to_torch(x):
+        def possible_to_torch(x, name=""):
             """Convert a list of inputs into an array suitable for the torch model."""
-            if isinstance(x, list) or isinstance(x, np.ndarray):
-                x = np.array(x, dtype=np.float32)
-                if len(x.shape) == 1:
-                    x = x.reshape(-1, 1)
-                return torch.from_numpy(x).to(self.device)
+
+            if name in self.no_convert_torch:
+                return x
+
+            try:
+                if isinstance(x, list) or isinstance(x, np.ndarray):
+                    x = np.array(x, dtype=np.float32)
+                    if len(x.shape) == 1:
+                        x = x.reshape(-1, 1)
+                    return torch.from_numpy(x).to(self.device)
+            except Exception as e:
+                print(f"Cannot convert {name} to torch representation.")
+                raise e
             return x
 
-        context = {x: possible_to_torch(y) for x, y in context.items()}
+        context = {x: possible_to_torch(y, name=x) for x, y in context.items()}
         self._context_cache = context
 
         return context
