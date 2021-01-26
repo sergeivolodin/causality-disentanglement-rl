@@ -52,3 +52,25 @@ def siamese_feature_discriminator(obs, decoder, causal_feature_model_discriminat
     return {'loss': loss_correct + loss_incorrect,
             'metrics': {'disc_siam_correct': loss_correct.item(),
                         'disc_siam_incorrect': loss_incorrect.item()}}
+
+@gin.configurable
+def siamese_feature_discriminator_l2(obs, decoder, **kwargs):
+    def loss(y_true, y_pred):
+        """L2 norm for the distance, no flat."""
+        delta = y_true - y_pred
+        delta = delta.pow(2)
+        delta = delta.flatten(start_dim=1)
+        delta = delta.mean(1)
+        return delta
+
+    # original inputs order
+    batch_dim = obs.shape[0]
+
+    # random permutation for incorrect inputs
+    idxes = torch.randperm(batch_dim).to(obs.device)
+    obs_shuffled = obs[idxes]
+
+    distance_shuffle = loss(obs, obs_shuffled)
+    distance_f = loss(decoder(obs), decoder(obs_shuffled))
+
+    return torch.abs(distance_shuffle - distance_f).mean()
