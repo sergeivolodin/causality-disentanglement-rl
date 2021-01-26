@@ -69,6 +69,7 @@ class ManyNetworkModel(Model):
     def model__params(self):
         """List of model (not switch) parameters."""
         for m in self.all_models:
+            m = getattr(self, m)
             if hasattr(m, 'model') and hasattr(m, 'switch'):
                 for p in m.model.parameters():
                     yield p
@@ -79,6 +80,7 @@ class ManyNetworkModel(Model):
     def switch__params(self):
         """List of switch parameters."""
         for m in self.all_models:
+            m = getattr(self, m)
             if hasattr(m, 'model') and hasattr(m, 'switch'):
                 for p in m.switch.parameters():
                     yield p
