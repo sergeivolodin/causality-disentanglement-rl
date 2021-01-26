@@ -100,6 +100,7 @@ class Config(object):
     def __setstate__(self, s):
         self._config = s['_config']
         self._temporary_variables = s['_temporary_variables']
+        self.communicator = None
 
     def __init__(self, config=None, **kwargs):
         """Initialize
