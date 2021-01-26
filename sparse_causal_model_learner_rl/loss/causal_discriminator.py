@@ -1,7 +1,7 @@
 import torch
 import gin
 
-def contrastive_loss_permute(pair_a, pair_b, fcn):
+def contrastive_loss_permute(pair_a, pair_b, fcn, invert_labels=False):
     """Contrastive loss by permuting pair_a."""
     assert pair_a.shape[0] == pair_b.shape[0], (pair_a.shape, pair_b.shape)
     batch_dim = pair_a.shape[0]
@@ -22,6 +22,10 @@ def contrastive_loss_permute(pair_a, pair_b, fcn):
     # incorrect pairs, contrastive loss
     logits_true_incorrect = fcn(pair_a=pair_a_shuffled, pair_b=pair_b)
     target_incorrect = (idxes == idxes_orig).to(torch.float32).to(pair_a.device)
+
+    if invert_labels:
+        target_correct = 1 - target_correct
+        target_incorrect = 1 - target_incorrect
 
     # two parts of the loss
     loss_correct = criterion(logits_true_correct.view(-1), target_correct)
@@ -48,7 +52,8 @@ def siamese_feature_discriminator(obs, decoder, causal_feature_model_discriminat
     def fcn(pair_a, pair_b):
         return causal_feature_model_discriminator(f_t=pair_a, f_t1=pair_b)
 
-    loss_correct, loss_incorrect = contrastive_loss_permute(decoder(obs), decoder(obs), fcn)
+    loss_correct, loss_incorrect = contrastive_loss_permute(decoder(obs), decoder(obs), fcn,
+                                                            invert_labels=True)
     return {'loss': loss_correct + loss_incorrect,
             'metrics': {'disc_siam_correct': loss_correct.item(),
                         'disc_siam_incorrect': loss_incorrect.item()}}

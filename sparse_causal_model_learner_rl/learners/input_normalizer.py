@@ -26,7 +26,7 @@ class Normalizer(object):
         if self.type_ == 'meanstd':
             return (inp - self.mean) / (eps + self.std)
         elif self.type_ == 'minmax':
-            return 2 * ((inp - self.min) / (self.max - self.min) - 0.5)
+            return 2 * ((inp - self.min) / (1e-3 + self.max - self.min) - 0.5)
         else:
             raise NotImplementedError(f"Wrong type {self.type_}")
 

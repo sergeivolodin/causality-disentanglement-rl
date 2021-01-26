@@ -56,19 +56,26 @@ sch/Scheduler.factor = 0.5
 
 Config.schedulers = {'opt1': @sch/Scheduler,}
 
-Config.optimizers = {'opt1': @opt1/Optimizer}#, 'opt2': @opt2/Optimizer}
-Config.execution = {'opt1': ['discriminate_siamese']}#, 'opt2': ['discriminate']}
+Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer}
+Config.execution = {'opt1': ['discriminate_siamese'], 'opt2': ['discriminate_siamese']}
 Config.losses = {'discriminate_siamese': {'fcn': @siamese_feature_discriminator, 'coeff': 1.0}}
 
-Config.optim_params = {'opt1': ['decoder', 'causal_feature_model_discriminator']}
+Config.optim_params = {'opt1': ['decoder'], 'opt2': ['causal_feature_model_discriminator']}
 
 Config._update_function = []
 
 Config.loss_every = 99999999999999
 Config.graph_every = 99999999999999
-Config.report_weights = False
+Config.report_weights = True
+Config.report_weights_every = 100
 Config.keep_history = False
 Config.checkpoint_every = 500
 
 Config.grad_clip_value = 1e-2
 Config.run_communicator = True
+
+# normalize input data
+Normalizer.once = True
+Normalizer.dim = 0
+normalize_context_transform.normalize_context_dct = {'obs': ['obs_x', 'obs_y', 'obs'],}
+Config.context_transforms = [@normalize_context_transform]

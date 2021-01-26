@@ -118,10 +118,11 @@ class DifferenceAggregator(nn.Module):
         assert output_shape[0] == 1, output_shape
         assert input_shape[0] % 2 == 0, input_shape
         self.input_dim_half = input_shape[0] // 2
-        self.loss = nn.MSELoss()
-        self.to_logits = nn.Linear(1, 1)
+
+        self.loss = lambda y_true, y_pred: (y_true - y_pred).pow(2).mean(1)
+        self.to_logits = nn.Linear(1, 1, bias=True)
 
     def forward(self, x):
         p1 = x[:, :self.input_dim_half]
         p2 = x[:, self.input_dim_half:]
-        return self.to_logits(self.loss(p1, p2))
+        return self.to_logits(self.loss(p1, p2).view(x.shape[0], 1))
