@@ -101,7 +101,17 @@ class AbstractLearner(ABC):
 
         def vars_for_trainables(lst):
             """All variables for a list of trainables."""
-            return [p for k in lst for p in self.trainables[k].parameters()]
+            result = []
+            for k in lst:
+                if k.endswith('__params'):
+                    k_model, k_attr = k.split('.')
+                    k_params = getattr(self.trainables[k_model], k_attr)
+                    if callable(k_params):
+                        k_params = k_params()
+                else:
+                    k_params = self.trainables[k].parameters()
+                result += list(k_params)
+            return result
 
         # All variables for all trainables.
         self.all_variables = vars_for_trainables(self.trainables.keys())
