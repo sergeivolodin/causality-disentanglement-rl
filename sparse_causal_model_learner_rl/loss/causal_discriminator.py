@@ -16,7 +16,7 @@ def contrastive_loss_permute(pair_a, pair_b, fcn, invert_labels=False):
     pair_a_shuffled = pair_a[idxes]
 
     # correct pairs for contrastive loss
-    logits_true_correct = fcn(pair_a=pair_a, pair_b=pair_b)
+    logits_true_correct = fcn(pair_a=pair_a, pair_b=psair_b)
     target_correct = torch.ones([batch_dim, ], dtype=torch.float32).to(pair_a.device)
 
     # incorrect pairs, contrastive loss
@@ -61,7 +61,7 @@ def siamese_feature_discriminator(obs, decoder, causal_feature_model_discriminat
     return contrastive_loss_permute(decoder(obs), decoder(obs), fcn, invert_labels=False)
 
 @gin.configurable
-def siamese_feature_discriminator_l2(obs, decoder, m=1, **kwargs):
+def siamese_feature_discriminator_l2(obs, decoder, margin=1.0, **kwargs):
     def loss(y_true, y_pred):
         """L2 norm for the distance, no flat."""
         delta = y_true - y_pred
@@ -83,6 +83,9 @@ def siamese_feature_discriminator_l2(obs, decoder, m=1, **kwargs):
     # distance_shuffle = loss(obs, obs_shuffled)
     distance_f = loss(decoder(obs), decoder(obs_shuffled))
 
-    return torch.where(target_incorrect,
-                       torch.nn.ReLU()(m - distance_f),
-                       distance_f).mean()
+    # print(torch.nn.ReLU()(margin - distance_f), torch.where)
+
+    return {'loss': torch.where(~target_incorrect, torch.nn.ReLU()(margin - distance_f), distance_f).mean(),
+            'metrics': {'distance_plus': distance_f[~target_incorrect].mean().item(),
+                        'distance_minus': distance_f[target_incorrect].mean().item()}
+            }
