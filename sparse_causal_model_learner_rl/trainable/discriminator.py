@@ -111,7 +111,7 @@ class DecoderDiscriminator(ModelDiscriminator):
 @gin.configurable
 class DifferenceAggregator(nn.Module):
     """Aggregate embeddings with an l2 difference."""
-    def __init__(self, input_shape, output_shape):
+    def __init__(self, input_shape, output_shape, use_cosine=False):
         super(DifferenceAggregator, self).__init__()
         assert len(input_shape) == 1, input_shape
         assert len(output_shape) == 1, output_shape
@@ -119,11 +119,22 @@ class DifferenceAggregator(nn.Module):
         assert input_shape[0] % 2 == 0, input_shape
         self.input_dim_half = input_shape[0] // 2
 
-        self.loss = lambda y_true, y_pred: (y_true - y_pred).pow(2).mean(1)
-        self.to_logits = nn.Linear(1, 1, bias=True)
 
-        torch.nn.init.constant_(self.to_logits.bias, -2.0)
-        torch.nn.init.constant_(self.to_logits.weight, 1.0)
+        if use_cosine:
+            self.cos_loss = nn.CosineSimilarity(dim=1)
+            self.loss = lambda y_true, y_pred: self.cos_loss(y_true, y_pred)
+            # loss: [-1, 1], -1 is best
+            # self.loss = lambda y_true, y_pred: (y_true - y_pred).pow(2).mean(1)
+            self.to_logits = nn.Linear(1, 1, bias=True)
+
+            torch.nn.init.constant_(self.to_logits.bias, 0)
+            torch.nn.init.constant_(self.to_logits.weight, 0.01)
+        else:
+            self.loss = lambda y_true, y_pred: (y_true - y_pred).pow(2).mean(1)
+            self.to_logits = nn.Linear(1, 1, bias=True)
+
+            torch.nn.init.constant_(self.to_logits.bias, -2.0)
+            torch.nn.init.constant_(self.to_logits.weight, 1.0)
 
     def forward(self, x):
         p1 = x[:, :self.input_dim_half]

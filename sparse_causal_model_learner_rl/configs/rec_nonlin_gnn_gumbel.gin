@@ -63,3 +63,6 @@ entropy_np.return_distribution = True
 
 Config.schedulers = {}
 Config.checkpoint_every = 1000
+
+LearnableSwitch.switch_neg = -5
+LearnableSwitch.switch_pos = 5

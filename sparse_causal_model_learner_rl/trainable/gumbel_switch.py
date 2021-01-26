@@ -11,13 +11,13 @@ class LearnableSwitch(nn.Module):
     Based on Yoshua Bengio's group work and the Gumbel-Softmax trick.
     """
 
-    def __init__(self, shape, sample_many=True):
+    def __init__(self, shape, sample_many=True, switch_neg=-1, switch_pos=1):
         super(LearnableSwitch, self).__init__()
         self.shape = shape
         # 1-st component is for ACTIVE
 
-        init_0 = np.ones(shape) * -1
-        init_1 = np.ones(shape) * 1
+        init_0 = np.ones(shape) * switch_neg
+        init_1 = np.ones(shape) * switch_pos
         init = np.array([init_0, init_1])
         #init = np.array(np.ones((2, *shape)), dtype=np.float32)
         init = np.array(init, dtype=np.float32)
