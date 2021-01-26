@@ -133,6 +133,18 @@ def sparsity_loss_linreg(obs_x, obs_y, action_x, decoder, fcn=sparsity_uniform, 
     #return fcn(tensors=[Mf, Ma, torch.pinverse(Mf), torch.pinverse(Ma)], ord=ord)
     return sparsity_uniform([Mf, Ma, torch.inverse(Mf), torch.inverse(Ma)], ord=ord)
 
+
+@gin.configurable
+def nonzero_proba_loss(model, eps=1e-3, **kwargs):
+    """Make probabilities larger than some constant, so that gradients do not disappear completely."""
+    params = [x[1] for x in model.sparsify_me()]
+    # assuming proba in [0, 1]
+    margin = [torch.nn.ReLU()(eps - param.flatten().abs()).mean() / eps for param in params]
+    msp = [p.min().item() for p in params]
+    return {'loss': sum(margin) / len(margin),
+            'metrics': {'min_switch_proba': min(msp)}}
+
+
 @gin.configurable
 def sparsity_loss(model, device, add_reg=True, ord=1, eps=1e-8, add_inv=True,
                   **kwargs):
