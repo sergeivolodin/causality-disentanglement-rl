@@ -24,7 +24,7 @@ decoder/FCNet.activation_cls = @Tanh
 ModelDecoder.model_cls = @decoder/FCNet
 ModelDecoder.use_batchnorm = False
 
-CausalFeatureModelDiscriminator.feature_embedding_dim = 20
+CausalFeatureModelDiscriminator.feature_embedding_dim = 40
 CausalFeatureModelDiscriminator.input_embedder_cls = {'f_t1': @IdentityNet,
                                                       'f_t':  @IdentityNet}
 
@@ -41,12 +41,12 @@ Config.reconstructor = None
 Config.value_predictor = None
 Config.causal_feature_model_discriminator = @CausalFeatureModelDiscriminator
 
-Config.feature_shape = (20, )
+Config.feature_shape = (40, )
 
 opt1/Optimizer.name = 'Adam'
 opt2/Optimizer.name = 'Adam'
-opt1/Optimizer.lr = 1e-3
-opt2/Optimizer.lr = 1e-3
+opt1/Optimizer.lr = 1e-2
+opt2/Optimizer.lr = 5e-3
 
 Config.metrics = {'episode_reward': @episode_reward,}
 sch/Scheduler.name = 'ReduceLROnPlateau'
@@ -61,6 +61,7 @@ Config.execution = {'opt1': ['discriminate_siamese'], 'opt2': ['discriminate_sia
 Config.losses = {'discriminate_siamese': {'fcn': @siamese_feature_discriminator, 'coeff': 1.0}}
 
 Config.optim_params = {'opt1': ['decoder'], 'opt2': ['causal_feature_model_discriminator']}
+Config.opt_iterations = {'opt1': 1, 'opt2': 1}
 
 Config._update_function = []
 
@@ -71,7 +72,7 @@ Config.report_weights_every = 100
 Config.keep_history = False
 Config.checkpoint_every = 500
 
-Config.grad_clip_value = 1e-2
+Config.grad_clip_value = 1e-1
 Config.run_communicator = True
 
 # normalize input data

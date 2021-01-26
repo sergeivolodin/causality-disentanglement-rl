@@ -122,6 +122,9 @@ class DifferenceAggregator(nn.Module):
         self.loss = lambda y_true, y_pred: (y_true - y_pred).pow(2).mean(1)
         self.to_logits = nn.Linear(1, 1, bias=True)
 
+        torch.nn.init.constant_(self.to_logits.bias, -2.0)
+        torch.nn.init.constant_(self.to_logits.weight, 1.0)
+
     def forward(self, x):
         p1 = x[:, :self.input_dim_half]
         p2 = x[:, self.input_dim_half:]
