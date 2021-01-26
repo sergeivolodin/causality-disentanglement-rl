@@ -38,7 +38,7 @@ def AnnealerThresholdSelector(config, config_object, epoch_info, temp,
     temp['suggested_hyper'] = non_sparse_fit_loss * multiplier
 
     if temp.get('suggested_hyper', None) is not None and (i - temp['last_hyper_adjustment'] >= adjust_every):
-        config[config_object.GIN_KEY][gin_variable] = temp['suggested_hyper']
+        gin.bind_parameter(gin_variable, temp['suggested_hyper'])
         temp['suggested_hyper'] = None
         temp['last_hyper_adjustment'] = i
     return config
@@ -83,3 +83,8 @@ def ThresholdAnnealer(config, epoch_info, temp,
         temp['suggested_hyper'] = None
         temp['last_hyper_adjustment'] = i
     return config
+
+
+@gin.configurable
+def threshold_annealer_threshold(**kwargs):
+    return gin.query_parameter('ThresholdAnnealer.fit_threshold')

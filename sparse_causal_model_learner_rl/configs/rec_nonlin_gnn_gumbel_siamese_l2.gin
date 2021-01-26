@@ -1,0 +1,105 @@
+import sparse_causal_model_learner_rl.trainable.decoder
+import sparse_causal_model_learner_rl.trainable.reconstructor
+import sparse_causal_model_learner_rl.trainable.model
+import sparse_causal_model_learner_rl.trainable.gumbel_switch
+import sparse_causal_model_learner_rl.config
+import sparse_causal_model_learner_rl.annealer.threshold
+import sparse_causal_model_learner_rl.loss.losses
+import sparse_causal_model_learner_rl.loss.optimizer
+import sparse_causal_model_learner_rl.metrics.nnz
+import sparse_causal_model_learner_rl.metrics.loss_thresholded
+import sparse_causal_model_learner_rl.metrics.model_entropy
+import gin_tune
+import sparse_causal_model_learner_rl.trainable.value_predictor
+import sparse_causal_model_learner_rl.trainable.fcnet
+import sparse_causal_model_learner_rl.learners.input_normalizer
+import sparse_causal_model_learner_rl.metrics.context_rewrite
+import sparse_causal_model_learner_rl.loss.causal_discriminator
+include 'rec_nonlin_gnn.gin'
+
+tune_run.num_samples = 1
+
+Config.loss_every = 1000000000000000
+
+model_gnn/FCNet.hidden_sizes = [60, 60, 60]
+model_gnn/FCNet.activation_cls = @ReLU
+
+model_gnn/WithInputSwitch.model_cls = @model_gnn/FCNet
+
+LearnableSwitch.sample_many = False
+
+Config.env_steps = 5000
+Config.collect_every = 10
+Config.batch_training = False
+Config.shuffle = False
+
+Config.decoder = @IdentityDecoder#ModelDecoder
+Config.reconstructor = @IdentityReconstructor#ModelReconstructor
+
+ManyNetworkModel.skip_connection = False
+sparse_model/ManyNetworkModel.model_cls = @model_gnn/WithInputSwitch
+non_sparse_model/ManyNetworkModel.model_cls = @model_gnn/FCNet
+ManyNetworkModel.sparse_do_max = False
+ManyNetworkModel.sparse_do_max_mfma = False
+
+Config.model = @sparse_model/ManyNetworkModel
+Config.non_sparse_model = @non_sparse_model/ManyNetworkModel
+
+Config.feature_shape = (17, )
+
+opt1/Optimizer.lr = 1e-3
+opt2/Optimizer.lr = 1e-3
+opt3/Optimizer.lr = 1e-3
+
+Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer, 'opt3': @opt2/Optimizer}
+Config.execution = {'opt1': ['fit', 'discriminate_siamese', 'sparsity'],
+                    'opt2': ['fit', 'discriminate_siamese', 'sparsity'],
+                    'opt3': ['non_sparse_fit', 'discriminate_siamese']}
+Config.optim_params = {'opt1': ['model.switch__params'],
+                       'opt2': ['model.model__params', 'decoder'],
+                       'opt3': ['non_sparse_model']}
+Config.opt_iterations = {'opt1': 2, 'opt2': 1, 'opt3': 1}
+
+# using vanilla fit loss
+Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
+                  'threshold_features': @threshold_features, 'max_element_ma': @max_element_ma,
+                  'max_element_mf': @max_element_mf,
+                  'episode_reward': @episode_reward,
+                  'graph_entropy_ma': @entropy_action,
+                  'graph_entropy_mf': @entropy_features,
+                  'threshold_annealer_threshold': @threshold_annealer_threshold}
+
+Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1},
+                 'sparsity': {'fcn': @sparsity_loss, 'coeff': 1e-10},
+                 # 'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 1},
+                 'non_sparse_fit': {'fcn': @non_sparse_fit_loss/context_rewriter, 'coeff': 1},
+                 'discriminate_siamese': {'fcn': @siamese_feature_discriminator_l2, 'coeff': 1.0},
+                }
+
+non_sparse_fit_loss/context_rewriter.function = @fit_loss
+non_sparse_fit_loss/context_rewriter.rewrite = {'model': 'non_sparse_model'}
+
+ThresholdAnnealer.source_metric_key = '/fit/value'
+
+entropy_np.return_distribution = True
+
+Config.schedulers = {}
+Config.checkpoint_every = 1000
+
+LearnableSwitch.switch_neg = -2
+LearnableSwitch.switch_pos = 2
+
+Config._update_function = [@AnnealerThresholdSelector, @ThresholdAnnealer]
+
+ThresholdAnnealer.adjust_every = 20
+AnnealerThresholdSelector.multiplier = 10
+AnnealerThresholdSelector.adjust_every = 20
+AnnealerThresholdSelector.source_fit_loss_key = '/non_sparse_fit/value'
+
+# normalize input data
+Normalizer.once = True
+Normalizer.dim = 0
+normalize_context_transform.normalize_context_dct = {'obs': ['obs_x', 'obs_y', 'obs'],}
+Config.context_transforms = [@normalize_context_transform]
+
+siamese_feature_discriminator_l2.margin = 0.1

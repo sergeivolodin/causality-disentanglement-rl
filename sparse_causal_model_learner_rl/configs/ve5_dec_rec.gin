@@ -1,0 +1,30 @@
+import sparse_causal_model_learner_rl.trainable.decoder
+import sparse_causal_model_learner_rl.trainable.reconstructor
+import sparse_causal_model_learner_rl.trainable.model
+import sparse_causal_model_learner_rl.trainable.gumbel_switch
+import sparse_causal_model_learner_rl.config
+import sparse_causal_model_learner_rl.annealer.threshold
+import sparse_causal_model_learner_rl.loss.losses
+import sparse_causal_model_learner_rl.loss.optimizer
+import sparse_causal_model_learner_rl.metrics.nnz
+import sparse_causal_model_learner_rl.metrics.loss_thresholded
+import sparse_causal_model_learner_rl.metrics.model_entropy
+import gin_tune
+import sparse_causal_model_learner_rl.trainable.value_predictor
+import sparse_causal_model_learner_rl.trainable.fcnet
+import sparse_causal_model_learner_rl.learners.input_normalizer
+import sparse_causal_model_learner_rl.metrics.context_rewrite
+
+decoder/FCNet.hidden_sizes = [150, 150, 150]
+decoder/FCNet.activation_cls = @Tanh
+ModelDecoder.model_cls = @decoder/FCNet
+ModelDecoder.use_batchnorm = False
+
+Config.decoder = @ModelDecoder
+
+reconstructor/FCNet.hidden_sizes = [150, 150, 150]
+reconstructor/FCNet.activation_cls = @Tanh
+ModelReconstructor.model_cls = @reconstructor/FCNet
+ModelReconstructor.use_batchnorm = False
+
+Config.reconstructor = @ModelReconstructor
