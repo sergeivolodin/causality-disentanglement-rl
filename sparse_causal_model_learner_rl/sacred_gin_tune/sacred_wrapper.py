@@ -164,7 +164,7 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
                 tune.report()
 
     if checkpoint_dir:
-        learner = pickle.load(os.path.join(checkpoint_dir, "checkpoint"))
+        learner = pickle.load(open(os.path.join(checkpoint_dir, "checkpoint"), 'rb'))
         learner.callback = callback
     else:
         learner = learner_cls(config, callback=callback)
