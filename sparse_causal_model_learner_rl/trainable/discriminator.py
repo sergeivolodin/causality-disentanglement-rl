@@ -107,3 +107,21 @@ class DecoderDiscriminator(ModelDiscriminator):
             },
             **kwargs
         )
+
+@gin.configurable
+class DifferenceAggregator(nn.Module):
+    """Aggregate embeddings with an l2 difference."""
+    def __init__(self, input_shape, output_shape):
+        super(DifferenceAggregator, self).__init__()
+        assert len(input_shape) == 1, input_shape
+        assert len(output_shape) == 1, output_shape
+        assert output_shape[0] == 1, output_shape
+        assert input_shape[0] % 2 == 0, input_shape
+        self.input_dim_half = input_shape[0] // 2
+        self.loss = nn.MSELoss()
+        self.to_logits = nn.Linear(1, 1)
+
+    def forward(self, x):
+        p1 = x[:, :self.input_dim_half]
+        p2 = x[:, self.input_dim_half:]
+        return self.to_logits(self.loss(p1, p2))

@@ -27,6 +27,16 @@ class Scaler(nn.Module):
     def __repr__(self):
         return f"Scaler({self.shape})"
 
+@gin.configurable
+class IdentityNet(nn.Module):
+    """Return the input"""
+
+    def __init__(self, input_shape, output_shape, **kwargs):
+        super(IdentityNet, self).__init__()
+        assert input_shape == output_shape, (input_shape, output_shape)
+
+    def forward(self, x):
+        return x
 
 @gin.configurable
 class FCNet(nn.Module):

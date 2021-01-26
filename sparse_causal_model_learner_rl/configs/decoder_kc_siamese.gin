@@ -24,17 +24,11 @@ decoder/FCNet.activation_cls = @Tanh
 ModelDecoder.model_cls = @decoder/FCNet
 ModelDecoder.use_batchnorm = False
 
-dec_agg/FCNet.hidden_sizes = [100]
-dec_agg/FCNet.activation_cls = @ReLU
-
-net_f/FCNet.hidden_sizes = []
-net_f/FCNet.activation_cls = None
-
 CausalFeatureModelDiscriminator.feature_embedding_dim = 20
-CausalFeatureModelDiscriminator.input_embedder_cls = {'f_t1': @net_f/FCNet,
-                                                      'f_t':  @net_f/FCNet,}
+CausalFeatureModelDiscriminator.input_embedder_cls = {'f_t1': @IdentityNet,
+                                                      'f_t':  @IdentityNet}
 
-CausalFeatureModelDiscriminator.aggregator_cls = @dec_agg/FCNet
+CausalFeatureModelDiscriminator.aggregator_cls = @DifferenceAggregator
 
 Config.env_steps = 5000
 Config.collect_every = 100

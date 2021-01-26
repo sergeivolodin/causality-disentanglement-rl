@@ -17,6 +17,8 @@ import sparse_causal_model_learner_rl.trainable.fcnet
 import sparse_causal_model_learner_rl.learners.input_normalizer
 include 'common.gin'
 
+# l2 shouldn't be the same actually for 1-hot and coord representations...
+
 tune_run.num_samples = 1
 
 decoder/FCNet.hidden_sizes = [150, 150, 150]
