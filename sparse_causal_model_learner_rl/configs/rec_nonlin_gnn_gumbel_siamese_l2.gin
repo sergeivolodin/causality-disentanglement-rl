@@ -28,6 +28,7 @@ model_gnn/FCNet.activation_cls = @ReLU
 model_gnn/WithInputSwitch.model_cls = @model_gnn/FCNet
 
 LearnableSwitch.sample_many = True
+LearnableSwitch.power = 0.3
 
 Config.env_steps = 5000
 Config.collect_every = 10
@@ -53,9 +54,9 @@ opt2/Optimizer.lr = 1e-3
 opt3/Optimizer.lr = 1e-3
 
 Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer, 'opt3': @opt2/Optimizer}
-Config.execution = {'opt1': ['fit', 'discriminate_siamese', 'sparsity'],
-                    'opt2': ['fit', 'discriminate_siamese', 'sparsity'],
-                    'opt3': ['non_sparse_fit', 'discriminate_siamese']}
+Config.execution = {'opt1': ['fit', 'non_sparse_fit', 'no_small_probas', 'discriminate_siamese', 'sparsity'],
+                    'opt2': ['fit', 'non_sparse_fit', 'no_small_probas', 'discriminate_siamese', 'sparsity'],
+                    'opt3': ['fit', 'non_sparse_fit', 'no_small_probas', 'discriminate_siamese', 'sparsity']}
 Config.optim_params = {'opt1': ['model.switch__params'],
                        'opt2': ['model', 'decoder'],
                        'opt3': ['non_sparse_model']}
@@ -77,6 +78,7 @@ Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1},
                  # 'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 1},
                  'non_sparse_fit': {'fcn': @non_sparse_fit_loss/context_rewriter, 'coeff': 1},
                  'discriminate_siamese': {'fcn': @siamese_feature_discriminator_l2, 'coeff': 1.0},
+                 'no_small_probas': {'fcn': @nonzero_proba_loss, 'coeff': 0.3},
                 }
 
 non_sparse_fit_loss/context_rewriter.function = @fit_loss
@@ -89,8 +91,8 @@ entropy_np.return_distribution = True
 Config.schedulers = {}
 Config.checkpoint_every = 1000
 
-LearnableSwitch.switch_neg = -1
-LearnableSwitch.switch_pos = 1
+LearnableSwitch.switch_neg = -0.1
+LearnableSwitch.switch_pos = 0.1
 
 Config._update_function = [@AnnealerThresholdSelector, @ThresholdAnnealer]
 
@@ -99,7 +101,7 @@ ThresholdAnnealer.factor_cool = 0.7
 ThresholdAnnealer.factor_warm = 0.3
 ThresholdAnnealer.min_hyper = %MIN_HYPER_ANNEAL
 ThresholdAnnealer.max_hyper = 10
-AnnealerThresholdSelector.multiplier = 2
+AnnealerThresholdSelector.multiplier = 5
 AnnealerThresholdSelector.adjust_every = 20
 AnnealerThresholdSelector.source_fit_loss_key = '/non_sparse_fit/value'
 

@@ -11,7 +11,7 @@ class LearnableSwitch(nn.Module):
     Based on Yoshua Bengio's group work and the Gumbel-Softmax trick.
     """
 
-    def __init__(self, shape, sample_many=True, switch_neg=-1, switch_pos=1):
+    def __init__(self, shape, sample_many=True, power=1.0, switch_neg=-1, switch_pos=1):
         super(LearnableSwitch, self).__init__()
         self.shape = shape
         # 1-st component is for ACTIVE
@@ -24,6 +24,7 @@ class LearnableSwitch(nn.Module):
 
         self.logits = torch.nn.Parameter(torch.from_numpy(init))
         self.sample_many = sample_many
+        self.power = power
 
     def logits_batch(self, n_batch):
         return self.logits.view(self.logits.shape[0], 1,
@@ -62,8 +63,11 @@ class LearnableSwitch(nn.Module):
         if return_mask:
             return mask
 
-        return x * mask
-
+        # power<1 increases the gradient when the proba is low
+        # otherwise, grad ~ proba ** 2 (sampling + here)
+        # (xsigma^a')xasigma^a*(1-sigma). the (1-sigma part can still be low)
+        # but there the sampling is almost sure
+        return x * (mask ** power)
 
 @gin.configurable
 class WithInputSwitch(nn.Module):
