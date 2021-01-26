@@ -16,10 +16,11 @@ class LearnableSwitch(nn.Module):
         self.shape = shape
         # 1-st component is for ACTIVE
 
-        # init_0 = np.ones(shape) * -1
-        # init_1 = np.ones(shape) * 1
-        # init = np.array([init_0, init_1])
-        init = np.array(np.ones((2, *shape)), dtype=np.float32)
+        init_0 = np.ones(shape) * -1
+        init_1 = np.ones(shape) * 1
+        init = np.array([init_0, init_1])
+        #init = np.array(np.ones((2, *shape)), dtype=np.float32)
+        init = np.array(init, dtype=np.float32)
 
         self.logits = torch.nn.Parameter(torch.from_numpy(init))
         self.sample_many = sample_many
