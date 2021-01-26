@@ -57,7 +57,7 @@ Config.execution = {'opt1': ['fit', 'discriminate_siamese', 'sparsity'],
                     'opt2': ['fit', 'discriminate_siamese', 'sparsity'],
                     'opt3': ['non_sparse_fit', 'discriminate_siamese']}
 Config.optim_params = {'opt1': ['model.switch__params'],
-                       'opt2': ['model.model__params', 'decoder'],
+                       'opt2': ['model', 'decoder'],
                        'opt3': ['non_sparse_model']}
 Config.opt_iterations = {'opt1': 2, 'opt2': 1, 'opt3': 1}
 

@@ -71,7 +71,7 @@ def plot_model(model, vmin=None, vmax=None):
     max_f = np.max(np.abs(Mf))
     vmin_ = vmin if vmin is not None else -max_f
     vmax_ = vmax if vmax is not None else max_f
-    sns.heatmap(Mf, vmin=-vmin_, vmax=vmax_, cmap=cm)
+    sns.heatmap(Mf, vmin=vmin_, vmax=vmax_, cmap=cm)
     plt.xlabel('Old features')
     plt.ylabel('New features')
 
