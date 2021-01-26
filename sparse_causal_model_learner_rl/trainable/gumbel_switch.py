@@ -67,7 +67,7 @@ class LearnableSwitch(nn.Module):
         # otherwise, grad ~ proba ** 2 (sampling + here)
         # (xsigma^a')xasigma^a*(1-sigma). the (1-sigma part can still be low)
         # but there the sampling is almost sure
-        return x * (mask ** power)
+        return x * mask.pow(power)
 
 @gin.configurable
 class WithInputSwitch(nn.Module):
