@@ -18,6 +18,33 @@ def find_value(dct, key_substr):
 
 
 @gin.configurable
+def AnnealerThresholdSelector(config, config_object, epoch_info, temp,
+                              adjust_every=100,
+                              multiplier=10, # allow the loss to be 10 times bigger than the best
+                              source_quality_key=None,
+                              source_fit_loss_key='no_sparse_fit',
+                              gin_variable='ThresholdAnnealer.fit_threshold'):
+    """Adjust the fit threshold based on a non-sparse model's loss."""
+    try:
+        non_sparse_fit_loss = find_value(epoch_info, source_fit_loss_key)
+        logging.info(f"Threshold detector found non-sparse loss {non_sparse_fit_loss}")
+    except AssertionError as e:
+        return config
+
+    if 'last_hyper_adjustment' not in temp:
+        temp['last_hyper_adjustment'] = 0
+    i = epoch_info['epochs']
+
+    temp['suggested_hyper'] = non_sparse_fit_loss * multiplier
+
+    if temp.get('suggested_hyper', None) is not None and (i - temp['last_hyper_adjustment'] >= adjust_every):
+        config[config_object.GIN_KEY][gin_variable] = temp['suggested_hyper']
+        temp['suggested_hyper'] = None
+        temp['last_hyper_adjustment'] = i
+    return config
+
+
+@gin.configurable
 def ThresholdAnnealer(config, epoch_info, temp,
                       fit_threshold=1e-2,
                       min_hyper=1e-5,
@@ -51,7 +78,7 @@ def ThresholdAnnealer(config, epoch_info, temp,
         if config['losses']['sparsity']['coeff'] < max_hyper:
             temp['suggested_hyper'] = config['losses']['sparsity']['coeff'] / factor
 
-    if 'suggested_hyper' in temp and temp['suggested_hyper'] is not None and (i - temp['last_hyper_adjustment'] >= adjust_every):
+    if temp.get('suggested_hyper', None) is not None and (i - temp['last_hyper_adjustment'] >= adjust_every):
         config['losses']['sparsity']['coeff'] = temp['suggested_hyper']
         temp['suggested_hyper'] = None
         temp['last_hyper_adjustment'] = i

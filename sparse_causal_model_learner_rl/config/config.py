@@ -129,9 +129,14 @@ class Config(object):
                 update_val = [update_val]
             results = []
             for i, f in enumerate(update_val):
+                # per-updater termporary variables
+                if i not in self._temporary_variables:
+                    self._temporary_variables[i] = {}
+
                 assert callable(f), f"Update entry {i} must be callable: {f}, {type(f)}"
-                results.append(f(config=self._config, temp=self._temporary_variables,
-                         **kwargs))
+                results.append(f(config=self._config, temp=self._temporary_variables[i],
+                                 config_object=self,
+                                 **kwargs))
             return results
         return []
 
