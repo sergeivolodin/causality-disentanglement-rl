@@ -58,7 +58,8 @@ def add_artifact(fn, ex, do_sacred, epochs, epoch_info):
             logging.error(f"Can't read image: {fn} {e} {type(e)}")
             print(traceback.format_exc())
 
-def plot_model(model):
+@gin.configurable
+def plot_model(model, vmin=None, vmax=None):
     """Plot models (action and features) as a heatmap."""
     cm = sns.diverging_palette(0, 129, l=70, s=100, n=500, center="dark")
 
@@ -68,14 +69,18 @@ def plot_model(model):
     plt.subplot(1, 2, 1)
     plt.title("Model for features")
     max_f = np.max(np.abs(Mf))
-    sns.heatmap(Mf, vmin=-max_f, vmax=max_f, cmap=cm)
+    vmin_ = vmin if vmin is not None else -max_f
+    vmax_ = vmax if vmax is not None else max_f
+    sns.heatmap(Mf, vmin=-vmin_, vmax=vmax_, cmap=cm)
     plt.xlabel('Old features')
     plt.ylabel('New features')
 
     plt.subplot(1, 2, 2)
     plt.title("Model for actions")
     max_a = np.max(np.abs(Ma))
-    sns.heatmap(Ma, vmin=-max_a, vmax=max_a, cmap=cm)
+    vmin_ = vmin if vmin is not None else -max_a
+    vmax_ = vmax if vmax is not None else max_a
+    sns.heatmap(Ma, vmin=vmin_, vmax=vmax_, cmap=cm)
     plt.xlabel('Actions')
     plt.ylabel('New features')
     return fig
