@@ -28,7 +28,6 @@ model_gnn/FCNet.activation_cls = @ReLU
 model_gnn/WithInputSwitch.model_cls = @model_gnn/FCNet
 
 LearnableSwitch.sample_many = True
-LearnableSwitch.power = 0.3
 
 Config.env_steps = 5000
 Config.collect_every = 10
@@ -91,14 +90,14 @@ entropy_np.return_distribution = True
 Config.schedulers = {}
 Config.checkpoint_every = 1000
 
-LearnableSwitch.switch_neg = -0.1
-LearnableSwitch.switch_pos = 0.1
+LearnableSwitch.switch_neg = -3
+LearnableSwitch.switch_pos = 3
 
 Config._update_function = [@AnnealerThresholdSelector, @ThresholdAnnealer]
 
-ThresholdAnnealer.adjust_every = 20
-ThresholdAnnealer.factor_cool = 0.7
-ThresholdAnnealer.factor_warm = 0.3
+ThresholdAnnealer.adjust_every = 100
+ThresholdAnnealer.factor_cool = 0.5
+ThresholdAnnealer.factor_warm = 0.001
 ThresholdAnnealer.min_hyper = %MIN_HYPER_ANNEAL
 ThresholdAnnealer.max_hyper = 10
 AnnealerThresholdSelector.multiplier = 5
