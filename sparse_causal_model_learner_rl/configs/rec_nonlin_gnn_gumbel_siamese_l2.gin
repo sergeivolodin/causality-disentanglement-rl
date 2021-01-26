@@ -33,8 +33,8 @@ Config.collect_every = 10
 Config.batch_training = False
 Config.shuffle = False
 
-Config.decoder = @IdentityDecoder#ModelDecoder
-Config.reconstructor = @IdentityReconstructor#ModelReconstructor
+Config.decoder = @IdentityDecoder
+Config.reconstructor = None
 
 ManyNetworkModel.skip_connection = False
 sparse_model/ManyNetworkModel.model_cls = @model_gnn/WithInputSwitch
@@ -69,8 +69,10 @@ Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
                   'graph_entropy_mf': @entropy_features,
                   'threshold_annealer_threshold': @threshold_annealer_threshold}
 
+MIN_HYPER_ANNEAL = 1e-4
+
 Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1},
-                 'sparsity': {'fcn': @sparsity_loss, 'coeff': 1e-10},
+                 'sparsity': {'fcn': @sparsity_loss, 'coeff': %MIN_HYPER_ANNEAL},
                  # 'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 1},
                  'non_sparse_fit': {'fcn': @non_sparse_fit_loss/context_rewriter, 'coeff': 1},
                  'discriminate_siamese': {'fcn': @siamese_feature_discriminator_l2, 'coeff': 1.0},
@@ -92,7 +94,11 @@ LearnableSwitch.switch_pos = 2
 Config._update_function = [@AnnealerThresholdSelector, @ThresholdAnnealer]
 
 ThresholdAnnealer.adjust_every = 20
-AnnealerThresholdSelector.multiplier = 10
+ThresholdAnnealer.factor_cool = 0.7
+ThresholdAnnealer.factor_warm = 0.3
+ThresholdAnnealer.min_hyper = %MIN_HYPER_ANNEAL
+ThresholdAnnealer.max_hyper = 10
+AnnealerThresholdSelector.multiplier = 2
 AnnealerThresholdSelector.adjust_every = 20
 AnnealerThresholdSelector.source_fit_loss_key = '/non_sparse_fit/value'
 
@@ -103,3 +109,10 @@ normalize_context_transform.normalize_context_dct = {'obs': ['obs_x', 'obs_y', '
 Config.context_transforms = [@normalize_context_transform]
 
 siamese_feature_discriminator_l2.margin = 0.1
+
+Config.report_every = 5
+Config.metrics_every = 5
+
+tune_run.resources_per_trial = {'gpu': 0, 'cpu': 1}
+
+Config.graph_every = 20
