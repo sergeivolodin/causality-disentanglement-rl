@@ -21,8 +21,8 @@ include 'common.gin'
 
 tune_run.num_samples = 1
 
-decoder/FCNet.hidden_sizes = [150, 150, 150]
-decoder/FCNet.activation_cls = @Tanh
+decoder/FCNet.hidden_sizes = [512]
+decoder/FCNet.activation_cls = @Sigmoid
 ModelDecoder.model_cls = @decoder/FCNet
 ModelDecoder.use_batchnorm = False
 
@@ -62,7 +62,7 @@ Config.optim_params = {'opt1': ['decoder', 'model']}#, 'causal_feature_model_dis
 Config._update_function = []
 
 Config.loss_every = 99999999999999
-Config.graph_every = 99999999999999
+Config.graph_every = 200
 Config.report_weights = False
 Config.keep_history = False
 Config.checkpoint_every = 500
@@ -76,7 +76,7 @@ Normalizer.dim = 0
 normalize_context_transform.normalize_context_dct = {'obs': ['obs_x', 'obs_y', 'obs'],}
 Config.context_transforms = [@normalize_context_transform]
 
-siamese_feature_discriminator_l2.margin = 1.0
+siamese_feature_discriminator_l2.margin = 0.1
 
 model_gnn/FCNet.hidden_sizes = [60, 60, 60]
 model_gnn/FCNet.activation_cls = @ReLU
