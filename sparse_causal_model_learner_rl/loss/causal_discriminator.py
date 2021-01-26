@@ -27,11 +27,19 @@ def contrastive_loss_permute(pair_a, pair_b, fcn, invert_labels=False):
         target_correct = 1 - target_correct
         target_incorrect = 1 - target_incorrect
 
+    mean_logits_correct = logits_true_correct.mean()
+    mean_logits_incorrect = logits_true_incorrect.mean()
+
     # two parts of the loss
     loss_correct = criterion(logits_true_correct.view(-1), target_correct)
     loss_incorrect = criterion(logits_true_incorrect.view(-1), target_incorrect)
 
-    return loss_correct, loss_incorrect
+    return {'loss': loss_correct + loss_incorrect,
+            'metrics': {'disc_correct': loss_correct.item(),
+                        'disc_incorrect': loss_incorrect.item(),
+                        'mean_logits_correct': mean_logits_correct.item(),
+                        'mean_logits_incorrect': mean_logits_incorrect.item(),
+                        'mean_incorrect_collision': target_incorrect.mean().item()}}
 
 
 @gin.configurable
@@ -42,24 +50,18 @@ def decoder_discriminator_loss(obs, decoder, decoder_discriminator, **kwargs):
         # pair_a == obs
         return decoder_discriminator(o_t=pair_a, f_t=pair_b)
 
-    loss_correct, loss_incorrect = contrastive_loss_permute(obs, decoder(obs), fcn)
-    return {'loss': loss_correct + loss_incorrect,
-            'metrics': {'disc_correct': loss_correct.item(),
-                        'disc_incorrect': loss_incorrect.item()}}
+    return contrastive_loss_permute(obs, decoder(obs), fcn)
+
 
 @gin.configurable
 def siamese_feature_discriminator(obs, decoder, causal_feature_model_discriminator, **kwargs):
     def fcn(pair_a, pair_b):
         return causal_feature_model_discriminator(f_t=pair_a, f_t1=pair_b)
 
-    loss_correct, loss_incorrect = contrastive_loss_permute(decoder(obs), decoder(obs), fcn,
-                                                            invert_labels=True)
-    return {'loss': loss_correct + loss_incorrect,
-            'metrics': {'disc_siam_correct': loss_correct.item(),
-                        'disc_siam_incorrect': loss_incorrect.item()}}
+    return contrastive_loss_permute(decoder(obs), decoder(obs), fcn, invert_labels=False)
 
 @gin.configurable
-def siamese_feature_discriminator_l2(obs, decoder, **kwargs):
+def siamese_feature_discriminator_l2(obs, decoder, m=1, **kwargs):
     def loss(y_true, y_pred):
         """L2 norm for the distance, no flat."""
         delta = y_true - y_pred
@@ -75,7 +77,12 @@ def siamese_feature_discriminator_l2(obs, decoder, **kwargs):
     idxes = torch.randperm(batch_dim).to(obs.device)
     obs_shuffled = obs[idxes]
 
-    distance_shuffle = loss(obs, obs_shuffled)
+    idxes_orig = torch.arange(start=0, end=batch_dim).to(obs.device)
+    target_incorrect = (idxes == idxes_orig).to(obs.device)
+
+    # distance_shuffle = loss(obs, obs_shuffled)
     distance_f = loss(decoder(obs), decoder(obs_shuffled))
 
-    return torch.abs(distance_shuffle - distance_f).mean()
+    return torch.where(target_incorrect,
+                       torch.nn.ReLU()(m - distance_f),
+                       distance_f).mean()
