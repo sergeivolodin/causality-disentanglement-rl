@@ -59,12 +59,13 @@ Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1.0},
                 }
 
 Config.potential_trainables_list = [
-    {'name': 'model'},
-    {'name': 'decoder'},
-    {'name': 'reconstructor'},
-    {'name': 'value_predictor'},
-    {'name': 'causal_feature_model_discriminator'},
-    {'name': 'decoder_discriminator'},
+    {'name': 'model', 'description': "Transform current time-step features into next time-step features"},
+    {'name': 'decoder', 'description': "Transform high-dimensional observation into low-dimensional features"},
+    {'name': 'reconstructor', 'description': "Predict the original observation from features"},
+    {'name': 'value_predictor', 'description': "Predict value-to-go from the current features"},
+    {'name': 'causal_feature_model_discriminator', 'description': "Discriminate between correct and incorrect of pairs (f1, f2)"},
+    {'name': 'decoder_discriminator', 'description': "Discriminate between correct and incorrect pairs of (observation, feature)"},
+    {'name': 'non_sparse_model', 'description': "A model w/o sparsity constraints used for reference"}
 ]
 
 loss_thresholded.eps = 1e-3
