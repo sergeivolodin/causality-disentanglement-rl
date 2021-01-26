@@ -15,6 +15,20 @@ class Normalizer(object):
         self.once = once
         self.dim = dim
 
+    def unnormalize(self, outp, eps=1e-8):
+        if self.type_ == 'minmax':
+            outp /= 2 # -0.5, 0.5
+            outp += 0.5 # 0, 1
+            outp *= (1e-3 + self.max - self.min)
+            outp += self.min
+            return outp
+        elif self.type_ == 'meanstd':
+            outp *= (1e-8 + self.std)
+            outp += self.mean
+            return outp
+        else:
+            raise NotImplementedError(self.type_)
+
     def maybe_normalize(self, inp, eps=1e-8):
         if not self.computed or not self.once:
             self.mean = np.mean(inp, axis=self.dim)

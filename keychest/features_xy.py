@@ -61,7 +61,7 @@ def obs_features_handcoded(engine, obs=None):
         m = get_map(key)
         where = sorted(list(zip(*np.where(m))))
         #         print(key, where)
-        assert len(where) <= 1 or key in objects_cnt
+        assert len(where) <= 1 or key in objects_cnt, (obs, key, m, where)
 
         if key in objects_cnt:
             for i in range(objects_cnt[key]):
