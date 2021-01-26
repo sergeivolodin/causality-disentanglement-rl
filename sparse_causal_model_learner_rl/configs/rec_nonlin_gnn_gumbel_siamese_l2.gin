@@ -27,7 +27,7 @@ model_gnn/FCNet.activation_cls = @ReLU
 
 model_gnn/WithInputSwitch.model_cls = @model_gnn/FCNet
 
-LearnableSwitch.sample_many = False
+LearnableSwitch.sample_many = True
 
 Config.env_steps = 5000
 Config.collect_every = 10
@@ -59,7 +59,7 @@ Config.execution = {'opt1': ['fit', 'discriminate_siamese', 'sparsity'],
 Config.optim_params = {'opt1': ['model.switch__params'],
                        'opt2': ['model', 'decoder'],
                        'opt3': ['non_sparse_model']}
-Config.opt_iterations = {'opt1': 2, 'opt2': 1, 'opt3': 1}
+Config.opt_iterations = {'opt1': 1, 'opt2': 4, 'opt3': 5}
 
 # using vanilla fit loss
 Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
@@ -70,7 +70,7 @@ Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
                   'graph_entropy_mf': @entropy_features,
                   'threshold_annealer_threshold': @threshold_annealer_threshold}
 
-MIN_HYPER_ANNEAL = 1e-4
+MIN_HYPER_ANNEAL = 1e-8
 
 Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1},
                  'sparsity': {'fcn': @sparsity_loss, 'coeff': %MIN_HYPER_ANNEAL},
@@ -89,8 +89,8 @@ entropy_np.return_distribution = True
 Config.schedulers = {}
 Config.checkpoint_every = 1000
 
-LearnableSwitch.switch_neg = -2
-LearnableSwitch.switch_pos = 2
+LearnableSwitch.switch_neg = -1
+LearnableSwitch.switch_pos = 1
 
 Config._update_function = [@AnnealerThresholdSelector, @ThresholdAnnealer]
 
@@ -114,9 +114,11 @@ siamese_feature_discriminator_l2.margin = 0.1
 Config.report_every = 5
 Config.metrics_every = 5
 
-tune_run.resources_per_trial = {'gpu': 0, 'cpu': 1}
+tune_run.resources_per_trial = {'gpu': 0.1, 'cpu': 1}
 
 Config.graph_every = 20
 
 plot_model.vmin = -1.0
 plot_model.vmax = 1.0
+Config.report_weights = True
+Config.report_weights_every = 100
