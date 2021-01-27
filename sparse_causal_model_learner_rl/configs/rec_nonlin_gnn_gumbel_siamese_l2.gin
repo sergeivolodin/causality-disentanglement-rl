@@ -28,6 +28,7 @@ model_gnn/FCNet.activation_cls = @ReLU
 model_gnn/WithInputSwitch.model_cls = @model_gnn/FCNet
 
 LearnableSwitch.sample_many = True
+LearnableSwitch.sample_threshold = 0.99 # after this value, always sample 1 to prevent vanishing grads
 
 Config.env_steps = 5000
 Config.collect_every = 10
