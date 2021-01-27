@@ -98,7 +98,7 @@ Config._update_function = [@AnnealerThresholdSelector, @ThresholdAnnealer]
 
 ThresholdAnnealer.adjust_every = 100
 ThresholdAnnealer.factor_cool = 0.5
-ThresholdAnnealer.factor_warm = 0.001
+ThresholdAnnealer.factor_heat = 0.001
 ThresholdAnnealer.min_hyper = %MIN_HYPER_ANNEAL
 ThresholdAnnealer.max_hyper = 10
 AnnealerThresholdSelector.multiplier = 5
