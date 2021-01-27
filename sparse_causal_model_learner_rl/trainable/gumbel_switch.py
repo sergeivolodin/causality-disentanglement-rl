@@ -2,7 +2,20 @@ import gin
 from torch import nn
 import torch
 import numpy as np
+from functools import partial
 
+
+@gin.configurable
+def sample_from_logits_simple(logits_plus, tau=1.0):
+    """Simple sampling, grad=as if multiplied by proba."""
+    probas = torch.nn.Sigmoid()(logits_plus)
+    probas_tau = torch.nn.Sigmoid()(logits_plus * tau)
+    sampled = torch.bernoulli(probas)
+
+    def grad_fcn():
+        return probas_tau#1000 * logits_plus
+
+    return sampled + grad_fcn() - grad_fcn().detach()#ogits_plus) - torch.exp(logits_plus).detach()#probas_tau - probas_tau.detach()
 
 @gin.configurable
 class LearnableSwitch(nn.Module):
@@ -11,7 +24,11 @@ class LearnableSwitch(nn.Module):
     Based on Yoshua Bengio's group work and the Gumbel-Softmax trick.
     """
 
-    def __init__(self, shape, sample_many=True, power=1.0, switch_neg=-1, switch_pos=1):
+    def __init__(self, shape, sample_many=True,
+                 sample_fcn=None,
+                 power=1.0, switch_neg=-1,
+                 sample_threshold=None,
+                 switch_pos=1, tau=1.0):
         super(LearnableSwitch, self).__init__()
         self.shape = shape
         # 1-st component is for ACTIVE
@@ -25,6 +42,25 @@ class LearnableSwitch(nn.Module):
         self.logits = torch.nn.Parameter(torch.from_numpy(init))
         self.sample_many = sample_many
         self.power = power
+        self.tau = tau
+        self.sample_fcn = sample_fcn
+        if self.sample_fcn is None:
+            self.sample_fcn = partial(torch.nn.functional.gumbel_softmax,
+                                      hard=True, eps=1e-10, dim=0)
+        self.sample_fcn = partial(self.sample_fcn, tau=self.tau)
+        self.sample_threshold = sample_threshold
+        if self.sample_threshold is not None:
+            def new_sample_fcn(logits, f=self.sample_fcn):
+                return self.wrap_sample_threshold(f(logits))
+            self.sample_fcn = new_sample_fcn
+
+    def wrap_sample_threshold(self, mask_sampled):
+        if self.sample_threshold is None:
+            return mask_sampled
+        ones = torch.ones_like(mask_sampled)
+        out = torch.where(self.softmaxed() > self.sample_threshold,
+                          ones, mask_sampled)
+        return out.detach() + mask_sampled - mask_sampled.detach()
 
     def logits_batch(self, n_batch):
         return self.logits.view(self.logits.shape[0], 1,
@@ -38,9 +74,7 @@ class LearnableSwitch(nn.Module):
         return [('proba_on', self.softmaxed())]
 
     def gumbel0(self, logits):
-        return torch.nn.functional.gumbel_softmax(logits,
-                                                  tau=1, hard=True,
-                                                  eps=1e-10, dim=0)[1]
+        return self.sample_fcn(logits)[1]
 
     def sample_mask(self, method='activate'):
 
@@ -74,15 +108,19 @@ class LearnableSwitch(nn.Module):
 class WithInputSwitch(nn.Module):
     """Add the input switch to the model."""
 
-    def __init__(self, model_cls, input_shape, **kwargs):
+    def __init__(self, model_cls, input_shape, enable_switch=True, **kwargs):
         super(WithInputSwitch, self).__init__()
         self.switch = LearnableSwitch(shape=input_shape)
         self.model = model_cls(input_shape=input_shape, **kwargs)
+        self.enable_switch = enable_switch
 
     def sparsify_me(self):
         return self.switch.sparsify_me()
 
     def forward(self, x):
-        on_off = self.switch(x)
-        y = self.model(on_off)
-        return y
+        if self.enable_switch:
+            on_off = self.switch(x)
+            y = self.model(on_off)
+            return y
+        else:
+            return self.model(x)
