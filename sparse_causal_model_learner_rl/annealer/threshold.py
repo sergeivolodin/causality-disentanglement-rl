@@ -1,4 +1,5 @@
 import gin
+import torch
 import logging
 
 
@@ -43,6 +44,52 @@ def AnnealerThresholdSelector(config, config_object, epoch_info, temp,
         temp['last_hyper_adjustment'] = i
     return config
 
+
+@gin.configurable
+def ModelResetter(config, epoch_info, temp,
+                  gin_annealer_cls='ThresholdAnnealer',
+                  trainables=None,
+                  reset_weights=True,
+                  reset_logits=True,
+                  grace_epochs=2000, # give that many epochs to try to recover on its own
+                  new_logits=0.0, **kwargs):
+
+    source_metric_key = gin.query_parameter(f"{gin_annealer_cls}.source_metric_key")
+
+    try:
+        fit_loss = find_value(epoch_info, source_metric_key)
+        # logging.warning("Cannot find loss with sparsity, defaulting to fit loss")
+    except AssertionError as e:
+        return config
+
+    fit_threshold = gin.query_parameter(f"{gin_annealer_cls}.fit_threshold")
+    logging.info(f"Resetter found multiplier loss {fit_loss} threshold {fit_threshold}")
+
+    is_good = fit_loss <= fit_threshold
+
+    i = epoch_info['epochs']
+
+    if is_good:
+        temp['first_not_good'] = None
+    elif temp['first_not_good'] is None:
+        temp['first_not_good'] = i
+    elif i - temp['first_not_good'] >= grace_epochs:
+        if reset_weights:
+            for key, param in trainables.get('model').named_parameters():
+                if 'switch' not in key:
+                    logging.info(f'Resetting parameter {key}')
+                    if 'bias' in key:
+                        torch.nn.init.zeros_(param)
+                    else:
+                        torch.nn.init.xavier_uniform_(param)
+
+        if reset_logits:
+            for p in trainables.get('model').switch__params:
+                logging.info(f"Resetting switch parameter with shape {p.data.shape}")
+                p_orig = p.data.detach().clone()
+                p.data[1, p_orig[1] < -new_logits] = -new_logits
+                p.data[0, p_orig[1] < -new_logits] = new_logits
+        temp['first_not_good'] = None
 
 @gin.configurable
 def ThresholdAnnealer(config, epoch_info, temp,

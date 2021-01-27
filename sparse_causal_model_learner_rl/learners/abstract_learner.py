@@ -383,7 +383,7 @@ class AbstractLearner(ABC):
             self.history = self.history[-mhistsize:]
 
         # update config
-        self.config.update(epoch_info=epoch_info)
+        self.config.update(epoch_info=epoch_info, trainables=self.trainables)
         self.epochs += 1
 
         self.epoch_info = epoch_info
