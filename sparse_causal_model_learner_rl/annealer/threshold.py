@@ -24,7 +24,8 @@ def AnnealerThresholdSelector(config, config_object, epoch_info, temp,
                               multiplier=10, # allow the loss to be 10 times bigger than the best
                               source_quality_key=None,
                               source_fit_loss_key='no_sparse_fit',
-                              gin_variable='ThresholdAnnealer.fit_threshold'):
+                              gin_variable='ThresholdAnnealer.fit_threshold',
+                              **kwargs):
     """Adjust the fit threshold based on a non-sparse model's loss."""
     try:
         non_sparse_fit_loss = find_value(epoch_info, source_fit_loss_key)
@@ -62,12 +63,16 @@ def ModelResetter(config, epoch_info, temp,
     except AssertionError as e:
         return config
 
+    if 'first_not_good' not in temp:
+        temp['first_not_good'] = None
+
     fit_threshold = gin.query_parameter(f"{gin_annealer_cls}.fit_threshold")
-    logging.info(f"Resetter found multiplier loss {fit_loss} threshold {fit_threshold}")
-
     is_good = fit_loss <= fit_threshold
-
     i = epoch_info['epochs']
+
+    logging.info(f"Resetter found loss {fit_loss} threshold {fit_threshold}, good {is_good} epoch {i} fng {temp['first_not_good']}")
+
+
 
     if is_good:
         temp['first_not_good'] = None
