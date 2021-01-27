@@ -125,6 +125,10 @@ class AbstractLearner(ABC):
         # opt_params_descr = {x: [p.name for p in y] for x, y in self.params_for_optimizers.items()}
         # logging.info(f"Optimizers parameters {opt_params_descr}")
 
+        self.create_optimizers()
+
+    def create_optimizers(self):
+
         self.optimizer_objects = {}
         self.scheduler_objects = {}
 
@@ -383,7 +387,8 @@ class AbstractLearner(ABC):
             self.history = self.history[-mhistsize:]
 
         # update config
-        self.config.update(epoch_info=epoch_info, trainables=self.trainables)
+        self.config.update(epoch_info=epoch_info, trainables=self.trainables,
+                           learner=self)
         self.epochs += 1
 
         self.epoch_info = epoch_info

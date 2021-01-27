@@ -48,10 +48,12 @@ def AnnealerThresholdSelector(config, config_object, epoch_info, temp,
 
 @gin.configurable
 def ModelResetter(config, epoch_info, temp,
+                  learner=None,
                   gin_annealer_cls='ThresholdAnnealer',
                   trainables=None,
                   reset_weights=True,
                   reset_logits=True,
+                  reset_optimizers=False,
                   grace_epochs=2000, # give that many epochs to try to recover on its own
                   new_logits=0.0, **kwargs):
 
@@ -94,6 +96,9 @@ def ModelResetter(config, epoch_info, temp,
                 p_orig = p.data.detach().clone()
                 p.data[1, p_orig[1] < -new_logits] = -new_logits
                 p.data[0, p_orig[1] < -new_logits] = new_logits
+
+        if reset_optimizers:
+            learner.create_optimizers()
         temp['first_not_good'] = None
 
 @gin.configurable
