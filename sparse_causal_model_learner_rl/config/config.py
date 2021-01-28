@@ -146,7 +146,8 @@ class Config(object):
             assert isinstance(gin_dict, dict), f"Gin entry must be a dict {gin_dict}"
             for key, value in gin_dict.items():
                 logging.info(f"Binding gin {key} -> {value}")
-                gin.bind_parameter(key, value)
+                with gin.unlock_config():
+                    gin.bind_parameter(key, value)
 
     @property
     def config(self):
