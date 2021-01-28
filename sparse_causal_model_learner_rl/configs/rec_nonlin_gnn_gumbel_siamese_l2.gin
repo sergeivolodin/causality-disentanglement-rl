@@ -81,7 +81,7 @@ Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
                   'threshold_annealer_threshold': @threshold_annealer_threshold,
                   'fit_loss_smooth': @fit_loss_smooth/smooth,
                   'non_sparse_fit_loss_smooth': @non_sparse_fit_loss_smooth/smooth,
-                  'mult_sparsity_gap': @mult_sparsity_gap}
+                  '|last_mult_sparsity_gap': @mult_sparsity_gap}
 
 MIN_HYPER_ANNEAL = 1e-8
 

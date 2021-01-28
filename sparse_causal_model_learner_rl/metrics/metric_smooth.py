@@ -1,6 +1,7 @@
 import gin
 import numpy as np
 from sparse_causal_model_learner_rl.metrics import find_value
+import logging
 
 
 # history of metrics
@@ -33,8 +34,12 @@ def smooth(orig_key, now_epoch_info, smooth_steps=20, do_log=True,
 @gin.configurable
 def mult_sparsity_gap(sparse_key, non_sparse_key, now_epoch_info, **kwargs):
     """Get sparse loss / non_sparse_loss."""
-    sparse_loss = find_value(now_epoch_info, sparse_key)
-    non_sparse_loss = find_value(now_epoch_info, non_sparse_key)
+    try:
+        sparse_loss = find_value(now_epoch_info, sparse_key)
+        non_sparse_loss = find_value(now_epoch_info, non_sparse_key)
+    except AssertionError as e:
+        # logging.warning(f"No loss found {e}")
+        return None
     if sparse_loss and non_sparse_loss:
         return sparse_loss / non_sparse_loss
     return None
