@@ -65,8 +65,8 @@ Config.opt_iterations = {'opt1': 1, 'opt2': 4, 'opt3': 5}
 
 smooth.smooth_steps = 20
 smooth.do_log = True
-fit_loss_smooth/smooth.orig_key = 'losses/opt1/fit/value'
-non_sparse_fit_loss_smooth/smooth.orig_key = 'losses/opt1/non_sparse_fit/value'
+fit_loss_smooth/smooth.orig_key = '/fit/value'
+non_sparse_fit_loss_smooth/smooth.orig_key = '/non_sparse_fit/value'
 
 # using vanilla fit loss
 Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,

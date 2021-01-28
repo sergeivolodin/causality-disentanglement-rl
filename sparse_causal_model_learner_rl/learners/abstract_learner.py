@@ -359,7 +359,7 @@ class AbstractLearner(ABC):
             for metric_label, metric in self.config['metrics'].items():
                 epoch_info['metrics'][metric_label] = metric(**context, context=context,
                                                              prev_epoch_info=self.epoch_info,
-                                                             now_epoch_info=epoch_info)
+                                                             now_epoch_info=postprocess_info(epoch_info))
 
         def get_weights():
             return {label + '/' + param_name: np.copy(param.detach().cpu().numpy())
