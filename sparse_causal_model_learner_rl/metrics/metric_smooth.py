@@ -29,3 +29,12 @@ def smooth(orig_key, now_epoch_info, smooth_steps=20, do_log=True,
             averaged = agg_fcn(data)
         return averaged
     return None
+
+@gin.configurable
+def mult_sparsity_gap(sparse_key, non_sparse_key, now_epoch_info, **kwargs):
+    """Get sparse loss / non_sparse_loss."""
+    sparse_loss = find_value(now_epoch_info, sparse_key)
+    non_sparse_loss = find_value(now_epoch_info, non_sparse_key)
+    if sparse_loss and non_sparse_loss:
+        return sparse_loss / non_sparse_loss
+    return None
