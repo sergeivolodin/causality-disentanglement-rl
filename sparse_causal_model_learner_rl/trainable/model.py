@@ -2,6 +2,7 @@ import gin
 from torch import nn
 import numpy as np
 import torch
+# import threading
 
 
 @gin.configurable
@@ -154,7 +155,17 @@ class ManyNetworkModel(Model):
         use_models = self.additional_models if additional else self.models
 
         # all models on data
-        f_t1 = [getattr(self, m)(fa_t) for m in use_models]
+        # def set_model_future(fut, model, input_data):
+        #     fut.set_result(model(input_data))
+        # f_t1 = [getattr(self, m)(fa_t) for m in use_models]
+
+        # futs = [torch.futures.Future() for _ in use_models]
+        # threads = [threading.Thread(target=set_model_future, args=(fut, getattr(self, m), fa_t))
+        #            for (fut, m) in zip(futs, use_models)]
+        # f_t1 = [fut.wait() for fut in futs]
+        # [t.join() for t in threads]
+        f_t1 = torch.nn.parallel.parallel_apply([getattr(self, m) for m in use_models],
+                                                [fa_t] * len(use_models))
 
         # predictions as a tensor
         f_t1 = torch.cat(f_t1, dim=1)
