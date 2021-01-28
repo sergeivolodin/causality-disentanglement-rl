@@ -54,14 +54,19 @@ opt1/Optimizer.lr = 1e-3
 opt2/Optimizer.lr = 1e-3
 opt3/Optimizer.lr = 1e-3
 
-Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer, 'opt3': @opt2/Optimizer}
+opt4/Optimizer.name = 'Adam'
+opt4/Optimizer.lr = 1e-3
+
+Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer, 'opt3': @opt3/Optimizer, 'opt4': @opt4/Optimizer}
 Config.execution = {'opt1': ['fit', 'non_sparse_fit', 'no_small_probas', 'discriminate_siamese', 'sparsity'],
                     'opt2': ['fit', 'non_sparse_fit', 'no_small_probas', 'discriminate_siamese', 'sparsity'],
-                    'opt3': ['fit', 'non_sparse_fit', 'no_small_probas', 'discriminate_siamese', 'sparsity']}
+                    'opt3': ['fit', 'non_sparse_fit', 'no_small_probas', 'discriminate_siamese', 'sparsity'],
+                    'opt4': ['fit', 'non_sparse_fit', 'no_small_probas', 'discriminate_siamese']} # w/o sparsity, only model (for fit)
 Config.optim_params = {'opt1': ['model.switch__params'],
                        'opt2': ['model', 'decoder'],
-                       'opt3': ['non_sparse_model']}
-Config.opt_iterations = {'opt1': 1, 'opt2': 4, 'opt3': 5}
+                       'opt3': ['non_sparse_model'],
+                       'opt4': ['model']}
+Config.opt_iterations = {'opt1': 3, 'opt2': 5, 'opt3': 5, 'opt4': 5}
 
 smooth.smooth_steps = 20
 smooth.do_log = True
