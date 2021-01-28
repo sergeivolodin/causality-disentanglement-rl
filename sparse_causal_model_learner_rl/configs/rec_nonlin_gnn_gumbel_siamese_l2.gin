@@ -127,3 +127,6 @@ plot_model.vmin = -1.0
 plot_model.vmax = 1.0
 Config.report_weights = True
 Config.report_weights_every = 100
+
+graph_for_matrices.additional_features = %ADDITIONAL_FEATURES
+graph_for_matrices.engine = 'dot'

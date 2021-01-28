@@ -128,34 +128,59 @@ def select_threshold(array, name='exp', eps=1e-10, do_plot=True, do_log=True):
             return 0.0
 
 
-def graph_for_matrices(model, threshold_act=0.2, threshold_f=0.2, do_write=True):
+@gin.configurable
+def graph_for_matrices(model, threshold_act=0.2, threshold_f=0.2, do_write=True,
+                       additional_features=None,
+                       engine='dot'):
     """Visualize matrices as a graph."""
+
+    if additional_features is None:
+        additional_features = []
+
     Mf, Ma = model.Mf, model.Ma
     # dimension
     actions = Ma.shape[1]
     features = Mf.shape[1]
 
-    ps = Digraph(name='Causal model', engine='neato')  # ,
+    Mf_t = np.abs(Mf) > threshold_f
+    Ma_t = np.abs(Ma) > threshold_act
+
+    keep_actions = np.where(np.max(Ma_t, axis=0))[0]
+    keep_features = np.where(Mf_t)
+    keep_features = set(keep_features[0]) | set(keep_features[1])
+
+    ps = Digraph(name='Causal model', engine=engine)  # ,
     # node_attr={'shape': 'plaintext'})
+
+    additional_features_dct = dict(
+        zip(range(Mf.shape[0])[-len(additional_features):], additional_features))
+
+    def feature_name(idx):
+        if idx in additional_features_dct:
+            return additional_features_dct[idx]
+        else:
+            return 'f%02d' % idx
 
     # adding features nodes
     for f in range(features):
-        ps.node('f%02d' % f, color='green')
-        ps.node("f'%02d" % f, color='blue')
+        if f not in keep_features: continue
+        ps.node(feature_name(f), color='green')
+    #         ps.node("f'%02d" % f, color='blue')
 
     # adding action edges
     for a in range(actions):
+        if a not in keep_actions: continue
         ps.node('a%02d' % a, color='red')
 
     # adding edges
     edges = 0
 
-    for f1, a in zip(*np.where(np.abs(Ma) > threshold_act)):
-        ps.edge('a%02d' % a, "f'%02d" % f1)
+    for f1, a in zip(*np.where(Ma_t)):
+        ps.edge('a%02d' % a, feature_name(f1))
         edges += 1
 
-    for f1, f in zip(*np.where(np.abs(Mf) > threshold_f)):
-        ps.edge('f%02d' % f, "f'%02d" % f1)
+    for f1, f in zip(*np.where(Mf_t)):
+        ps.edge(feature_name(f), feature_name(f1))
         edges += 1
 
     max_edges = features ** 2 + actions * features
