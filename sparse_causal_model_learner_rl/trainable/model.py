@@ -66,6 +66,9 @@ class ManyNetworkModel(Model):
 
         self.all_models = self.models + self.additional_models
 
+        for m in self.all_models:
+            getattr(self, m).share_memory()
+
     @property
     def model__params(self):
         """List of model (not switch) parameters."""
@@ -164,6 +167,7 @@ class ManyNetworkModel(Model):
         #            for (fut, m) in zip(futs, use_models)]
         # f_t1 = [fut.wait() for fut in futs]
         # [t.join() for t in threads]
+        fa_t.share_memory_()
         f_t1 = torch.nn.parallel.parallel_apply([getattr(self, m) for m in use_models],
                                                 [fa_t] * len(use_models))
 

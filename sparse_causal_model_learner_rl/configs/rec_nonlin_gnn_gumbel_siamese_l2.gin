@@ -117,6 +117,7 @@ ThresholdAnnealer.factor_cool = 0.5
 ThresholdAnnealer.factor_heat = 0.001
 ThresholdAnnealer.min_hyper = %MIN_HYPER_ANNEAL
 ThresholdAnnealer.max_hyper = 10
+ThresholdAnnealer.emergency_heating = True
 AnnealerThresholdSelector.multiplier = 5
 AnnealerThresholdSelector.adjust_every = 20
 AnnealerThresholdSelector.source_fit_loss_key = 'non_sparse_fit_loss_smooth'

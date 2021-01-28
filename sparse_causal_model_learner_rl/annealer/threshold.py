@@ -100,6 +100,7 @@ def ThresholdAnnealer(config, epoch_info, temp,
                       factor=0.5, # if cool/warm not specified, use this one for both
                       factor_cool=None, # when increasing the coefficient (regularization -> cooling)
                       factor_heat=None, # when decreasing the coefficient (no reg -> warming)
+                      emergency_heating=False,
                       **kwargs):
     """Increase sparsity if fit loss is low, decrease otherwise."""
 
@@ -117,6 +118,8 @@ def ThresholdAnnealer(config, epoch_info, temp,
     if factor_heat is None:
         factor_heat = factor
 
+    need_heating = False
+
     if 'last_hyper_adjustment' not in temp:
         temp['last_hyper_adjustment'] = 0
     i = epoch_info['epochs']
@@ -127,11 +130,19 @@ def ThresholdAnnealer(config, epoch_info, temp,
         else:
             if config['losses']['sparsity']['coeff'] > min_hyper:
                 temp['suggested_hyper'] = config['losses']['sparsity']['coeff'] * factor_heat
+                need_heating = True
+                temp['suggested_hyper'] = max(min_hyper, temp['suggested_hyper'])
+
     else: # FREE ENRGY (loss) is low -> CAN DO COOLING (increase regul coeff)
         if config['losses']['sparsity']['coeff'] < max_hyper:
             temp['suggested_hyper'] = config['losses']['sparsity']['coeff'] / factor_cool
+            temp['suggested_hyper'] = min(max_hyper, temp['suggested_hyper'])
 
-    if temp.get('suggested_hyper', None) is not None and (i - temp['last_hyper_adjustment'] >= adjust_every):
+    epochs_enough = (i - temp['last_hyper_adjustment'] >= adjust_every)
+    if emergency_heating and need_heating:
+        epochs_enough = True
+
+    if temp.get('suggested_hyper', None) is not None and epochs_enough:
         config['losses']['sparsity']['coeff'] = temp['suggested_hyper']
         temp['suggested_hyper'] = None
         temp['last_hyper_adjustment'] = i
