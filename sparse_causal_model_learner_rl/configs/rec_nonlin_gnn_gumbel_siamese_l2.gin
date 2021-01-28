@@ -18,7 +18,7 @@ import sparse_causal_model_learner_rl.loss.causal_discriminator
 import sparse_causal_model_learner_rl.visual.learner_visual
 include 'rec_nonlin_gnn.gin'
 
-tune_run.num_samples = 1
+tune_run.num_samples = 2
 
 Config.loss_every = 1000000000000000
 
@@ -95,6 +95,7 @@ LearnableSwitch.switch_neg = -3
 LearnableSwitch.switch_pos = 3
 
 ModelResetter.grace_epochs = 2000
+ModelResetter.reset_optimizers = True
 
 Config._update_function = [@AnnealerThresholdSelector, @ThresholdAnnealer, @ModelResetter]
 
