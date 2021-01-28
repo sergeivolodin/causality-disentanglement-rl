@@ -1,3 +1,5 @@
 import gin_tune
+import sparse_causal_model_learner_rl.config
 
 tune_run.resources_per_trial = {'cpu': 1, 'gpu': 0}
+Config.disable_cuda = True
