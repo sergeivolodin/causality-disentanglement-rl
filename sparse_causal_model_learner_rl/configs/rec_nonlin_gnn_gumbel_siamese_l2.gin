@@ -9,6 +9,7 @@ import sparse_causal_model_learner_rl.loss.optimizer
 import sparse_causal_model_learner_rl.metrics.nnz
 import sparse_causal_model_learner_rl.metrics.loss_thresholded
 import sparse_causal_model_learner_rl.metrics.model_entropy
+import sparse_causal_model_learner_rl.metrics.metric_smooth
 import gin_tune
 import sparse_causal_model_learner_rl.trainable.value_predictor
 import sparse_causal_model_learner_rl.trainable.fcnet
@@ -62,6 +63,11 @@ Config.optim_params = {'opt1': ['model.switch__params'],
                        'opt3': ['non_sparse_model']}
 Config.opt_iterations = {'opt1': 1, 'opt2': 4, 'opt3': 5}
 
+smooth.smooth_steps = 20
+smooth.do_log = True
+fit_loss_smooth/smooth.orig_key = 'losses/opt1/fit/value'
+non_sparse_fit_loss_smooth/smooth.orig_key = 'losses/opt1/non_sparse_fit/value'
+
 # using vanilla fit loss
 Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
                   'threshold_features': @threshold_features, 'max_element_ma': @max_element_ma,
@@ -69,7 +75,9 @@ Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
                   'episode_reward': @episode_reward,
                   'graph_entropy_ma': @entropy_action,
                   'graph_entropy_mf': @entropy_features,
-                  'threshold_annealer_threshold': @threshold_annealer_threshold}
+                  'threshold_annealer_threshold': @threshold_annealer_threshold,
+                  'fit_loss_smooth': @fit_loss_smooth/smooth,
+                  'non_sparse_fit_loss_smooth': @non_sparse_fit_loss_smooth/smooth,}
 
 MIN_HYPER_ANNEAL = 1e-8
 
@@ -84,7 +92,7 @@ Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1},
 non_sparse_fit_loss/context_rewriter.function = @fit_loss
 non_sparse_fit_loss/context_rewriter.rewrite = {'model': 'non_sparse_model'}
 
-ThresholdAnnealer.source_metric_key = '/fit/value'
+ThresholdAnnealer.source_metric_key = 'fit_loss_smooth'
 
 entropy_np.return_distribution = True
 
@@ -106,7 +114,7 @@ ThresholdAnnealer.min_hyper = %MIN_HYPER_ANNEAL
 ThresholdAnnealer.max_hyper = 10
 AnnealerThresholdSelector.multiplier = 5
 AnnealerThresholdSelector.adjust_every = 20
-AnnealerThresholdSelector.source_fit_loss_key = '/non_sparse_fit/value'
+AnnealerThresholdSelector.source_fit_loss_key = 'non_sparse_fit_loss_smooth'
 
 # normalize input data
 Normalizer.once = True
