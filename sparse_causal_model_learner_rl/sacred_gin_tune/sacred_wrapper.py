@@ -5,6 +5,7 @@ import os
 import shutil
 import sys
 from functools import partial
+from uuid import uuid1
 
 import cloudpickle as pickle
 import gin
@@ -87,6 +88,7 @@ def gin_sacred(config_files, main_fcn, db_name='causal_sparse', base_dir=None):
         base_dir = os.getcwd()
 
     run_uid = datetime.datetime.utcnow().strftime("%Y_%m_%d_%H_%M_%S")
+    run_uid += "__" + str(uuid1())
 
     base_dir = os.path.join(base_dir, name, run_uid)
 
