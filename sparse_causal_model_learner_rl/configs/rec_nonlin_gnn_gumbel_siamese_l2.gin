@@ -68,6 +68,9 @@ smooth.do_log = True
 fit_loss_smooth/smooth.orig_key = '/fit/value'
 non_sparse_fit_loss_smooth/smooth.orig_key = '/non_sparse_fit/value'
 
+mult_sparsity_gap.sparse_key = 'fit_loss_smooth'
+mult_sparsity_gap.non_sparse_key = 'non_sparse_fit_loss_smooth'
+
 # using vanilla fit loss
 Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
                   'threshold_features': @threshold_features, 'max_element_ma': @max_element_ma,
@@ -77,7 +80,8 @@ Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
                   'graph_entropy_mf': @entropy_features,
                   'threshold_annealer_threshold': @threshold_annealer_threshold,
                   'fit_loss_smooth': @fit_loss_smooth/smooth,
-                  'non_sparse_fit_loss_smooth': @non_sparse_fit_loss_smooth/smooth,}
+                  'non_sparse_fit_loss_smooth': @non_sparse_fit_loss_smooth/smooth,
+                  '|last_mult_sparsity_gap': @mult_sparsity_gap}
 
 MIN_HYPER_ANNEAL = 1e-8
 
