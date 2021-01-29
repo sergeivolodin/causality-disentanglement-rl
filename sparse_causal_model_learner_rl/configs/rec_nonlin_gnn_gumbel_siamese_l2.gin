@@ -29,7 +29,7 @@ model_gnn/FCNet.activation_cls = @ReLU
 model_gnn/WithInputSwitch.model_cls = @model_gnn/FCNet
 
 LearnableSwitch.sample_many = True
-LearnableSwitch.sample_threshold = 0.99 # after this value, always sample 1 to prevent vanishing grads
+LearnableSwitch.sample_threshold = 0.9 # after this value, always sample 1 to prevent vanishing grads
 
 Config.env_steps = 5000
 Config.collect_every = 10
@@ -98,6 +98,8 @@ Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1},
                  'no_small_probas': {'fcn': @nonzero_proba_loss, 'coeff': 0.3},
                 }
 
+nonzero_proba_loss.eps = 0.05
+
 non_sparse_fit_loss/context_rewriter.function = @fit_loss
 non_sparse_fit_loss/context_rewriter.rewrite = {'model': 'non_sparse_model'}
 
@@ -108,8 +110,8 @@ entropy_np.return_distribution = True
 Config.schedulers = {}
 Config.checkpoint_every = 1000
 
-LearnableSwitch.switch_neg = -3
-LearnableSwitch.switch_pos = 3
+LearnableSwitch.switch_neg = 0
+LearnableSwitch.switch_pos = 0
 
 ModelResetter.grace_epochs = 1000
 ModelResetter.reset_optimizers = True
