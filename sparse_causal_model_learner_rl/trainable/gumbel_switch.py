@@ -28,6 +28,7 @@ class LearnableSwitch(nn.Module):
                  sample_fcn=None,
                  power=1.0, switch_neg=-1,
                  sample_threshold=None,
+                 sample_threshold_min=None,
                  switch_pos=1, tau=1.0):
         super(LearnableSwitch, self).__init__()
         self.shape = shape
@@ -49,11 +50,25 @@ class LearnableSwitch(nn.Module):
                                       hard=True, eps=1e-10, dim=0)
         self.sample_fcn = partial(self.sample_fcn, tau=self.tau)
         self.sample_threshold = sample_threshold
+        self.sample_threshold_min = sample_threshold_min
         if self.sample_threshold is not None:
             def new_sample_fcn(logits, f=self.sample_fcn):
                 return self.wrap_sample_threshold(f(logits))
             self.sample_fcn = new_sample_fcn
+        if self.sample_threshold_min is not None:
+            def new_sample_fcn(logits, f=self.sample_fcn):
+                return self.wrap_sample_threshold_min(f(logits))
+            self.sample_fcn = new_sample_fcn
 
+    def wrap_sample_threshold_min(self, mask_sampled):
+        if self.sample_threshold_min is None:
+            return mask_sampled
+        zeros = torch.zeros_like(mask_sampled)
+        out = torch.where(self.softmaxed() < self.sample_threshold_min,
+                          zeros, mask_sampled)
+        return out.detach() + mask_sampled - mask_sampled.detach()
+
+            
     def wrap_sample_threshold(self, mask_sampled):
         if self.sample_threshold is None:
             return mask_sampled
