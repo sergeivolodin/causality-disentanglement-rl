@@ -102,7 +102,7 @@ class LearnableSwitch(nn.Module):
         else:
             raise NotImplementedError
 
-    def forward(self, x, return_mask=False):
+    def forward(self, x, return_mask=False, return_x_and_mask=False):
         if self.sample_many:
             mask = self.logits_batch(x.shape[0])
             mask = self.gumbel0(mask)
@@ -117,16 +117,31 @@ class LearnableSwitch(nn.Module):
         # (xsigma^a')xasigma^a*(1-sigma). the (1-sigma part can still be low)
         # but there the sampling is almost sure
         # loss explodes
-        return x * mask#.pow(self.power)
+        xout = x * mask#.pow(self.power)
+
+        if return_x_and_mask:
+            return xout, mask
+
+        return xout
 
 @gin.configurable
 class WithInputSwitch(nn.Module):
     """Add the input switch to the model."""
 
-    def __init__(self, model_cls, input_shape, enable_switch=True, **kwargs):
+    def __init__(self, model_cls, input_shape, give_mask=False,
+                 enable_switch=True, **kwargs):
         super(WithInputSwitch, self).__init__()
         self.switch = LearnableSwitch(shape=input_shape)
-        self.model = model_cls(input_shape=input_shape, **kwargs)
+        self.give_mask = give_mask
+
+        if give_mask:
+            assert len(input_shape) == 1, input_shape
+            self.input_dim = self.input_shape[0]
+            self.input_shape_with_mask = (2 * self.input_dim,)
+
+            self.model = model_cls(input_shape=self.input_shape_with_mask, **kwargs)
+        else:
+            self.model = model_cls(input_shape=input_shape, **kwargs)
         self.enable_switch = enable_switch
 
     def sparsify_me(self):
@@ -134,8 +149,13 @@ class WithInputSwitch(nn.Module):
 
     def forward(self, x):
         if self.enable_switch:
-            on_off = self.switch(x)
-            y = self.model(on_off)
+            on_off, mask = self.switch(x, return_x_and_mask=True)
+
+            if self.give_mask:
+                x_with_mask = torch.cat([on_off, mask], dim=1)
+                y = self.model(x_with_mask)
+            else:
+                y = self.model(on_off)
             return y
         else:
             return self.model(x)
