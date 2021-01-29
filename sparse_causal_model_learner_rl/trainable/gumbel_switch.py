@@ -131,12 +131,13 @@ class WithInputSwitch(nn.Module):
     def __init__(self, model_cls, input_shape, give_mask=False,
                  enable_switch=True, **kwargs):
         super(WithInputSwitch, self).__init__()
+        self.input_shape = input_shape
         self.switch = LearnableSwitch(shape=input_shape)
         self.give_mask = give_mask
 
         if give_mask:
             assert len(input_shape) == 1, input_shape
-            self.input_dim = self.input_shape[0]
+            self.input_dim = input_shape[0]
             self.input_shape_with_mask = (2 * self.input_dim,)
 
             self.model = model_cls(input_shape=self.input_shape_with_mask, **kwargs)
@@ -152,10 +153,16 @@ class WithInputSwitch(nn.Module):
             on_off, mask = self.switch(x, return_x_and_mask=True)
 
             if self.give_mask:
-                x_with_mask = torch.cat([on_off, mask], dim=1)
+                x_with_mask = torch.cat([on_off, mask.detach()], dim=1)
                 y = self.model(x_with_mask)
             else:
                 y = self.model(on_off)
             return y
         else:
-            return self.model(x)
+            if self.give_mask:
+                ones = torch.ones_like(x)
+                x_with_mask = torch.cat([x, ones], dim=1)
+                y = self.model(x_with_mask)
+            else:
+                y = self.model(x)
+            return y

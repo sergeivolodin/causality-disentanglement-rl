@@ -134,6 +134,9 @@ class AbstractLearner(ABC):
 
         for label, fcn in self.config['optimizers'].items():
             params = self.params_for_optimizers[label]
+            for p in params:
+                if p is None:
+                    raise ValueError(f"None param: {label} {fcn} {p}")
             if params:
                 opt = fcn(params=params)
                 self.optimizer_objects[label] = opt
@@ -335,10 +338,12 @@ class AbstractLearner(ABC):
 
                     # computing gradient values
                     grad_norms1 = [torch.mean(torch.abs(p.grad.detach())).item()
-                                  for p in self.params_for_optimizers[opt_label]]
+                                  for p in self.params_for_optimizers[opt_label]
+                                  if p.grad is not None]
 
                     grad_norms2 = [p.grad.data.norm(2).item() ** 2
-                                   for p in self.params_for_optimizers[opt_label]]
+                                   for p in self.params_for_optimizers[opt_label]
+                                   if p.grad is not None]
 
 
                     epoch_info['grads'][f"{opt_label}/grad_total_l1mean"] = np.mean(grad_norms1)

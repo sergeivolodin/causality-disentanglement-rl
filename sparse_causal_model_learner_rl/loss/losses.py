@@ -139,7 +139,7 @@ def nonzero_proba_loss(model, eps=1e-3, **kwargs):
     """Make probabilities larger than some constant, so that gradients do not disappear completely."""
     params = [x[1] for x in model.sparsify_me()]
     # assuming proba in [0, 1]
-    margin = [torch.nn.ReLU()(eps - param.flatten().abs()).mean() / eps for param in params]
+    margin = [torch.nn.ReLU()(eps - param.flatten().abs()).max() / eps for param in params]
     msp = [p.min().item() for p in params]
     return {'loss': sum(margin) / len(margin),
             'metrics': {'min_switch_proba': min(msp)}}

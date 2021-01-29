@@ -26,7 +26,8 @@ Config.loss_every = 1000000000000000
 model_gnn/FCNet.hidden_sizes = [60, 60, 60]
 model_gnn/FCNet.activation_cls = @ReLU
 
-model_gnn/WithInputSwitch.model_cls = @model_gnn/FCNet
+WithInputSwitch.give_mask = True
+WithInputSwitch.model_cls = @model_gnn/FCNet
 
 LearnableSwitch.sample_many = True
 LearnableSwitch.sample_threshold = 0.9 # after this value, always sample 1 to prevent vanishing grads
@@ -39,9 +40,12 @@ Config.shuffle = False
 Config.decoder = @IdentityDecoder
 Config.reconstructor = None
 
+sparse_model/WithInputSwitch.enable_switch = True
+non_sparse_model/WithInputSwitch.enable_switch = False
+
 ManyNetworkModel.skip_connection = False
-sparse_model/ManyNetworkModel.model_cls = @model_gnn/WithInputSwitch
-non_sparse_model/ManyNetworkModel.model_cls = @model_gnn/FCNet
+sparse_model/ManyNetworkModel.model_cls = @sparse_model/WithInputSwitch
+non_sparse_model/ManyNetworkModel.model_cls = @non_sparse_model/WithInputSwitch
 ManyNetworkModel.sparse_do_max = False
 ManyNetworkModel.sparse_do_max_mfma = False
 
@@ -62,11 +66,11 @@ Config.execution = {'opt1': ['fit', 'non_sparse_fit', 'no_small_probas', 'discri
                     'opt2': ['fit', 'non_sparse_fit', 'no_small_probas', 'discriminate_siamese', 'sparsity'],
                     'opt3': ['fit', 'non_sparse_fit', 'no_small_probas', 'discriminate_siamese', 'sparsity'],
                     'opt4': ['fit', 'non_sparse_fit', 'no_small_probas', 'discriminate_siamese']} # w/o sparsity, only model (for fit)
-Config.optim_params = {'opt1': ['model.switch__params'],
-                       'opt2': ['model', 'decoder'],
-                       'opt3': ['non_sparse_model'],
-                       'opt4': ['model']}
-Config.opt_iterations = {'opt1': 3, 'opt2': 5, 'opt3': 5, 'opt4': 5}
+Config.optim_params = {'opt1': ['model.switch__params'], # switch learning
+                       'opt2': ['decoder'], # representation learning
+                       'opt3': ['non_sparse_model'], # reference model learning
+                       'opt4': ['model.model__params']} # model learning
+Config.opt_iterations = {'opt1': 10, 'opt2': 5, 'opt3': 25, 'opt4': 30}
 
 smooth.smooth_steps = 20
 smooth.do_log = True
@@ -95,10 +99,10 @@ Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1},
                  # 'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 1},
                  'non_sparse_fit': {'fcn': @non_sparse_fit_loss/context_rewriter, 'coeff': 1},
                  'discriminate_siamese': {'fcn': @siamese_feature_discriminator_l2, 'coeff': 1.0},
-                 'no_small_probas': {'fcn': @nonzero_proba_loss, 'coeff': 0.3},
+                 'no_small_probas': {'fcn': @nonzero_proba_loss, 'coeff': 10},
                 }
 
-nonzero_proba_loss.eps = 0.05
+nonzero_proba_loss.eps = 0.1
 
 non_sparse_fit_loss/context_rewriter.function = @fit_loss
 non_sparse_fit_loss/context_rewriter.rewrite = {'model': 'non_sparse_model'}
