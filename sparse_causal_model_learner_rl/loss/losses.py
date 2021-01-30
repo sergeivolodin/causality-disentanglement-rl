@@ -48,22 +48,30 @@ def reconstruction_loss_value_function_reward_to_go(obs_x, decoder, value_predic
     return mse(value_predictor(decoder(obs_x)), reward_to_go * value_scaler)
 
 @gin.configurable
-def fit_loss(obs_x, obs_y, action_x, decoder, model, additional_feature_keys, **kwargs):
+def fit_loss(obs_x, obs_y, action_x, decoder, model, additional_feature_keys,
+             model_forward_kwargs=None,
+             **kwargs):
     """Ensure that the model fits the features data."""
 
+    if model_forward_kwargs is None:
+        model_forward_kwargs = {}
+    
     f_t1 = decoder(obs_y)
 
     mse = torch.nn.MSELoss()
     # detaching second part like in q-learning makes the loss jitter
-    loss = mse(model(decoder(obs_x), action_x), f_t1)
+    loss = mse(model(decoder(obs_x), action_x, **model_forward_kwargs), f_t1)
 
     metrics = {'mean_feature': torch.mean(torch.abs(f_t1)).item()}
 
     if additional_feature_keys:
         add_features_y = torch.cat([kwargs[k] for k in additional_feature_keys], dim=1)
-        loss_additional = mse(model(decoder(obs_x), action_x, additional=True), add_features_y)
-        loss = loss + loss_additional
+        loss_additional = mse(model(decoder(obs_x), action_x, additional=True, **model_forward_kwargs), add_features_y)
+        loss_main = loss
+        loss = loss_main + loss_additional
         metrics['mean_additional_feature'] = torch.mean(torch.abs(add_features_y)).item()
+        metrics['loss_main'] = loss_main.item()
+        metrics['loss_additional'] = loss_additional.item()
 
     return {'loss': loss,
             'metrics': metrics}

@@ -257,13 +257,13 @@ class ModelModel(Model):
             self.model.apply(init_weights)
 
 
-    def forward(self, f_t, a_t, additional=False):
+    def forward(self, f_t, a_t, additional=False, **kwargs):
         fa_t = torch.cat((f_t, a_t), dim=1)
 
         if additional:
-            f_t1 = self.additional_model(fa_t)
+            f_t1 = self.additional_model(fa_t, **kwargs)
         else:
-            f_t1 = self.model(fa_t)
+            f_t1 = self.model(fa_t, **kwargs)
             if self.skip_connection:
                 f_t1 += f_t
         return f_t1

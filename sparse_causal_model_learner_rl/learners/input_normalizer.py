@@ -16,6 +16,8 @@ class Normalizer(object):
         self.dim = dim
 
     def unnormalize(self, outp, eps=1e-8):
+        outp = outp.clone()
+
         if self.type_ == 'minmax':
             outp /= 2 # -0.5, 0.5
             outp += 0.5 # 0, 1
