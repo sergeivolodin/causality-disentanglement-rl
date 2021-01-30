@@ -120,9 +120,11 @@ Config.checkpoint_every = 1000
 LearnableSwitch.switch_neg = 0
 LearnableSwitch.switch_pos = 0
 
-ModelResetter.grace_epochs = 1000
+ModelResetter.grace_epochs = 250
 ModelResetter.reset_optimizers = True
 ModelResetter.reset_weights = False
+ModelResetter.reset_logits = True
+ModelResetter.reset_turn_on = True
 
 Config._update_function = [@AnnealerThresholdSelector, @ThresholdAnnealer, @ModelResetter]
 

@@ -33,6 +33,42 @@ def AnnealerThresholdSelector(config, config_object, epoch_info, temp,
         temp['last_hyper_adjustment'] = i
     return config
 
+@gin.configurable
+def turn_on_features(m, ctx, logits_on=1.5, gap_threshold=1.1, loss_fcn=None):
+    """Turn on features giving better loss."""
+    for fout in range(m.n_features + m.n_additional_features):
+        if fout >= m.n_features:
+            fout_add = fout - m.n_features
+            logits = getattr(m, m.additional_models[fout_add]).switch.logits
+        else:
+            logits = getattr(m, m.models[fout]).switch.logits
+
+        for fin in range(m.n_features):
+            orig_logits0, orig_logits1 = logits[0, fin].item(), logits[1, fin].item()
+
+            # trying 0...
+            logits[0, fin], logits[1, fin] = 5, -5
+            loss_0 = loss_fcn(**ctx)
+            if isinstance(loss_0, dict):
+                loss_0 = loss_0['loss']
+            loss_0 = loss_0.item()
+
+
+            # trying 1...
+            logits[0, fin], logits[1, fin] = -5, 5
+            loss_1 = loss_fcn(**ctx)
+            if isinstance(loss_1, dict):
+                loss_1 = loss_1['loss']
+            loss_1 = loss_1.item()
+
+            logits[0, fin], logits[1, fin] = orig_logits0, orig_logits1
+
+            loss_ratio = loss_0 / loss_1
+
+            if loss_ratio > gap_threshold:
+                logging.info(f'Turn on feature {fout} <- {fin}')
+                logits[0, fin], logits[1, fin] = -logits_on, logits_on
+
 
 @gin.configurable
 def ModelResetter(config, epoch_info, temp,
@@ -43,6 +79,8 @@ def ModelResetter(config, epoch_info, temp,
                   reset_logits=True,
                   reset_optimizers=False,
                   grace_epochs=2000, # give that many epochs to try to recover on its own
+                  last_context=None,
+                  reset_turn_on=False,
                   new_logits=0.0, **kwargs):
 
     source_metric_key = gin.query_parameter(f"{gin_annealer_cls}.source_metric_key")
@@ -61,8 +99,6 @@ def ModelResetter(config, epoch_info, temp,
     i = epoch_info['epochs']
 
     logging.info(f"Resetter found loss {fit_loss} threshold {fit_threshold}, good {is_good} epoch {i} fng {temp['first_not_good']}")
-
-
 
     if is_good:
         temp['first_not_good'] = None
@@ -87,6 +123,10 @@ def ModelResetter(config, epoch_info, temp,
 
         if reset_optimizers:
             learner.create_optimizers()
+            
+        if reset_turn_on:
+            turn_on_features(m=learner.model, ctx=last_context)
+            
         temp['first_not_good'] = None
 
 @gin.configurable

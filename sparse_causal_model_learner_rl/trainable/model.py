@@ -144,7 +144,7 @@ class ManyNetworkModel(Model):
                 yield (name, w)
 
 
-    def forward(self, f_t, a_t, additional=False):
+    def forward(self, f_t, a_t, additional=False, **kwargs):
 
         n_f_out = self.n_additional_features if additional else self.n_features
 
@@ -169,7 +169,8 @@ class ManyNetworkModel(Model):
         # [t.join() for t in threads]
         fa_t.share_memory_()
         f_t1 = torch.nn.parallel.parallel_apply([getattr(self, m) for m in use_models],
-                                                [fa_t] * len(use_models))
+                                                [fa_t] * len(use_models),
+                                                kwargs_tup=[kwargs] * len(use_models))
 
         # predictions as a tensor
         f_t1 = torch.cat(f_t1, dim=1)

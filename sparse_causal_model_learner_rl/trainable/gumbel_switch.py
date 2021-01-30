@@ -148,14 +148,15 @@ class WithInputSwitch(nn.Module):
     def sparsify_me(self):
         return self.switch.sparsify_me()
 
-    def forward(self, x, enable_switch=None):
+    def forward(self, x, enable_switch=None, detach_mask=False):
         if enable_switch is None:
             enable_switch = self.enable_switch
         if enable_switch:
             on_off, mask = self.switch(x, return_x_and_mask=True)
 
             if self.give_mask:
-                x_with_mask = torch.cat([on_off, mask], dim=1) # .detach()
+                mask_maybe_detached = mask.detach() if detach_mask else mask
+                x_with_mask = torch.cat([on_off, mask_maybe_detached], dim=1)
                 y = self.model(x_with_mask)
             else:
                 y = self.model(on_off)

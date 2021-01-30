@@ -395,7 +395,7 @@ class AbstractLearner(ABC):
 
         # update config
         self.config.update(epoch_info=epoch_info, trainables=self.trainables,
-                           learner=self)
+                           learner=self, last_context=self._context_cache)
         self.epochs += 1
 
         self.epoch_info = epoch_info
