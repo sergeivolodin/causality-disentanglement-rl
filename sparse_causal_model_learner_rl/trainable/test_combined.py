@@ -1,5 +1,4 @@
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = "-1"
 import numpy as np
 from matplotlib import pyplot as plt
 import seaborn as sns
@@ -12,7 +11,6 @@ from sparse_causal_model_learner_rl.trainable.combined import FCCombinedModel
 
 use_cuda = False
 
-
 def get_model():
     m = torch.nn.Sequential(
         torch.nn.Linear(in_features=24, out_features=60,),
@@ -23,8 +21,6 @@ def get_model():
         torch.nn.ReLU(),
         torch.nn.Linear(in_features=60, out_features=1),
     )
-    if use_cuda:
-        m = m.cuda()
     return m
 
 class AllModels(nn.Module):
@@ -45,6 +41,7 @@ class AllModels(nn.Module):
         return torch.cat(results, dim=1)
 
 def test_combined_inp_outp():
+
     n_models = 25
     data = torch.randn(1000, 24)
     M = AllModels(n_models)
