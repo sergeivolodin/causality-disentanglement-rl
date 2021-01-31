@@ -192,6 +192,7 @@ class WithInputSwitch(nn.Module):
             self.input_shape = input_shape
         self.switch = switch_cls(shape=self.input_shape)
         self.give_mask = give_mask
+        self.last_mask = None
 
         if give_mask:
             assert len(input_shape) == 1, input_shape
@@ -218,6 +219,7 @@ class WithInputSwitch(nn.Module):
             # print("XSHAPE", x.shape)
 
             on_off, mask = self.switch(x, return_x_and_mask=True)
+            self.last_mask = mask
 
             if self.give_mask:
                 mask_maybe_detached = mask.detach() if detach_mask else mask
