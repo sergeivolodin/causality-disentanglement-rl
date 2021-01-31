@@ -68,11 +68,12 @@ class Switch(nn.Module):
 @gin.configurable
 class LearnableSwitchSimple(Switch):
     """Sample from Bernoulli, return p for grad."""
-    def __init__(self, initial_proba=0.5, **kwargs):
+    def __init__(self, initial_proba=0.5, return_grad=True, **kwargs):
         super(LearnableSwitchSimple, self).__init__(**kwargs)
 
         init = np.full(shape=self.shape, fill_value=initial_proba, dtype=np.float32)
         self.probas = torch.nn.Parameter(torch.from_numpy(init))
+        self.return_grad = return_grad
 
     def logits_batch(self, n_batch):
         return self.probas.view(1, *self.probas.shape).expand(
@@ -83,7 +84,9 @@ class LearnableSwitchSimple(Switch):
 
     def gumbel0(self, data):
         sampled = torch.bernoulli(data)
-        return sampled + data - data.detach()
+        if self.return_grad:
+            sampled = sampled + data - data.detach()
+        return sampled
 
     def sample_mask(self, method=None):
         return self.gumbel0(self.probas)
