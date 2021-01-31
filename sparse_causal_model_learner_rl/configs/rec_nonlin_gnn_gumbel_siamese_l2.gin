@@ -40,6 +40,8 @@ Config.shuffle = False
 Config.decoder = @IdentityDecoder
 Config.reconstructor = None
 
+WithInputSwitch.switch_cls = @LearnableSwitchSimple
+
 sparse_model/WithInputSwitch.enable_switch = True
 non_sparse_model/WithInputSwitch.enable_switch = False
 
@@ -120,11 +122,14 @@ Config.checkpoint_every = 1000
 LearnableSwitch.switch_neg = 0
 LearnableSwitch.switch_pos = 0
 
+LearnableSwitchSimple.initial_proba = 0.0
+LearnableSwitchSimple.sample_many = True
+
 ModelResetter.grace_epochs = 250
 ModelResetter.reset_optimizers = True
 ModelResetter.reset_weights = False
-ModelResetter.reset_logits = True
-ModelResetter.reset_turn_on = True
+ModelResetter.reset_logits = False
+ModelResetter.reset_turn_on = False
 
 Config._update_function = [@AnnealerThresholdSelector, @ThresholdAnnealer, @ModelResetter]
 
@@ -137,6 +142,8 @@ ThresholdAnnealer.emergency_heating = True
 AnnealerThresholdSelector.multiplier = 5
 AnnealerThresholdSelector.adjust_every = 20
 AnnealerThresholdSelector.source_fit_loss_key = 'non_sparse_fit_loss_smooth'
+
+turn_on_features.loss_fcn = @fit_loss
 
 # normalize input data
 Normalizer.once = True

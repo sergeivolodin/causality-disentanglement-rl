@@ -36,38 +36,39 @@ def AnnealerThresholdSelector(config, config_object, epoch_info, temp,
 @gin.configurable
 def turn_on_features(m, ctx, logits_on=1.5, gap_threshold=1.1, loss_fcn=None):
     """Turn on features giving better loss."""
-    for fout in range(m.n_features + m.n_additional_features):
-        if fout >= m.n_features:
-            fout_add = fout - m.n_features
-            logits = getattr(m, m.additional_models[fout_add]).switch.logits
-        else:
-            logits = getattr(m, m.models[fout]).switch.logits
+    with torch.no_grad():
+        for fout in range(m.n_features + m.n_additional_features):
+            if fout >= m.n_features:
+                fout_add = fout - m.n_features
+                logits = getattr(m, m.additional_models[fout_add]).switch.logits
+            else:
+                logits = getattr(m, m.models[fout]).switch.logits
 
-        for fin in range(m.n_features):
-            orig_logits0, orig_logits1 = logits[0, fin].item(), logits[1, fin].item()
+            for fin in range(m.n_features):
+                orig_logits0, orig_logits1 = logits[0, fin].item(), logits[1, fin].item()
 
-            # trying 0...
-            logits[0, fin], logits[1, fin] = 5, -5
-            loss_0 = loss_fcn(**ctx)
-            if isinstance(loss_0, dict):
-                loss_0 = loss_0['loss']
-            loss_0 = loss_0.item()
+                # trying 0...
+                logits[0, fin], logits[1, fin] = 5, -5
+                loss_0 = loss_fcn(**ctx)
+                if isinstance(loss_0, dict):
+                    loss_0 = loss_0['loss']
+                loss_0 = loss_0.item()
 
 
-            # trying 1...
-            logits[0, fin], logits[1, fin] = -5, 5
-            loss_1 = loss_fcn(**ctx)
-            if isinstance(loss_1, dict):
-                loss_1 = loss_1['loss']
-            loss_1 = loss_1.item()
+                # trying 1...
+                logits[0, fin], logits[1, fin] = -5, 5
+                loss_1 = loss_fcn(**ctx)
+                if isinstance(loss_1, dict):
+                    loss_1 = loss_1['loss']
+                loss_1 = loss_1.item()
 
-            logits[0, fin], logits[1, fin] = orig_logits0, orig_logits1
+                logits[0, fin], logits[1, fin] = orig_logits0, orig_logits1
 
-            loss_ratio = loss_0 / loss_1
+                loss_ratio = loss_0 / loss_1
 
-            if loss_ratio > gap_threshold:
-                logging.info(f'Turn on feature {fout} <- {fin}')
-                logits[0, fin], logits[1, fin] = -logits_on, logits_on
+                if loss_ratio > gap_threshold:
+                    logging.info(f'Turn on feature {fout} <- {fin}')
+                    logits[0, fin], logits[1, fin] = -logits_on, logits_on
 
 
 @gin.configurable
