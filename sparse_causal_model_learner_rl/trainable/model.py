@@ -296,7 +296,7 @@ class ManyNetworkCombinedModel(Model):
         # features and actions together
         fa_t = torch.cat((f_t, a_t), dim=1)
 
-        f_t1 = self.model(fa_t)
+        f_t1 = self.model(fa_t, **kwargs)
 
         # sanity check for output
         assert f_t1.shape[1] == n_f_out, f"Must return {n_f_out} features add={additional}: {f_t1.shape}"
