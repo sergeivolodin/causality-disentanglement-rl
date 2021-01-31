@@ -17,17 +17,18 @@ import sparse_causal_model_learner_rl.learners.input_normalizer
 import sparse_causal_model_learner_rl.metrics.context_rewrite
 import sparse_causal_model_learner_rl.loss.causal_discriminator
 import sparse_causal_model_learner_rl.visual.learner_visual
+import sparse_causal_model_learner_rl.trainable.combined
 include 'rec_nonlin_gnn.gin'
 
 tune_run.num_samples = 2
 
 Config.loss_every = 1000000000000000
 
-model_gnn/FCNet.hidden_sizes = [60, 60, 60]
-model_gnn/FCNet.activation_cls = @ReLU
+model_gnn/FCCombinedModel.hidden_sizes = [60, 60, 60]
+model_gnn/FCCombinedModel.activation_cls = @ReLU
 
 WithInputSwitch.give_mask = True
-WithInputSwitch.model_cls = @model_gnn/FCNet
+WithInputSwitch.model_cls = @model_gnn/FCCombinedModel
 
 LearnableSwitch.sample_many = True
 LearnableSwitch.sample_threshold = 0.9 # after this value, always sample 1 to prevent vanishing grads
@@ -45,14 +46,13 @@ WithInputSwitch.switch_cls = @LearnableSwitchSimple
 sparse_model/WithInputSwitch.enable_switch = True
 non_sparse_model/WithInputSwitch.enable_switch = False
 
-ManyNetworkModel.skip_connection = False
-sparse_model/ManyNetworkModel.model_cls = @sparse_model/WithInputSwitch
-non_sparse_model/ManyNetworkModel.model_cls = @non_sparse_model/WithInputSwitch
-ManyNetworkModel.sparse_do_max = False
-ManyNetworkModel.sparse_do_max_mfma = False
+sparse_model/ManyNetworkCombinedModel.model_cls = @sparse_model/WithInputSwitch
+non_sparse_model/ManyNetworkCombinedModel.model_cls = @non_sparse_model/WithInputSwitch
+ManyNetworkCombinedModel.sparse_do_max = False
+ManyNetworkCombinedModel.sparse_do_max_mfma = False
 
-Config.model = @sparse_model/ManyNetworkModel
-Config.non_sparse_model = @non_sparse_model/ManyNetworkModel
+Config.model = @sparse_model/ManyNetworkCombinedModel
+Config.non_sparse_model = @non_sparse_model/ManyNetworkCombinedModel
 
 Config.feature_shape = (17, )
 
@@ -64,10 +64,10 @@ opt4/Optimizer.name = 'Adam'
 opt4/Optimizer.lr = 1e-3
 
 Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer, 'opt3': @opt3/Optimizer, 'opt4': @opt4/Optimizer}
-Config.execution = {'opt1': ['fit', 'non_sparse_fit', 'no_small_probas', 'discriminate_siamese', 'sparsity', 'fit_all_on'],
-                    'opt2': ['fit', 'non_sparse_fit', 'no_small_probas', 'discriminate_siamese', 'sparsity', 'fit_all_on'],
-                    'opt3': ['fit', 'non_sparse_fit', 'no_small_probas', 'discriminate_siamese', 'sparsity', 'fit_all_on'],
-                    'opt4': ['fit', 'non_sparse_fit', 'no_small_probas', 'discriminate_siamese', 'fit_all_on']} # w/o sparsity, only model (for fit)
+Config.execution = {'opt1': ['fit', 'no_small_probas', 'sparsity'],
+                    'opt2': ['fit', 'non_sparse_fit', 'discriminate_siamese', 'fit_all_on'],
+                    'opt3': ['non_sparse_fit'],
+                    'opt4': ['fit', 'fit_all_on']} # w/o sparsity, only model (for fit)
 Config.optim_params = {'opt1': ['model.switch__params'], # switch learning
                        'opt2': ['decoder'], # representation learning
                        'opt3': ['non_sparse_model.model__params'], # reference model learning

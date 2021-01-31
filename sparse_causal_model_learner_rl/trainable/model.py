@@ -190,6 +190,121 @@ class ManyNetworkModel(Model):
 
 
 @gin.configurable
+class ManyNetworkCombinedModel(Model):
+    """Instantiate many networks, each modelling one feature."""
+    def __init__(self, model_cls=None, sparse_do_max=True,
+                 sparse_do_max_mfma=True, **kwargs):
+        super(ManyNetworkCombinedModel, self).__init__(**kwargs)
+        assert len(self.feature_shape) == 1, f"Features must be scalar: {self.feature_shape}"
+        assert len(self.action_shape) == 1, f"Actions must be scalar: {self.action_shape}"
+        assert len(self.additional_feature_shape) == 1, f"Additional features must be scalar: {self.additional_feature_shape}"
+
+        self.n_features = self.feature_shape[0]
+        self.n_actions = self.action_shape[0]
+        self.n_additional_features = self.additional_feature_shape[0]
+        self.n_total_features = self.n_features + self.n_additional_features
+        self.model_cls = model_cls
+
+        self.sparse_do_max = sparse_do_max
+        self.sparse_do_max_mfma = sparse_do_max_mfma
+
+        self.model = model_cls(input_shape=(self.n_features + self.n_actions,),
+                               output_shape=(1,),
+                               n_models=self.n_total_features)
+    @property
+    def model__params(self):
+        """List of model (not switch) parameters."""
+        m = self.model
+        if hasattr(m, 'model') and hasattr(m, 'switch'):
+            for p in m.model.parameters():
+                yield p
+        else:
+            for p in m.parameters():
+                yield p
+    @property
+    def switch__params(self):
+        """List of switch parameters."""
+        m = self.model
+        if hasattr(m, 'model') and hasattr(m, 'switch'):
+            for p in m.switch.parameters():
+                yield p
+        else:
+            for p in m.parameters():
+                yield p
+
+    @property
+    def Mf(self):
+        """Return features model."""
+
+        weights = [x[1][:self.n_features].detach().cpu().numpy()
+                   for x in self.sparsify_me(sparse_do_max=self.sparse_do_max_mfma)]
+        assert len(weights) == 1
+        # shape: [input_features, output_features]
+        weights = weights[0].T
+
+        assert weights.shape == (self.n_features + self.n_additional_features, self.n_features)
+        return weights
+
+    @property
+    def Ma(self):
+        """Return action model."""
+        weights = [x[1][self.n_features:].detach().cpu().numpy()
+                   for x in self.sparsify_me(sparse_do_max=self.sparse_do_max_mfma)]
+        assert len(weights) == 1
+        # shape: [input_features, output_features]
+        weights = weights[0].T
+        assert weights.shape == (self.n_features + self.n_additional_features, self.n_actions)
+        return weights
+
+    def sparsify_me(self, sparse_do_max=None):
+        """List of sparsifiable (name, tensor), max-ed over output dimension."""
+        if sparse_do_max is None:
+            sparse_do_max = self.sparse_do_max
+
+        for name, w in self.sparsify_tensors():
+            if sparse_do_max:
+                wmax, _ = torch.max(torch.abs(w), dim=0)
+                assert wmax.shape[0] == self.n_features + self.n_actions, (wmax.shape, self.n_features, self.n_actions)
+                yield name, wmax
+            else:
+                yield name, w
+
+
+    def sparsify_tensors(self):
+        """List of named tensors to sparsify."""
+        m = self.model
+        mname = 'model'
+        if hasattr(m, 'sparsify_me'):
+            # Gumbel-Softmax model
+            for name, w in m.sparsify_me():
+                name = mname + '.' + name
+                assert w.shape[0] == self.n_features + self.n_actions
+                yield (name, w)
+
+        else:
+            # print(self.model)
+            raise NotImplementedError
+
+    def forward(self, f_t, a_t, additional=False, all=False, **kwargs):
+        assert all is True
+        n_f_out = self.n_total_features
+
+        assert f_t.shape[1] == self.n_features, f"Wrong f_t shape {f_t.shape}"
+        assert a_t.shape[1] == self.n_actions, f"Wrong a_t shape {a_t.shape}"
+        assert f_t.shape[0] == a_t.shape[0], f"Wrong batches {f_t.shape} {a_t.shape}"
+
+        # features and actions together
+        fa_t = torch.cat((f_t, a_t), dim=1)
+
+        f_t1 = self.model(fa_t)
+
+        # sanity check for output
+        assert f_t1.shape[1] == n_f_out, f"Must return {n_f_out} features add={additional}: {f_t1.shape}"
+        assert f_t1.shape[0] == f_t.shape[0], f"Wrong out batches {f_t.shape} {f_t1.shape}"
+
+        return f_t1
+
+@gin.configurable
 class LinearModel(Model):
     def __init__(self, use_bias=True, init_identity=False, **kwargs):
         super(LinearModel, self).__init__(**kwargs)

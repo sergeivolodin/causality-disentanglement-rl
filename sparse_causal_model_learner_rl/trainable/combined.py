@@ -7,11 +7,13 @@ import gin
 
 @gin.configurable
 class AbstractCombinedModel(nn.Module):
-    def __init__(self, n_models, input_dim, output_dim=1):
+    def __init__(self, n_models, input_shape, output_shape):
         super(AbstractCombinedModel, self).__init__()
+        assert len(input_shape) == 1, input_shape
+        assert len(output_shape) == 1, output_shape
         self.n_models = n_models
-        self.input_dim = input_dim
-        self.output_dim = output_dim
+        self.input_dim = input_shape[0]
+        self.output_dim = output_shape[0]
 
 
 @gin.configurable

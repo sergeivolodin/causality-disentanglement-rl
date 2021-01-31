@@ -57,6 +57,7 @@ class Switch(nn.Module):
         # (xsigma^a')xasigma^a*(1-sigma). the (1-sigma part can still be low)
         # but there the sampling is almost sure
         # loss explodes
+        # print(x.shape, mask.shape, self.probas.shape)
         xout = x * mask#.pow(self.power)
 
         if return_x_and_mask:
@@ -184,8 +185,12 @@ class WithInputSwitch(nn.Module):
                  switch_cls=LearnableSwitch,
                  enable_switch=True, **kwargs):
         super(WithInputSwitch, self).__init__()
-        self.input_shape = input_shape
-        self.switch = switch_cls(shape=input_shape)
+        self.n_models = kwargs.get('n_models', None)
+        if self.n_models is not None:
+            self.input_shape = (*input_shape, self.n_models)
+        else:
+            self.input_shape = input_shape
+        self.switch = switch_cls(shape=self.input_shape)
         self.give_mask = give_mask
 
         if give_mask:
@@ -202,9 +207,16 @@ class WithInputSwitch(nn.Module):
         return self.switch.sparsify_me()
 
     def forward(self, x, enable_switch=None, detach_mask=False):
+
+        if self.n_models is not None:
+            x = x.view(*x.shape, 1).expand(*[-1] * len(x.shape), self.n_models)
+
         if enable_switch is None:
             enable_switch = self.enable_switch
         if enable_switch:
+
+            # print("XSHAPE", x.shape)
+
             on_off, mask = self.switch(x, return_x_and_mask=True)
 
             if self.give_mask:
