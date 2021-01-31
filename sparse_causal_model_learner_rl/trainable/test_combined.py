@@ -45,7 +45,7 @@ def test_combined_inp_outp():
     n_models = 25
     data = torch.randn(1000, 24)
     M = AllModels(n_models)
-    C = FCCombinedModel(hidden_sizes=[60, 60, 60], input_dim=24, n_models=n_models, output_dim=1)
+    C = FCCombinedModel(hidden_sizes=[60, 60, 60], input_shape=(24,), n_models=n_models, output_shape=(1,))
 
     for n, p in M.named_parameters():
         model_n = int(n[1:3])
