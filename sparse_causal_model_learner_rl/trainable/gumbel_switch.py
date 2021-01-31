@@ -17,31 +17,105 @@ def sample_from_logits_simple(logits_plus, tau=1.0):
 
     return sampled + grad_fcn() - grad_fcn().detach()#ogits_plus) - torch.exp(logits_plus).detach()#probas_tau - probas_tau.detach()
 
+class Switch(nn.Module):
+    def __init__(self, shape, sample_many=True):
+        super(Switch, self).__init__()
+        self.shape = shape
+        self.sample_many = sample_many
+
+    def sample_mask(self, method=None):
+        raise NotImplementedError
+
+    def logits_batch(self, n_batch):
+        raise NotImplementedError
+
+    def gumbel0(self, data):
+        raise NotImplementedError
+
+    def softmaxed(self):
+        raise NotImplementedError
+
+    def sparsify_me(self):
+        raise NotImplementedError
+
+    def project(self):
+        pass
+
+    def forward(self, x, return_mask=False, return_x_and_mask=False):
+        self.project()
+        if self.sample_many:
+            mask = self.logits_batch(x.shape[0])
+            mask = self.gumbel0(mask)
+        else:
+            mask = self.sample_mask(method='gumbel')
+
+        if return_mask:
+            return mask
+
+        # power<1 increases the gradient when the proba is low
+        # otherwise, grad ~ proba ** 2 (sampling + here)
+        # (xsigma^a')xasigma^a*(1-sigma). the (1-sigma part can still be low)
+        # but there the sampling is almost sure
+        # loss explodes
+        xout = x * mask#.pow(self.power)
+
+        if return_x_and_mask:
+            return xout, mask
+
+        return xout
+
+class LearnableSwitchSimple(Switch):
+    """Sample from Bernoulli, return p for grad."""
+    def __init__(self, initial_proba=0.5, **kwargs):
+        super(LearnableSwitchSimple, self).__init__(**kwargs)
+
+        init = np.full(initial_proba, dtype=np.float32)
+        self.probas = torch.nn.Parameter(torch.from_numpy(init))
+
+    def logits_batch(self, n_batch):
+        return self.probas.view(self.probas.shape[0], 1,
+                                *self.probas.shape[1:]).expand(
+            -1, n_batch, *[-1] * (len(self.probas.shape) - 1))
+
+    def project(self):
+        self.probas.data = torch.clamp(self.probas.data, min=0.0, max=1.0)
+
+    def gumbel0(self, data):
+        sampled = torch.bernoulli(data)
+        return sampled + data - data.detach()
+
+    def sample_mask(self, method=None):
+        return self.gumbel0(self.probas)
+
+    def softmaxed(self):
+        return self.probas
+
+    def sparsify_me(self):
+        return [('proba_on', self.softmaxed())]
+
+
 @gin.configurable
-class LearnableSwitch(nn.Module):
+class LearnableSwitch(Switch):
     """Learn binary probabilistic variables.
 
     Based on Yoshua Bengio's group work and the Gumbel-Softmax trick.
     """
 
-    def __init__(self, shape, sample_many=True,
-                 sample_fcn=None,
+    def __init__(self, sample_fcn=None,
                  power=1.0, switch_neg=-1,
                  sample_threshold=None,
                  sample_threshold_min=None,
-                 switch_pos=1, tau=1.0):
-        super(LearnableSwitch, self).__init__()
-        self.shape = shape
+                 switch_pos=1, tau=1.0, **kwargs):
+        super(LearnableSwitch, self).__init__(**kwargs)
         # 1-st component is for ACTIVE
 
-        init_0 = np.ones(shape) * switch_neg
-        init_1 = np.ones(shape) * switch_pos
+        init_0 = np.ones(self.shape) * switch_neg
+        init_1 = np.ones(self.shape) * switch_pos
         init = np.array([init_0, init_1])
         #init = np.array(np.ones((2, *shape)), dtype=np.float32)
         init = np.array(init, dtype=np.float32)
 
         self.logits = torch.nn.Parameter(torch.from_numpy(init))
-        self.sample_many = sample_many
         self.power = power
         self.tau = tau
         self.sample_fcn = sample_fcn
@@ -102,37 +176,16 @@ class LearnableSwitch(nn.Module):
         else:
             raise NotImplementedError
 
-    def forward(self, x, return_mask=False, return_x_and_mask=False):
-        if self.sample_many:
-            mask = self.logits_batch(x.shape[0])
-            mask = self.gumbel0(mask)
-        else:
-            mask = self.sample_mask(method='gumbel')
-
-        if return_mask:
-            return mask
-
-        # power<1 increases the gradient when the proba is low
-        # otherwise, grad ~ proba ** 2 (sampling + here)
-        # (xsigma^a')xasigma^a*(1-sigma). the (1-sigma part can still be low)
-        # but there the sampling is almost sure
-        # loss explodes
-        xout = x * mask#.pow(self.power)
-
-        if return_x_and_mask:
-            return xout, mask
-
-        return xout
-
 @gin.configurable
 class WithInputSwitch(nn.Module):
     """Add the input switch to the model."""
 
     def __init__(self, model_cls, input_shape, give_mask=False,
+                 switch_cls=LearnableSwitch,
                  enable_switch=True, **kwargs):
         super(WithInputSwitch, self).__init__()
         self.input_shape = input_shape
-        self.switch = LearnableSwitch(shape=input_shape)
+        self.switch = switch_cls(shape=input_shape)
         self.give_mask = give_mask
 
         if give_mask:
