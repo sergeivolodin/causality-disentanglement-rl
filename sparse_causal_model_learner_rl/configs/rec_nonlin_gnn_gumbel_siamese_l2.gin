@@ -103,7 +103,7 @@ Config.losses = {'fit': {'fcn': @fit/fit_loss, 'coeff': 1},
                  # 'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 1},
                  'non_sparse_fit': {'fcn': @non_sparse_fit_loss/context_rewriter, 'coeff': 1},
                  'discriminate_siamese': {'fcn': @siamese_feature_discriminator_l2, 'coeff': 1.0},
-                 'no_small_probas': {'fcn': @nonzero_proba_loss, 'coeff': 0.01},
+                 'no_small_probas': {'fcn': @nonzero_proba_loss, 'coeff': 1.0},
                  'fit_all_on': {'fcn': @all_on/fit_loss, 'coeff': 1.0},
                 }
 

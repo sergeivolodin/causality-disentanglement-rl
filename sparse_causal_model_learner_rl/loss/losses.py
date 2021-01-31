@@ -71,9 +71,12 @@ def manual_switch_gradient(f_t1, f_t1_pred, model, eps=1e-5):
 
     mask_atleast = ((n_pos >= 1) * (n_neg >= 1))
     mask_coeff = mask_atleast * (mask_pos - mask_neg)
-    p_grad = (delta_expanded * mask_coeff).mean(dim=0)
+    p_grad = (delta_expanded * mask_coeff).sum(dim=0)
 
-    model.model.switch.probas.grad = p_grad.clone()
+    if model.model.switch.probas.grad is None:
+        model.model.switch.probas.grad = p_grad.clone()
+    else:
+        model.model.switch.probas.grad += p_grad.clone()
     return 0.0
 
 @gin.configurable
