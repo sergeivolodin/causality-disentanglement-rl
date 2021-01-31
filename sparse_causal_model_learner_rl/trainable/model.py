@@ -20,7 +20,7 @@ class Model(nn.Module):
         if len(self.additional_feature_shape) == 0:
             self.additional_feature_shape = (1,)
 
-    def forward(self, f_t, a_t, additional=False):
+    def forward(self, f_t, a_t, additional=False, all=False):
         return NotImplementedError
 
     def sparsify_me(self):
@@ -144,9 +144,11 @@ class ManyNetworkModel(Model):
                 yield (name, w)
 
 
-    def forward(self, f_t, a_t, additional=False, **kwargs):
+    def forward(self, f_t, a_t, additional=False, all=False, **kwargs):
 
         n_f_out = self.n_additional_features if additional else self.n_features
+        if all:
+            n_f_out = self.n_features + self.n_additional_features
 
         assert f_t.shape[1] == self.n_features, f"Wrong f_t shape {f_t.shape}"
         assert a_t.shape[1] == self.n_actions, f"Wrong a_t shape {a_t.shape}"
@@ -156,6 +158,8 @@ class ManyNetworkModel(Model):
         fa_t = torch.cat((f_t, a_t), dim=1)
 
         use_models = self.additional_models if additional else self.models
+        if all:
+            use_models = self.models + self.additional_models
 
         # all models on data
         # def set_model_future(fut, model, input_data):
@@ -179,7 +183,7 @@ class ManyNetworkModel(Model):
         assert f_t1.shape[1] == n_f_out, f"Must return {n_f_out} features add={additional}: {f_t1.shape}"
         assert f_t1.shape[0] == f_t.shape[0], f"Wrong out batches {f_t.shape} {f_t1.shape}"
 
-        if self.skip_connection and not additional:
+        if self.skip_connection and not additional and not all:
             f_t1 += f_t
 
         return f_t1
@@ -208,13 +212,22 @@ class LinearModel(Model):
             self.fc_action.weight.data.copy_(torch.eye(self.feature_shape[0], self.action_shape[0]))
 
 
-    def forward(self, f_t, a_t, additional=False):
-        if additional:
-            f_next_f = self.fc_features_additional(f_t)
-            f_next_a = self.fc_action_additional(a_t)
+    def forward(self, f_t, a_t, additional=False, all=False):
+
+        if all:
+            f_next_f_add = self.fc_features_additional(f_t)
+            f_next_a_add = self.fc_action_additional(a_t)
+            f_next_f_main = self.fc_features(f_t)
+            f_next_a_main = self.fc_action(a_t)
+            f_next_f = torch.cat([f_next_f_main, f_next_f_add], dim=1)
+            f_next_a = torch.cat([f_next_a_main, f_next_a_add], dim=1)
         else:
-            f_next_f = self.fc_features(f_t)
-            f_next_a = self.fc_action(a_t)
+            if additional:
+                f_next_f = self.fc_features_additional(f_t)
+                f_next_a = self.fc_action_additional(a_t)
+            else:
+                f_next_f = self.fc_features(f_t)
+                f_next_a = self.fc_action(a_t)
         return f_next_f + f_next_a
 
     def sparsify_me(self):
@@ -258,13 +271,18 @@ class ModelModel(Model):
             self.model.apply(init_weights)
 
 
-    def forward(self, f_t, a_t, additional=False, **kwargs):
+    def forward(self, f_t, a_t, additional=False, all=False, **kwargs):
         fa_t = torch.cat((f_t, a_t), dim=1)
 
-        if additional:
-            f_t1 = self.additional_model(fa_t, **kwargs)
+        if all:
+            f_t1_main = self.model(fa_t, **kwargs)
+            f_t1_add = self.additional_model(fa_t, **kwargs)
+            f_t1 = torch.cat([f_t1_main, f_t1_add], dim=1)
         else:
-            f_t1 = self.model(fa_t, **kwargs)
-            if self.skip_connection:
-                f_t1 += f_t
+            if additional:
+                f_t1 = self.additional_model(fa_t, **kwargs)
+            else:
+                f_t1 = self.model(fa_t, **kwargs)
+                if self.skip_connection:
+                    f_t1 += f_t
         return f_t1

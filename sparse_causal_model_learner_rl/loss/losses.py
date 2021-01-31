@@ -57,21 +57,15 @@ def fit_loss(obs_x, obs_y, action_x, decoder, model, additional_feature_keys,
         model_forward_kwargs = {}
     
     f_t1 = decoder(obs_y)
+    if additional_feature_keys:
+        add_features_y = torch.cat([kwargs[k] for k in additional_feature_keys], dim=1)
+        f_t1 = torch.cat([f_t1, add_features_y], dim=1)
 
     mse = torch.nn.MSELoss()
     # detaching second part like in q-learning makes the loss jitter
-    loss = mse(model(decoder(obs_x), action_x, **model_forward_kwargs), f_t1)
+    loss = mse(model(decoder(obs_x), action_x, all=True, **model_forward_kwargs), f_t1)
 
     metrics = {'mean_feature': torch.mean(torch.abs(f_t1)).item()}
-
-    if additional_feature_keys:
-        add_features_y = torch.cat([kwargs[k] for k in additional_feature_keys], dim=1)
-        loss_additional = mse(model(decoder(obs_x), action_x, additional=True, **model_forward_kwargs), add_features_y)
-        loss_main = loss
-        loss = loss_main + loss_additional
-        metrics['mean_additional_feature'] = torch.mean(torch.abs(add_features_y)).item()
-        metrics['loss_main'] = loss_main.item()
-        metrics['loss_additional'] = loss_additional.item()
 
     return {'loss': loss,
             'metrics': metrics}
