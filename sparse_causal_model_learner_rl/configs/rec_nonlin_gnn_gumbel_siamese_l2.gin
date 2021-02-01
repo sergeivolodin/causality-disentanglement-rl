@@ -72,7 +72,7 @@ Config.optim_params = {'opt1': ['model.switch__params'], # switch learning
                        'opt2': ['decoder'], # representation learning
                        'opt3': ['non_sparse_model.model__params'], # reference model learning
                        'opt4': ['model.model__params']} # model learning
-Config.opt_iterations = {'opt1': 5, 'opt2': 5, 'opt3': 12, 'opt4': 15}
+Config.opt_iterations = {'opt1': 3, 'opt2': 0, 'opt3': 3, 'opt4': 4}
 
 smooth.smooth_steps = 20
 smooth.do_log = True
@@ -98,16 +98,19 @@ MIN_HYPER_ANNEAL = 1e-6
 
 all_on/fit_loss.model_forward_kwargs = {'enable_switch': False}
 
-Config.losses = {'fit': {'fcn': @fit_loss, 'coeff': 1},
+Config.losses = {'fit': {'fcn': @fit/fit_loss, 'coeff': 1},
                  'sparsity': {'fcn': @sparsity_loss, 'coeff': %MIN_HYPER_ANNEAL},
                  # 'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 1},
                  'non_sparse_fit': {'fcn': @non_sparse_fit_loss/context_rewriter, 'coeff': 1},
                  'discriminate_siamese': {'fcn': @siamese_feature_discriminator_l2, 'coeff': 1.0},
-                 'no_small_probas': {'fcn': @nonzero_proba_loss, 'coeff': 10},
+                 'no_small_probas': {'fcn': @nonzero_proba_loss, 'coeff': 1.0},
                  'fit_all_on': {'fcn': @all_on/fit_loss, 'coeff': 1.0},
                 }
 
-nonzero_proba_loss.eps = 0.1
+fit/fit_loss.fill_switch_grad = True
+
+nonzero_proba_loss.eps = 0.5
+nonzero_proba_loss.do_abs = False
 
 non_sparse_fit_loss/context_rewriter.function = @fit_loss
 non_sparse_fit_loss/context_rewriter.rewrite = {'model': 'non_sparse_model'}
@@ -122,11 +125,12 @@ Config.checkpoint_every = 1000
 LearnableSwitch.switch_neg = 0
 LearnableSwitch.switch_pos = 0
 
-LearnableSwitchSimple.initial_proba = 0.0
+LearnableSwitchSimple.initial_proba = 0.5
 LearnableSwitchSimple.sample_many = True
+LearnableSwitchSimple.return_grad = False
 
 ModelResetter.grace_epochs = 250
-ModelResetter.reset_optimizers = True
+ModelResetter.reset_optimizers = False
 ModelResetter.reset_weights = False
 ModelResetter.reset_logits = False
 ModelResetter.reset_turn_on = False
@@ -148,7 +152,7 @@ turn_on_features.loss_fcn = @fit_loss
 # normalize input data
 Normalizer.once = True
 Normalizer.dim = 0
-normalize_context_transform.normalize_context_dct = {'obs': ['obs_x', 'obs_y', 'obs'],}
+normalize_context_transform.normalize_context_dct = {'obs': ['obs_x', 'obs_y', 'obs'], 'rew_y': ['rew_y'], 'done_y': ['done_y']}
 Config.context_transforms = [@normalize_context_transform]
 
 siamese_feature_discriminator_l2.margin = 0.1

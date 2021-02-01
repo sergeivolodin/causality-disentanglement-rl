@@ -4,14 +4,14 @@ import logging
 
 
 @gin.configurable
-def entropy_np(W, return_distribution=False, eps=1e-8):
+def entropy_np(W, return_distribution=False, eps=1e-4):
     """Compute entropy for a softmax distribution."""
 
     # W: shape (n_out, n_in)
 
     W = W.flatten()
     
-    W = np.clip(W, a_min=eps, a_max=1.0)
+    W = np.clip(W, a_min=eps, a_max=1.0 - eps)
 
     p_plus = W
     p_minus = 1 - W

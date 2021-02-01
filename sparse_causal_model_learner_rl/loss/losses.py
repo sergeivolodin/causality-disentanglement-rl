@@ -71,9 +71,12 @@ def manual_switch_gradient(f_t1, f_t1_pred, model, eps=1e-5):
 
     mask_atleast = ((n_pos >= 1) * (n_neg >= 1))
     mask_coeff = mask_atleast * (mask_pos - mask_neg)
-    p_grad = (delta_expanded * mask_coeff).mean(dim=0)
+    p_grad = (delta_expanded * mask_coeff).sum(dim=0)
 
-    model.model.switch.probas.grad = p_grad.clone()
+    if model.model.switch.probas.grad is None:
+        model.model.switch.probas.grad = p_grad.clone()
+    else:
+        model.model.switch.probas.grad += p_grad.clone()
     return 0.0
 
 @gin.configurable
@@ -174,11 +177,16 @@ def sparsity_loss_linreg(obs_x, obs_y, action_x, decoder, fcn=sparsity_uniform, 
     return sparsity_uniform([Mf, Ma, torch.inverse(Mf), torch.inverse(Ma)], ord=ord)
 
 @gin.configurable
-def nonzero_proba_loss(model, eps=1e-3, **kwargs):
+def nonzero_proba_loss(model, eps=1e-3, do_abs=True, **kwargs):
     """Make probabilities larger than some constant, so that gradients do not disappear completely."""
     params = [x[1] for x in model.sparsify_me()]
     # assuming proba in [0, 1]
-    margin = [torch.nn.ReLU()(eps - param.flatten().abs()).max() / eps for param in params]
+    
+    params = [param.flatten() for param in params]
+    if do_abs:
+        params = [param.abs() for param in params]
+    
+    margin = [torch.nn.ReLU()(eps - param).max() / eps for param in params]
     msp = [p.min().item() for p in params]
     return {'loss': sum(margin) / len(margin),
             'metrics': {'min_switch_proba': min(msp)}}
