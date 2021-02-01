@@ -63,16 +63,23 @@ opt3/Optimizer.lr = 1e-3
 opt4/Optimizer.name = 'Adam'
 opt4/Optimizer.lr = 1e-3
 
-Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer, 'opt3': @opt3/Optimizer, 'opt4': @opt4/Optimizer}
+opt5/Optimizer.name = 'Adam'
+opt5/Optimizer.lr = 1e-3
+
+Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer, 'opt3': @opt3/Optimizer, 'opt4': @opt4/Optimizer}#, 'opt5': @opt5/Optimizer}
 Config.execution = {'opt1': ['fit', 'no_small_probas', 'sparsity'],
                     'opt2': ['fit', 'non_sparse_fit', 'discriminate_siamese', 'fit_all_on'],
                     'opt3': ['non_sparse_fit'],
-                    'opt4': ['fit', 'fit_all_on']} # w/o sparsity, only model (for fit)
+                    'opt4': ['fit', 'fit_all_on'], # w/o sparsity, only model (for fit)
+                    #'opt5': ['discriminate_siamese'],
+                    }
 Config.optim_params = {'opt1': ['model.switch__params'], # switch learning
                        'opt2': ['decoder'], # representation learning
                        'opt3': ['non_sparse_model.model__params'], # reference model learning
-                       'opt4': ['model.model__params']} # model learning
-Config.opt_iterations = {'opt1': 3, 'opt2': 0, 'opt3': 3, 'opt4': 4}
+                       'opt4': ['model.model__params'], # model learning
+                     #  'opt5': ['decoder'],
+                       }
+Config.opt_iterations = {'opt1': 3, 'opt2': 5, 'opt3': 3, 'opt4': 4}#, 'opt5': 5,}
 
 smooth.smooth_steps = 20
 smooth.do_log = True
@@ -102,7 +109,7 @@ Config.losses = {'fit': {'fcn': @fit/fit_loss, 'coeff': 1},
                  'sparsity': {'fcn': @sparsity_loss, 'coeff': %MIN_HYPER_ANNEAL},
                  # 'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 1},
                  'non_sparse_fit': {'fcn': @non_sparse_fit_loss/context_rewriter, 'coeff': 1},
-                 'discriminate_siamese': {'fcn': @siamese_feature_discriminator_l2, 'coeff': 1.0},
+                 'discriminate_siamese': {'fcn': @siamese_feature_discriminator_l2, 'coeff': 1000.0},
                  'no_small_probas': {'fcn': @nonzero_proba_loss, 'coeff': 1.0},
                  'fit_all_on': {'fcn': @all_on/fit_loss, 'coeff': 1.0},
                 }
@@ -119,7 +126,18 @@ ThresholdAnnealer.source_metric_key = 'fit_loss_smooth'
 
 entropy_np.return_distribution = True
 
-Config.schedulers = {}
+sch/Scheduler.name = 'ReduceLROnPlateau'
+sch/Scheduler.patience = 150
+sch/Scheduler.verbose = True
+sch/Scheduler.factor = 0.5
+
+Config.schedulers = {
+#'opt1': @sch/Scheduler,
+                     'opt2': @sch/Scheduler,
+                     #'opt3': @sch/Scheduler,
+                     }
+
+
 Config.checkpoint_every = 1000
 
 LearnableSwitch.switch_neg = 0
@@ -143,7 +161,7 @@ ThresholdAnnealer.factor_heat = 0.001
 ThresholdAnnealer.min_hyper = %MIN_HYPER_ANNEAL
 ThresholdAnnealer.max_hyper = 10
 ThresholdAnnealer.emergency_heating = True
-AnnealerThresholdSelector.multiplier = 2
+AnnealerThresholdSelector.multiplier = 1
 AnnealerThresholdSelector.adjust_every = 20
 AnnealerThresholdSelector.source_fit_loss_key = 'non_sparse_fit_loss_smooth'
 
