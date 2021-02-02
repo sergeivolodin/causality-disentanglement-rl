@@ -110,8 +110,8 @@ Config.losses = {'fit': {'fcn': @fit/fit_loss, 'coeff': 1},
                  # 'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 1},
                  'non_sparse_fit': {'fcn': @non_sparse_fit_loss/context_rewriter, 'coeff': 1},
                  'discriminate_siamese': {'fcn': @siamese_feature_discriminator_l2, 'coeff': 1000.0},
-                 'no_small_probas': {'fcn': @nonzero_proba_loss, 'coeff': 1.0},
-                 'fit_all_on': {'fcn': @all_on/fit_loss, 'coeff': 1.0},
+                 'no_small_probas': {'fcn': @nonzero_proba_loss, 'coeff': 1},
+                 'fit_all_on': {'fcn': @all_on/fit_loss, 'coeff': 1},
                 }
 
 fit/fit_loss.fill_switch_grad = True
@@ -161,7 +161,7 @@ ThresholdAnnealer.factor_heat = 0.001
 ThresholdAnnealer.min_hyper = %MIN_HYPER_ANNEAL
 ThresholdAnnealer.max_hyper = 10
 ThresholdAnnealer.emergency_heating = True
-AnnealerThresholdSelector.multiplier = 1
+AnnealerThresholdSelector.multiplier = 1.5
 AnnealerThresholdSelector.adjust_every = 20
 AnnealerThresholdSelector.source_fit_loss_key = 'non_sparse_fit_loss_smooth'
 

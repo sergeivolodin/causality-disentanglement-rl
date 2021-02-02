@@ -15,8 +15,8 @@ import sparse_causal_model_learner_rl.trainable.fcnet
 import sparse_causal_model_learner_rl.learners.input_normalizer
 import sparse_causal_model_learner_rl.metrics.context_rewrite
 
-decoder/FCNet.hidden_sizes = [150, 150, 150]
-decoder/FCNet.activation_cls = @Sigmoid
+decoder/FCNet.hidden_sizes = [150, 150]
+decoder/FCNet.activation_cls = @Tanh
 ModelDecoder.model_cls = @decoder/FCNet
 ModelDecoder.use_batchnorm = False
 
