@@ -114,8 +114,8 @@ def fit_loss(obs_x, obs_y, action_x, decoder, model, additional_feature_keys,
 
     loss = ((f_t1_pred - f_t1).pow(2) / f_t1_std.pow(2)).mean()
 
-    metrics = {'mean_feature': f_t1.mean(0).abs().mean().item(),
-               'std_feature': f_t1.std(0).abs().mean().item()}
+    metrics = {'mean_feature': f_t1.mean(0).detach().cpu().numpy(),
+               'std_feature': f_t1.std(0).detach().cpu().numpy()}
 
     return {'loss': loss,
             'metrics': metrics}
