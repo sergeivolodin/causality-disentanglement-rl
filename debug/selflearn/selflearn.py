@@ -29,6 +29,7 @@ class Net(nn.Module):
     def lr(self, x):
         x = self.common(x)
         x = self.fclr(x)
+        x = torch.nn.Sigmoid()(x)
         return x
 
     def forward(self, x):
@@ -96,7 +97,7 @@ class Interaction():
         # differentiable learning rate INSIDE the optimizer
         # just do SGD and manual parameter
 
-        return out, torch.exp(hparams_delta)
+        return out, hparams_delta
 
 
     def selflearn(self, model=None, optimizer_class=None):
