@@ -40,7 +40,7 @@ Config.shuffle = False
 
 Config.decoder = @IdentityDecoder
 Config.reconstructor = None
-Config.value_predictor = @ModelValuePredictor
+#Config.value_predictor = @ModelValuePredictor
 
 value/FCNet.hidden_sizes = [150, 150, 150]
 value/FCNet.activation_cls = @Tanh
@@ -71,20 +71,24 @@ opt4/Optimizer.lr = 1e-3
 opt5/Optimizer.name = 'Adam'
 opt5/Optimizer.lr = 1e-3
 
-Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer, 'opt3': @opt3/Optimizer, 'opt4': @opt4/Optimizer, 'opt5': @opt5/Optimizer}
-Config.execution = {'opt1': ['fit', 'no_small_probas', 'sparsity'],
-                    'opt2': ['fit', 'non_sparse_fit', 'discriminate_siamese', 'fit_all_on', 'value_loss'],
-                    'opt3': ['non_sparse_fit'],
-                    'opt4': ['fit', 'fit_all_on'], # w/o sparsity, only model (for fit)
-                    'opt5': ['discriminate_siamese', 'value_loss'],
+Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer, 'opt3': @opt3/Optimizer, 'opt4': @opt4/Optimizer}#, 'opt5': @opt5/Optimizer}
+
+LOSSES_OTHER = ['fit', 'fit_all_on', 'non_sparse_fit', 'discriminate_siamese']
+LOSSES_SPARSE = ['sparsity', 'fit']
+
+Config.execution = {'opt1': %LOSSES_SPARSE,
+                    'opt2': %LOSSES_OTHER,
+                    'opt3': %LOSSES_OTHER,
+                    'opt4': ['discriminate_siamese'], # w/o sparsity, only model (for fit)
+                    #'opt5': %ALL_LOSSES,
                     }
 Config.optim_params = {'opt1': ['model.switch__params'], # switch learning
-                       'opt2': ['decoder', 'value_predictor'], # representation learning
-                       'opt3': ['non_sparse_model.model__params'], # reference model learning
-                       'opt4': ['model.model__params'], # model learning
-                       'opt5': ['decoder', 'value_predictor'],
+                       'opt2': ['model.model__params', 'decoder'], # representation learning
+                       'opt3': ['non_sparse_model'], # reference model learning
+                       'opt4': ['decoder'], # representation learning
+                       #'opt5': ['decoder', 'value_predictor'],
                        }
-Config.opt_iterations = {'opt1': 3, 'opt2': 5, 'opt3': 3, 'opt4': 4, 'opt5': 5,}
+Config.opt_iterations = {'opt1': 1, 'opt2': 4, 'opt3': 5, 'opt4': 4}#, 'opt5': 5,}
 
 smooth.smooth_steps = 20
 smooth.do_log = True
@@ -106,7 +110,7 @@ Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
                   'non_sparse_fit_loss_smooth': @non_sparse_fit_loss_smooth/smooth,
                   '|last_mult_sparsity_gap': @mult_sparsity_gap}
 
-MIN_HYPER_ANNEAL = 1e-6
+MIN_HYPER_ANNEAL = 1e-9
 
 all_on/fit_loss.model_forward_kwargs = {'enable_switch': False}
 
@@ -115,9 +119,9 @@ Config.losses = {'fit': {'fcn': @fit/fit_loss, 'coeff': 1},
                  # 'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 1},
                  'non_sparse_fit': {'fcn': @non_sparse_fit_loss/context_rewriter, 'coeff': 1},
                  'discriminate_siamese': {'fcn': @siamese_feature_discriminator_l2, 'coeff': 1.0},
-                 'no_small_probas': {'fcn': @nonzero_proba_loss, 'coeff': 1},
+                 #'no_small_probas': {'fcn': @nonzero_proba_loss, 'coeff': 10.},
                  'fit_all_on': {'fcn': @all_on/fit_loss, 'coeff': 1},
-                 'value_loss': {'fcn': @reconstruction_loss_value_function_reward_to_go, 'coeff': 1.0},
+                 #'value_loss': {'fcn': @reconstruction_loss_value_function_reward_to_go, 'coeff': 1.0},
                 }
 
 fit/fit_loss.fill_switch_grad = True
@@ -150,6 +154,7 @@ LearnableSwitch.switch_neg = 0
 LearnableSwitch.switch_pos = 0
 
 LearnableSwitchSimple.initial_proba = 0.5
+LearnableSwitchSimple.min_proba = 0.5
 LearnableSwitchSimple.sample_many = True
 LearnableSwitchSimple.return_grad = False
 
@@ -162,11 +167,11 @@ ModelResetter.reset_turn_on = False
 Config._update_function = [@AnnealerThresholdSelector, @ThresholdAnnealer, @ModelResetter]
 
 ThresholdAnnealer.adjust_every = 100
-ThresholdAnnealer.factor_cool = 0.5
-ThresholdAnnealer.factor_heat = 0.001
+ThresholdAnnealer.factor_cool = 0.1
+ThresholdAnnealer.factor_heat = 0.1
 ThresholdAnnealer.min_hyper = %MIN_HYPER_ANNEAL
 ThresholdAnnealer.max_hyper = 10
-ThresholdAnnealer.emergency_heating = True
+ThresholdAnnealer.emergency_heating = False
 AnnealerThresholdSelector.multiplier = 5
 AnnealerThresholdSelector.adjust_every = 20
 AnnealerThresholdSelector.source_fit_loss_key = 'non_sparse_fit_loss_smooth'

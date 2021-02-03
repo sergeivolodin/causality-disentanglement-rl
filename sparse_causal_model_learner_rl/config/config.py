@@ -59,7 +59,7 @@ class Config(object):
                 name = str(uuid1())
                 print(f"Selecting name {name}")
             if not ray.is_initialized():
-                ray.init('auto')
+                ray.init(**self.ray_kwargs)
             logging.info(f"Starting parameter communicator with name {name}")
             self.communicator = run_communicator(name)
 
@@ -102,13 +102,16 @@ class Config(object):
         self._temporary_variables = s['_temporary_variables']
         self.communicator = None
 
-    def __init__(self, config=None, **kwargs):
+    def __init__(self, config=None, ray_kwargs=None, **kwargs):
         """Initialize
 
         Args:
             config: dictionary with configuration entries, can be nested
             kwargs: override for config entries.
         """
+        if ray_kwargs is None:
+            ray_kwargs = {'address': 'auto'}
+        self.ray_kwargs = ray_kwargs
         if config is None:
             config = {}
         assert isinstance(config, dict), "Please supply a dictionary"
