@@ -5,7 +5,16 @@ import gym
 import numpy as np
 import torch
 import logging
+import pickle
+import io
 
+
+class CPU_Unpickler(pickle.Unpickler):
+    """Unpickle GPU learner into CPU."""
+    def find_class(self, module, name):
+        if module == 'torch.storage' and name == '_load_from_bytes':
+            return lambda b: torch.load(io.BytesIO(b), map_location='cpu')
+        else: return super().find_class(module, name)
 
 def one_hot_encode(n, value):
     """Get a one-hot encoding of length n with a given value."""
