@@ -67,7 +67,7 @@ def siamese_feature_discriminator_l2(obs, decoder, margin=1.0, **kwargs):
         delta = y_true - y_pred
         delta = delta.pow(2)
         delta = delta.flatten(start_dim=1)
-        delta = delta.mean(1)
+        delta = delta.sum(1)
         return delta
 
     # original inputs order
