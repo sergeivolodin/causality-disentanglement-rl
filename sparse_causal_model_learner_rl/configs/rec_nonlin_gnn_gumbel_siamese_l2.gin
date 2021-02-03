@@ -71,20 +71,20 @@ opt4/Optimizer.lr = 1e-3
 opt5/Optimizer.name = 'Adam'
 opt5/Optimizer.lr = 1e-3
 
-Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer, 'opt3': @opt3/Optimizer, 'opt4': @opt4/Optimizer}#, 'opt5': @opt5/Optimizer}
+Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer, 'opt3': @opt3/Optimizer, 'opt4': @opt4/Optimizer, 'opt5': @opt5/Optimizer}
 Config.execution = {'opt1': ['fit', 'no_small_probas', 'sparsity'],
                     'opt2': ['fit', 'non_sparse_fit', 'discriminate_siamese', 'fit_all_on', 'value_loss'],
                     'opt3': ['non_sparse_fit'],
                     'opt4': ['fit', 'fit_all_on'], # w/o sparsity, only model (for fit)
-                    #'opt5': ['discriminate_siamese'],
+                    'opt5': ['discriminate_siamese', 'value_loss'],
                     }
 Config.optim_params = {'opt1': ['model.switch__params'], # switch learning
-                       'opt2': ['decoder'], # representation learning
+                       'opt2': ['decoder', 'value_predictor'], # representation learning
                        'opt3': ['non_sparse_model.model__params'], # reference model learning
                        'opt4': ['model.model__params'], # model learning
-                     #  'opt5': ['decoder'],
+                       'opt5': ['decoder', 'value_predictor'],
                        }
-Config.opt_iterations = {'opt1': 3, 'opt2': 5, 'opt3': 3, 'opt4': 4}#, 'opt5': 5,}
+Config.opt_iterations = {'opt1': 3, 'opt2': 5, 'opt3': 3, 'opt4': 4, 'opt5': 5,}
 
 smooth.smooth_steps = 20
 smooth.do_log = True
@@ -114,7 +114,7 @@ Config.losses = {'fit': {'fcn': @fit/fit_loss, 'coeff': 1},
                  'sparsity': {'fcn': @sparsity_loss, 'coeff': %MIN_HYPER_ANNEAL},
                  # 'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 1},
                  'non_sparse_fit': {'fcn': @non_sparse_fit_loss/context_rewriter, 'coeff': 1},
-                 'discriminate_siamese': {'fcn': @siamese_feature_discriminator_l2, 'coeff': 1000.0},
+                 'discriminate_siamese': {'fcn': @siamese_feature_discriminator_l2, 'coeff': 1.0},
                  'no_small_probas': {'fcn': @nonzero_proba_loss, 'coeff': 1},
                  'fit_all_on': {'fcn': @all_on/fit_loss, 'coeff': 1},
                  'value_loss': {'fcn': @reconstruction_loss_value_function_reward_to_go, 'coeff': 1.0},
@@ -139,7 +139,7 @@ sch/Scheduler.factor = 0.5
 
 Config.schedulers = {
 #'opt1': @sch/Scheduler,
-                     'opt2': @sch/Scheduler,
+                     #'opt2': @sch/Scheduler,
                      #'opt3': @sch/Scheduler,
                      }
 
