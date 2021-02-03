@@ -78,7 +78,7 @@ LOSSES_SPARSE = ['sparsity', 'fit']
 
 Config.execution = {'opt1': %LOSSES_SPARSE,
                     'opt2': %LOSSES_OTHER,
-                    'opt3': %LOSSES_OTHER,
+                    'opt3': ['non_sparse_fit'],
                     'opt4': ['discriminate_siamese'], # w/o sparsity, only model (for fit)
                     #'opt5': %ALL_LOSSES,
                     }
@@ -88,7 +88,7 @@ Config.optim_params = {'opt1': ['model.switch__params'], # switch learning
                        'opt4': ['decoder'], # representation learning
                        #'opt5': ['decoder', 'value_predictor'],
                        }
-Config.opt_iterations = {'opt1': 1, 'opt2': 4, 'opt3': 5, 'opt4': 4}#, 'opt5': 5,}
+Config.opt_iterations = {'opt1': 1, 'opt2': 4, 'opt3': 5, 'opt4': 6}#, 'opt5': 5,}
 
 smooth.smooth_steps = 20
 smooth.do_log = True

@@ -48,7 +48,7 @@ def reconstruction_loss_value_function_reward_to_go(obs_x, decoder, value_predic
     return mse(value_predictor(decoder(obs_x)), reward_to_go * value_scaler)
 
 @gin.configurable
-def manual_switch_gradient(f_t1, f_t1_pred, model, eps=1e-5):
+def manual_switch_gradient(f_t1, f_t1_pred, model, f_t1_std=None, eps=1e-5):
     """Fill in the gradient of switch probas manually
 
     Assuming that the batch size is enough to estimate mean loss with
@@ -56,7 +56,9 @@ def manual_switch_gradient(f_t1, f_t1_pred, model, eps=1e-5):
     """
     mask = model.model.last_mask
     input_dim = model.n_features + model.n_actions
-    delta = (f_t1 - f_t1_pred).abs().pow(2)
+    delta = (f_t1 - f_t1_pred).pow(2)
+    if f_t1_std is not None:
+        delta = delta / f_t1_std.pow(2)
 
     delta_expanded = delta.view(delta.shape[0], 1, delta.shape[1]).expand(-1, input_dim, -1)
     mask_coeff = (mask - 0.5) * 2
@@ -79,10 +81,14 @@ def manual_switch_gradient(f_t1, f_t1_pred, model, eps=1e-5):
         model.model.switch.probas.grad += p_grad.clone()
     return 0.0
 
+# class MovingAverage(nn.Module):
+#     def __init__(self, )
+
 @gin.configurable
 def fit_loss(obs_x, obs_y, action_x, decoder, model, additional_feature_keys,
              model_forward_kwargs=None,
              fill_switch_grad=False,
+             std_eps=1e-6,
              **kwargs):
     """Ensure that the model fits the features data."""
 
@@ -90,23 +96,26 @@ def fit_loss(obs_x, obs_y, action_x, decoder, model, additional_feature_keys,
         model_forward_kwargs = {}
     
     f_t1 = decoder(obs_y)
+        
     have_additional = False
     if additional_feature_keys:
         have_additional = True
         add_features_y = torch.cat([kwargs[k] for k in additional_feature_keys], dim=1)
         f_t1 = torch.cat([f_t1, add_features_y], dim=1)
 
-    mse = torch.nn.MSELoss()
+    f_t1_std = (torch.std(f_t1, dim=0, keepdim=True) + std_eps).detach()
+        
     # detaching second part like in q-learning makes the loss jitter
 
     f_t1_pred = model(decoder(obs_x), action_x, all=have_additional, **model_forward_kwargs)
 
     if fill_switch_grad:
-        manual_switch_gradient(f_t1, f_t1_pred, model)
+        manual_switch_gradient(f_t1, f_t1_pred, model, f_t1_std=f_t1_std)
 
-    loss = mse(f_t1_pred, f_t1)
+    loss = ((f_t1_pred - f_t1).pow(2) / f_t1_std.pow(2)).mean()
 
-    metrics = {'mean_feature': torch.mean(torch.abs(f_t1)).item()}
+    metrics = {'mean_feature': f_t1.mean(0).abs().mean().item(),
+               'std_feature': f_t1.std(0).abs().mean().item()}
 
     return {'loss': loss,
             'metrics': metrics}
