@@ -59,7 +59,8 @@ class Config(object):
                 name = str(uuid1())
                 print(f"Selecting name {name}")
             if not ray.is_initialized():
-                ray.init(**self.ray_kwargs)
+                ray_kwargs = self.ray_kwargs if hasattr(self, 'ray_kwargs') else {}
+                ray.init(**ray_kwargs)
             logging.info(f"Starting parameter communicator with name {name}")
             self.communicator = run_communicator(name)
 

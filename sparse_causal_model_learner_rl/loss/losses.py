@@ -81,14 +81,32 @@ def manual_switch_gradient(f_t1, f_t1_pred, model, f_t1_std=None, eps=1e-5):
         model.model.switch.probas.grad += p_grad.clone()
     return 0.0
 
-# class MovingAverage(nn.Module):
-#     def __init__(self, )
+class MedianStd():
+    """Compute median standard deviation of features."""
+    def __init__(self, keep_many=100):
+        self.last_stds = []
+        self.keep_many = keep_many
+        
+    def forward(self, dataset, save=True, eps=1e-8):
+        std = dataset.std(0).detach()
+        if not self.last_stds or save:
+            self.last_stds.append(std)
+            self.last_stds = self.last_stds[-self.keep_many:]
+        stds = torch.stack(self.last_stds, dim=0)
+        med, _ = torch.median((stds + eps).log(), dim=0)
+        med = med.exp()
+        return med
+    
+fit_loss_median_std = MedianStd()
+    
 
 @gin.configurable
 def fit_loss(obs_x, obs_y, action_x, decoder, model, additional_feature_keys,
              model_forward_kwargs=None,
              fill_switch_grad=False,
-             std_eps=1e-6,
+             opt_label=None,
+             divide_by_std=True,
+             std_eps=0.05,
              **kwargs):
     """Ensure that the model fits the features data."""
 
@@ -103,7 +121,11 @@ def fit_loss(obs_x, obs_y, action_x, decoder, model, additional_feature_keys,
         add_features_y = torch.cat([kwargs[k] for k in additional_feature_keys], dim=1)
         f_t1 = torch.cat([f_t1, add_features_y], dim=1)
 
-    f_t1_std = (torch.std(f_t1, dim=0, keepdim=True) + std_eps).detach()
+    if divide_by_std:
+        f_t1_std = (fit_loss_median_std.forward(f_t1, save=opt_label is not None).view(1, -1))
+        f_t1_std = torch.max(torch.ones_like(f_t1_std) * std_eps, f_t1_std).detach()
+    else:
+        f_t1_std = None
         
     # detaching second part like in q-learning makes the loss jitter
 
@@ -112,10 +134,17 @@ def fit_loss(obs_x, obs_y, action_x, decoder, model, additional_feature_keys,
     if fill_switch_grad:
         manual_switch_gradient(f_t1, f_t1_pred, model, f_t1_std=f_t1_std)
 
-    loss = ((f_t1_pred - f_t1).pow(2) / f_t1_std.pow(2)).mean()
+    loss = (f_t1_pred - f_t1).pow(2)
+    if f_t1_std is not None:
+        loss = loss / f_t1_std.pow(2)
+    loss = loss.mean(1).mean()
 
     metrics = {'mean_feature': f_t1.mean(0).detach().cpu().numpy(),
-               'std_feature': f_t1.std(0).detach().cpu().numpy()}
+               'std_feature': f_t1.std(0).detach().cpu().numpy(),
+               'min_feature': f_t1.min().item(),
+               'max_feature': f_t1.max().item(),
+               'std_feature_avg': f_t1_std.detach().cpu().numpy() if f_t1_std is not None else 0.0,
+               'inv_std_feature_avg': 1/f_t1_std.detach().cpu().numpy() if f_t1_std is not None else 0.0}
 
     return {'loss': loss,
             'metrics': metrics}
@@ -236,6 +265,11 @@ def soft_batchnorm_dec_out(decoder, obs, **kwargs):
     ls1 = (f.std(0) - 1.0).pow(2).mean()
 
     return lm0 + ls1
+
+@gin.configurable
+def soft_batchnorm_std_margin(decoder, obs, margin=1.0, **kwargs):
+    f = decoder(obs)
+    return torch.nn.ReLU()(margin - f.std(0)).mean()
 
 @gin.configurable
 def soft_batchnorm_regul(decoder, **kwargs):

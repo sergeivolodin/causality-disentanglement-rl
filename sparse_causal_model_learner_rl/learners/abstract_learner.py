@@ -321,7 +321,7 @@ class AbstractLearner(ABC):
                 total_loss = 0
                 for loss_label in self.config['execution'].get(opt_label, []):
                     loss = self.config['losses'][loss_label]
-                    value = loss['fcn'](**context)
+                    value = loss['fcn'](**context, opt_label=opt_label)
                     if isinstance(value, dict):
                         epoch_info['metrics'].update(value.get('metrics', {}))
                         value = value['loss']

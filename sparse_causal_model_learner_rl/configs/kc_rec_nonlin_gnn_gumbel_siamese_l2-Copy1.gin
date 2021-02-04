@@ -24,7 +24,7 @@ tune_run.num_samples = 2
 
 Config.loss_every = 1000000000000000
 
-model_gnn/FCCombinedModel.hidden_sizes = [150, 150, 150]
+model_gnn/FCCombinedModel.hidden_sizes = [60, 60, 60]
 model_gnn/FCCombinedModel.activation_cls = @ReLU
 
 WithInputSwitch.give_mask = True
@@ -71,24 +71,25 @@ opt4/Optimizer.lr = 1e-3
 opt5/Optimizer.name = 'Adam'
 opt5/Optimizer.lr = 1e-3
 
-Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer, 'opt3': @opt3/Optimizer, 'opt4': @opt4/Optimizer, 'opt5': @opt5/Optimizer}
+Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer, 'opt3': @opt3/Optimizer}#, 'opt4': @opt4/Optimizer, 'opt5': @opt5/Optimizer}
 
-LOSSES_OTHER = ['fit', 'fit_all_on', 'non_sparse_fit', 'discriminate_siamese', 'soft_batchnorm_std_margin']
+LOSSES_OTHER = ['fit', 'fit_all_on', 'non_sparse_fit', 'discriminate_siamese']
 LOSSES_SPARSE = ['sparsity', 'fit']
+LOSSES_ALL = ['fit', 'fit_all_on', 'non_sparse_fit', 'discriminate_siamese', 'sparsity']
 
-Config.execution = {'opt1': %LOSSES_SPARSE,
-                    'opt2': ['fit', 'discriminate_siamese', 'soft_batchnorm_std_margin'],
-                    'opt3': ['non_sparse_fit'],
-                    'opt4': ['discriminate_siamese', 'soft_batchnorm_std_margin', 'non_sparse_fit'], # w/o sparsity, only model (for fit)
-                    'opt5': ['fit', 'fit_all_on'],
+Config.execution = {'opt1': %LOSSES_ALL,
+                    'opt2': %LOSSES_ALL,
+                    'opt3': %LOSSES_ALL,
+                    #'opt4': ['discriminate_siamese', 'non_sparse_fit'], # w/o sparsity, only model (for fit)
+                    #'opt5': ['fit', 'fit_all_on'],
                     }
 Config.optim_params = {'opt1': ['model.switch__params'], # switch learning
-                       'opt2': ['model.model__params', 'decoder'], # representation learning
+                       'opt2': ['model', 'decoder'], # representation learning
                        'opt3': ['non_sparse_model'], # reference model learning
-                       'opt4': ['decoder'], # representation learning
-                       'opt5': ['model.model__params'],
+                       #'opt4': ['decoder'], # representation learning
+                       #'opt5': ['model.model__params'],
                        }
-Config.opt_iterations = {'opt1': 1, 'opt2': 2, 'opt3': 5, 'opt4': 6, 'opt5': 4,}
+Config.opt_iterations = {'opt1': 1, 'opt2': 4, 'opt3': 5}#, 'opt4': 6, 'opt5': 4,}
 
 smooth.smooth_steps = 20
 smooth.do_log = True
@@ -116,15 +117,11 @@ MIN_HYPER_ANNEAL = 1e-9
 
 all_on/fit_loss.model_forward_kwargs = {'enable_switch': False}
 
-Config.losses = {'fit': {'fcn': @fit/fit_loss, 'coeff': 1},
+Config.losses = {'fit': {'fcn': @fit/fit_loss, 'coeff': 1.0},
                  'sparsity': {'fcn': @sparsity_loss, 'coeff': %MIN_HYPER_ANNEAL},
-                 # 'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 1},
                  'non_sparse_fit': {'fcn': @non_sparse_fit_loss/context_rewriter, 'coeff': 1},
-                 'discriminate_siamese': {'fcn': @siamese_feature_discriminator_l2, 'coeff': 100000.0},
-                 #'no_small_probas': {'fcn': @nonzero_proba_loss, 'coeff': 10.},
-                 'fit_all_on': {'fcn': @all_on/fit_loss, 'coeff': 1},
-                 #'value_loss': {'fcn': @reconstruction_loss_value_function_reward_to_go, 'coeff': 1.0},
-                 'soft_batchnorm_std_margin': {'fcn': @soft_batchnorm_std_margin, 'coeff': 0.0},
+                 'discriminate_siamese': {'fcn': @siamese_feature_discriminator_l2, 'coeff': 1.0},
+                 'fit_all_on': {'fcn': @all_on/fit_loss, 'coeff': 1.0},
                 }
 
 fit/fit_loss.fill_switch_grad = True
@@ -156,7 +153,7 @@ Config.checkpoint_every = 1000
 LearnableSwitch.switch_neg = 0
 LearnableSwitch.switch_pos = 0
 
-LearnableSwitchSimple.initial_proba = 0.5
+LearnableSwitchSimple.initial_proba = 1.0
 LearnableSwitchSimple.min_proba = 0.5
 LearnableSwitchSimple.sample_many = True
 LearnableSwitchSimple.return_grad = False
@@ -170,8 +167,8 @@ ModelResetter.reset_turn_on = False
 Config._update_function = [@AnnealerThresholdSelector, @ThresholdAnnealer, @ModelResetter]
 
 ThresholdAnnealer.adjust_every = 100
-ThresholdAnnealer.factor_cool = 0.1
-ThresholdAnnealer.factor_heat = 0.1
+ThresholdAnnealer.factor_cool = 0.5
+ThresholdAnnealer.factor_heat = 0.001
 ThresholdAnnealer.min_hyper = %MIN_HYPER_ANNEAL
 ThresholdAnnealer.max_hyper = 10
 ThresholdAnnealer.emergency_heating = False
