@@ -17,6 +17,9 @@ import sparse_causal_model_learner_rl.learners.rl_learner
 import gin_tune
 include 'base_learner.gin'
 
+Config.shuffle_together = [['obs_x', 'obs_y', 'action_x', 'reward_to_go', 'rew_y', 'done_y'],
+                           ['obs'], ['episode_rewards']]
+
 # a hack, does not work as a reference
 Config.learner_cls = "sparse_causal_model_learner_rl.learners.rl_learner.CausalModelLearnerRL"
 

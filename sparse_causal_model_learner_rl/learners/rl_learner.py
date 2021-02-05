@@ -138,21 +138,26 @@ class RemoteRLContext():
     def __init__(self, config, gin_config):
         gin.parse_config(gin_config)
         self.rl_context = RLContext(config)
+        self.replay_buffer = ExperienceReplayBuffer(config)
     def collect_steps_and_context(self):
         self.rl_context.collect_steps()
-        return self.rl_context.get_context()
+        pre_context = self.rl_context.get_context()
+        self.replay_buffer.observe(pre_context)
+        pre_context_sample = self.replay_buffer.sample_batch()
+        return pre_context_sample
 
 
 @gin.configurable
 class ExperienceReplayBuffer():
     """Collect data from RL contexts, and store it. Then, sample batches."""
-    def __init__(self, buffer_limit_steps=1000000,
-                 minibatch_size=5000,
-                 shuffle_together=None):
+    def __init__(self, config,
+                 buffer_limit_steps=1000000,
+                 minibatch_size=5000):
+        self.config = config
         self.buffer_limit_steps = buffer_limit_steps
         self.minibatch_size = minibatch_size
         self.buffer = {}
-        self.shuffle_together = shuffle_together
+        self.shuffle_together = self.config.get('shuffle_together', [])
 
     def sample_batch(self, group_size_max=None):
         assert self.buffer, "Buffer is empty"
@@ -233,9 +238,8 @@ class CausalModelLearnerRL(AbstractLearner):
             self.future_buffer_size = self.config.get('future_buffer_size', 10)
             self.next_context_refs = set()
 
-        self.shuffle_together = [['obs_x', 'obs_y', 'action_x', 'reward_to_go', 'rew_y', 'done_y'],
-                                 ['obs'], ['episode_rewards']]
-        self.replay_buffer = ExperienceReplayBuffer(shuffle_together=self.shuffle_together)
+        self.shuffle_together = self.config.get('shuffle_together', [])
+
 
     def collect_steps(self):
         raise NotImplementedError("Use collect_and_get_context")
@@ -267,9 +271,7 @@ class CausalModelLearnerRL(AbstractLearner):
             self.rl_context.collect_steps()
             pre_context = self.rl_context.get_context()
 
-        self.replay_buffer.observe(pre_context)
-        pre_context_sample = self.replay_buffer.sample_batch()
-
+        pre_context_sample = pre_context
         pre_context_sample = self.context_add_scalars(pre_context_sample)
         return self.wrap_context(pre_context_sample)
 
