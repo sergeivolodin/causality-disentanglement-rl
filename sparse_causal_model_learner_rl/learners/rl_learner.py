@@ -120,14 +120,13 @@ class RLContext():
         reward_to_go = np.array(reward_to_go)
         done_y = np.array(done_y)
         rew_y = np.array(rew_y)
+        episode_rewards = np.array(episode_rewards)
 
         context = {'obs_x': obs_x, 'obs_y': obs_y, 'action_x': act_x,
                    'rew_y': rew_y, 'done_y': done_y,
                    'obs': obs,
                    'reward_to_go': reward_to_go,
-                   'episode_rewards': episode_rewards,
-                   'n_samples': len(obs_x),
-                   'additional_feature_keys': self.additional_feature_keys}
+                   'episode_rewards': episode_rewards}
 
         return context
 
@@ -142,6 +141,58 @@ class RemoteRLContext():
     def collect_steps_and_context(self):
         self.rl_context.collect_steps()
         return self.rl_context.get_context()
+
+
+@gin.configurable
+class ExperienceReplayBuffer():
+    """Collect data from RL contexts, and store it. Then, sample batches."""
+    def __init__(self, buffer_limit_steps=1000000,
+                 minibatch_size=5000,
+                 shuffle_together=None):
+        self.buffer_limit_steps = buffer_limit_steps
+        self.minibatch_size = minibatch_size
+        self.buffer = {}
+        self.shuffle_together = shuffle_together
+
+    def sample_batch(self, group_size_max=None):
+        assert self.buffer, "Buffer is empty"
+
+        if group_size_max is None:
+            group_size_max = self.minibatch_size
+
+        pre_context_return = {}
+        left_keys = set(self.buffer.keys())
+        for group in self.shuffle_together:
+            left_keys.difference_update(group)
+            group_lens = [len(self.buffer[key]) for key in group]
+            group_len = group_lens[0]
+            assert [group_len == l for l in group_lens], f"group lens must be the same {group} {group_lens}"
+
+            if group_len > group_size_max:
+                idxes_return = np.random.choice(
+                    a=range(group_len), size=group_size_max, replace=False)
+            else:
+                idxes_return = range(group_len)
+
+            for key in group:
+                pre_context_return[key] = self.buffer[key][idxes_return]
+
+        assert not left_keys, f"Some keys were not used: {left_keys} {self.shuffle_together}"
+        return pre_context_return
+
+    def limit_size(self):
+        self.buffer = self.sample_batch(self.buffer_limit_steps)
+
+    def observe(self, pre_context):
+        for key in pre_context.keys():
+
+            assert isinstance(pre_context[key], np.ndarray), f"Inputs must be numpy arrays {key} {type(pre_context[key])}"
+            if key in self.buffer:
+                self.buffer[key] = np.concatenate((self.buffer[key], pre_context[key]), axis=0)
+            else:
+                self.buffer[key] = pre_context[key]
+
+        self.limit_size()
 
 
 @gin.register
@@ -183,7 +234,8 @@ class CausalModelLearnerRL(AbstractLearner):
             self.next_context_refs = set()
 
         self.shuffle_together = [['obs_x', 'obs_y', 'action_x', 'reward_to_go', 'rew_y', 'done_y'],
-                                 ['obs']]
+                                 ['obs'], ['episode_rewards']]
+        self.replay_buffer = ExperienceReplayBuffer(shuffle_together=self.shuffle_together)
 
     def collect_steps(self):
         raise NotImplementedError("Use collect_and_get_context")
@@ -191,6 +243,11 @@ class CausalModelLearnerRL(AbstractLearner):
     @property
     def _context_subclass(self):
         raise NotImplementedError("Use collect_and_get_context")
+
+    def context_add_scalars(self, ctx):
+        ctx['n_samples'] = len(ctx['obs_x'])
+        ctx['additional_feature_keys'] = self.additional_feature_keys
+        return ctx
 
     def collect_and_get_context(self):
         """Collect new data and return the training context."""
@@ -209,7 +266,12 @@ class CausalModelLearnerRL(AbstractLearner):
         else:
             self.rl_context.collect_steps()
             pre_context = self.rl_context.get_context()
-        return self.wrap_context(pre_context)
+
+        self.replay_buffer.observe(pre_context)
+        pre_context_sample = self.replay_buffer.sample_batch()
+
+        pre_context_sample = self.context_add_scalars(pre_context_sample)
+        return self.wrap_context(pre_context_sample)
 
     @property
     def graph(self):
