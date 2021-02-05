@@ -177,7 +177,8 @@ class CausalModelLearnerRL(AbstractLearner):
         if self.collect_remotely:
             self.remote_rl_context = RemoteRLContext.remote(config=self.config,
                                                             gin_config=gin.config_str())
-            self.next_context_ref = None
+            self.future_buffer_size = 10
+            self.next_context_refs = []
 
         self.shuffle_together = [['obs_x', 'obs_y', 'action_x', 'reward_to_go', 'rew_y', 'done_y'],
                                  ['obs']]
@@ -193,12 +194,12 @@ class CausalModelLearnerRL(AbstractLearner):
         """Collect new data and return the training context."""
 
         if self.collect_remotely:
-            if self.next_context_ref is None:
-                self.rl_context.collect_steps()
-                pre_context = self.rl_context.get_context()
-            else:
-                pre_context = ray.get(self.next_context_ref)
-            self.next_context_ref = self.remote_rl_context.collect_steps_and_context.remote()
+            # scheduling remote jobs...
+            while len(self.next_context_refs) < self.future_buffer_size:
+                self.next_context_refs.append(self.remote_rl_context.collect_steps_and_context.remote())
+
+            pre_context = ray.get(self.next_context_refs[0])
+            self.next_context_refs = self.next_context_refs[1:]
         else:
             self.rl_context.collect_steps()
             pre_context = self.rl_context.get_context()
