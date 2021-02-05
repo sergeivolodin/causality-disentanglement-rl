@@ -2,6 +2,7 @@ import logging
 import os
 import traceback
 from functools import partial
+import ray
 
 import gin
 import gym
@@ -21,18 +22,13 @@ from sparse_causal_model_learner_rl.visual.learner_visual import total_loss, los
     plot_contour, plot_3d
 
 
-@gin.register
-class CausalModelLearnerRL(AbstractLearner):
-    """Learn a model for an RL environment with custom losses and parameters."""
-
-    def __init__(self, *args, **kwargs):
-
-        super().__init__(*args, **kwargs)
-
-        # creating environment
+@gin.configurable
+class RLContext():
+    """Collect data from an RL environment on a random policy."""
+    def __init__(self, config):
+        self.config = config
         self.env = self.create_env()
         self.collector = EnvDataCollector(self.env)
-
         self.vf_gamma = self.config.get('vf_gamma', 1.0)
 
         # Discrete action -> one-hot encoding
@@ -43,21 +39,8 @@ class CausalModelLearnerRL(AbstractLearner):
             self.to_onehot = False
             self.action_shape = self.env.action_space.shape
 
-        self.observation_shape = self.env.observation_space.shape
-
-        self.feature_shape = self.config['feature_shape']
-        if self.feature_shape is None:
-            self.feature_shape = self.observation_shape
-
         self.additional_feature_keys = self.config.get('additional_feature_keys', [])
-        self.additional_feature_shape = (len(self.additional_feature_keys),)
 
-        self.model_kwargs = {'feature_shape': self.feature_shape,
-                             'action_shape': self.action_shape,
-                             'observation_shape': self.observation_shape,
-                             'additional_feature_shape': self.additional_feature_shape}
-
-        logging.info(self.model_kwargs)
 
     def create_env(self):
         """Create the RL environment."""
@@ -67,7 +50,6 @@ class CausalModelLearnerRL(AbstractLearner):
         return load_env()
 
     def collect_steps(self, do_tqdm=False):
-        """Do one round of data collection from the RL environment."""
         # TODO: run a policy with curiosity reward instead of the random policy
 
         # removing old data
@@ -85,9 +67,7 @@ class CausalModelLearnerRL(AbstractLearner):
                     pbar.update(1)
         self.collector.flush()
 
-    @property
-    def _context_subclass(self):
-        """Context for losses."""
+    def get_context(self):
         # x: pre time-step, y: post time-step
 
         # observations, actions, rewards-to-go, total rewards
@@ -133,9 +113,6 @@ class CausalModelLearnerRL(AbstractLearner):
         # for reconstruction
         assert len(obs_x) == len(obs_y)
 
-        self.shuffle_together = [['obs_x', 'obs_y', 'action_x', 'reward_to_go', 'rew_y', 'done_y'],
-                                 ['obs']]
-
         obs_x = np.array(obs_x)
         obs_y = np.array(obs_y)
         obs = np.array(obs)
@@ -153,6 +130,79 @@ class CausalModelLearnerRL(AbstractLearner):
                    'additional_feature_keys': self.additional_feature_keys}
 
         return context
+
+
+
+@ray.remote
+class RemoteRLContext():
+    """Collect data from a learner remotely."""
+    def __init__(self, config, gin_config):
+        gin.parse_config(gin_config)
+        self.rl_context = RLContext(config)
+    def collect_steps_and_context(self):
+        self.rl_context.collect_steps()
+        return self.rl_context.get_context()
+
+
+@gin.register
+class CausalModelLearnerRL(AbstractLearner):
+    """Learn a model for an RL environment with custom losses and parameters."""
+
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+
+        # creating environment
+        self.rl_context = RLContext(config=self.config)
+        self.env = self.rl_context.env
+
+        self.observation_shape = self.env.observation_space.shape
+        self.action_shape = self.rl_context.action_shape
+
+        self.feature_shape = self.config['feature_shape']
+        if self.feature_shape is None:
+            self.feature_shape = self.observation_shape
+
+        self.additional_feature_keys = self.rl_context.additional_feature_keys
+        self.additional_feature_shape = (len(self.additional_feature_keys),)
+
+        self.model_kwargs = {'feature_shape': self.feature_shape,
+                             'action_shape': self.action_shape,
+                             'observation_shape': self.observation_shape,
+                             'additional_feature_shape': self.additional_feature_shape}
+
+        logging.info(self.model_kwargs)
+
+        self.collect_remotely = self.config.get('collect_remotely', False)
+        if self.collect_remotely:
+            self.remote_rl_context = RemoteRLContext.remote(config=self.config,
+                                                            gin_config=gin.config_str())
+            self.next_context_ref = None
+
+        self.shuffle_together = [['obs_x', 'obs_y', 'action_x', 'reward_to_go', 'rew_y', 'done_y'],
+                                 ['obs']]
+
+    def collect_steps(self):
+        raise NotImplementedError("Use collect_and_get_context")
+
+    @property
+    def _context_subclass(self):
+        raise NotImplementedError("Use collect_and_get_context")
+
+    def collect_and_get_context(self):
+        """Collect new data and return the training context."""
+
+        if self.collect_remotely:
+            if self.next_context_ref is None:
+                self.rl_context.collect_steps()
+                pre_context = self.rl_context.get_context()
+            else:
+                pre_context = ray.get(self.next_context_ref)
+            self.next_context_ref = self.remote_rl_context.collect_steps_and_context.remote()
+        else:
+            self.rl_context.collect_steps()
+            pre_context = self.rl_context.get_context()
+        return self.wrap_context(pre_context)
 
     @property
     def graph(self):

@@ -1,5 +1,6 @@
 import logging
 import os
+import ray
 
 import cloudpickle as pickle
 import gin
@@ -12,7 +13,6 @@ from causal_util.helpers import postprocess_info
 from sparse_causal_model_learner_rl.config import Config
 from abc import ABC, abstractmethod, abstractproperty
 from torch.nn.utils.clip_grad import clip_grad_norm_
-
 
 
 class AbstractLearner(ABC):
@@ -161,6 +161,7 @@ class AbstractLearner(ABC):
 
     def train(self, do_tqdm=False):
         """Train (many epochs)."""
+        self.create_trainables()
         tqdm_ = tqdm if do_tqdm else (lambda x: x)
         for _ in tqdm_(range(self.config['train_steps'])):
             self._epoch()
@@ -221,6 +222,10 @@ class AbstractLearner(ABC):
     @property
     def _context(self):
         context = self._context_subclass
+        return self.wrap_context(context)
+
+
+    def wrap_context(self, context):
         assert isinstance(context, dict), "_context_subclass() must return a dict."
 
         context.update({'config': self.config,
@@ -264,6 +269,11 @@ class AbstractLearner(ABC):
 
         return context
 
+    def collect_and_get_context(self):
+        """Collect new data and return the training context."""
+        self.collect_steps()
+        return self._context
+
     @abstractmethod
     def collect_steps(self):
         """Obtain the dataset and save it internally."""
@@ -276,9 +286,10 @@ class AbstractLearner(ABC):
         n_batches = collect_every = self.config.get('collect_every', 1)
 
         if (self.epochs % collect_every == 0) or self._context_cache is None:
-            self.collect_steps()
-            self.create_trainables()
-            context_orig = self._context
+            # self.collect_steps()
+            # self.create_trainables()
+            # context_orig = self._context
+            context_orig = self.collect_and_get_context()
             self.batch_index = 0
         else:
             context_orig = self._context_cache
