@@ -180,7 +180,7 @@ class CausalModelLearnerRL(AbstractLearner):
                                                               gin_config=gin.config_str())
                                        for _ in range(self.n_collectors)]
             self.future_buffer_size = self.config.get('future_buffer_size', 10)
-            self.next_context_refs = []
+            self.next_context_refs = set()
 
         self.shuffle_together = [['obs_x', 'obs_y', 'action_x', 'reward_to_go', 'rew_y', 'done_y'],
                                  ['obs']]
@@ -200,10 +200,12 @@ class CausalModelLearnerRL(AbstractLearner):
             while len(self.next_context_refs) < self.future_buffer_size:
                 remote_context_id = np.random.choice(range(len(self.remote_rl_contexts)))
                 remote_context = self.remote_rl_contexts[remote_context_id]
-                self.next_context_refs.append(remote_context.collect_steps_and_context.remote())
+                self.next_context_refs.add(remote_context.collect_steps_and_context.remote())
 
-            pre_context = ray.get(self.next_context_refs[0])
-            self.next_context_refs = self.next_context_refs[1:]
+            ready_refs, non_ready_refs = ray.wait(list(self.next_context_refs), num_returns=1)
+            ready_ref = ready_refs[0]
+            self.next_context_refs.remove(ready_ref)
+            pre_context = ray.get(ready_ref)
         else:
             self.rl_context.collect_steps()
             pre_context = self.rl_context.get_context()
