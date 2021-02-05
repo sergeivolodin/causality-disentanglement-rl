@@ -174,10 +174,12 @@ class CausalModelLearnerRL(AbstractLearner):
         logging.info(self.model_kwargs)
 
         self.collect_remotely = self.config.get('collect_remotely', False)
+        self.n_collectors = self.config.get('n_collectors', 1)
         if self.collect_remotely:
-            self.remote_rl_context = RemoteRLContext.remote(config=self.config,
-                                                            gin_config=gin.config_str())
-            self.future_buffer_size = 10
+            self.remote_rl_contexts = [RemoteRLContext.remote(config=self.config,
+                                                              gin_config=gin.config_str())
+                                       for _ in range(self.n_collectors)]
+            self.future_buffer_size = self.config.get('future_buffer_size', 10)
             self.next_context_refs = []
 
         self.shuffle_together = [['obs_x', 'obs_y', 'action_x', 'reward_to_go', 'rew_y', 'done_y'],
@@ -196,7 +198,9 @@ class CausalModelLearnerRL(AbstractLearner):
         if self.collect_remotely:
             # scheduling remote jobs...
             while len(self.next_context_refs) < self.future_buffer_size:
-                self.next_context_refs.append(self.remote_rl_context.collect_steps_and_context.remote())
+                remote_context_id = np.random.choice(range(len(self.remote_rl_contexts)))
+                remote_context = self.remote_rl_contexts[remote_context_id]
+                self.next_context_refs.append(remote_context.collect_steps_and_context.remote())
 
             pre_context = ray.get(self.next_context_refs[0])
             self.next_context_refs = self.next_context_refs[1:]
