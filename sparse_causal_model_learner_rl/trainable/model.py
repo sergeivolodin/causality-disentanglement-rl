@@ -193,11 +193,14 @@ class ManyNetworkModel(Model):
 class ManyNetworkCombinedModel(Model):
     """Instantiate many networks, each modelling one feature."""
     def __init__(self, model_cls=None, sparse_do_max=True,
+                 input_batchnorm=True,
                  sparse_do_max_mfma=True, **kwargs):
         super(ManyNetworkCombinedModel, self).__init__(**kwargs)
         assert len(self.feature_shape) == 1, f"Features must be scalar: {self.feature_shape}"
         assert len(self.action_shape) == 1, f"Actions must be scalar: {self.action_shape}"
         assert len(self.additional_feature_shape) == 1, f"Additional features must be scalar: {self.additional_feature_shape}"
+
+        self.input_batchnorm = input_batchnorm
 
         self.n_features = self.feature_shape[0]
         self.n_actions = self.action_shape[0]
@@ -207,6 +210,9 @@ class ManyNetworkCombinedModel(Model):
 
         self.sparse_do_max = sparse_do_max
         self.sparse_do_max_mfma = sparse_do_max_mfma
+
+        if self.input_batchnorm:
+            self.bn = torch.nn.BatchNorm1d(num_features=self.n_features + self.n_actions)
 
         self.model = model_cls(input_shape=(self.n_features + self.n_actions,),
                                output_shape=(1,),
@@ -221,6 +227,10 @@ class ManyNetworkCombinedModel(Model):
         else:
             for p in m.parameters():
                 yield p
+        if self.input_batchnorm:
+            for p in self.bb.parameters():
+                yield p
+
     @property
     def switch__params(self):
         """List of switch parameters."""
@@ -295,6 +305,9 @@ class ManyNetworkCombinedModel(Model):
 
         # features and actions together
         fa_t = torch.cat((f_t, a_t), dim=1)
+
+        if self.input_batchnorm:
+            fa_t = self.bn(fa_t)
 
         f_t1 = self.model(fa_t, **kwargs)
 
