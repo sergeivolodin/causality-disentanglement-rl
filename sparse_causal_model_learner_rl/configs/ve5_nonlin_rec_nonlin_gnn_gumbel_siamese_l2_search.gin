@@ -1,0 +1,13 @@
+import gin_tune
+include 've5_nonlin_rec_nonlin_gnn_gumbel_siamese_l2-Copy1.gin'
+
+tune_run.num_samples = 4
+
+Config.opt_iterations = {'opt1': @opt1/choice(),
+                         'opt2': @opt2/choice(),
+                         'opt3': @opt3/choice(),}
+opt1/choice.categories = [1, 2, 5, 10]
+opt2/choice.categories = [1, 2, 5, 10]
+opt3/choice.categories = [1, 2, 5, 10]
+
+Config.train_steps = 7000
