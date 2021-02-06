@@ -61,7 +61,11 @@ def siamese_feature_discriminator(obs, decoder, causal_feature_model_discriminat
     return contrastive_loss_permute(decoder(obs), decoder(obs), fcn, invert_labels=False)
 
 @gin.configurable
-def siamese_feature_discriminator_l2(obs, decoder, obs_delta_eps=1e-4, margin=1.0, **kwargs):
+def siamese_feature_discriminator_l2(obs, decoder, obs_delta_eps=1e-3,
+                                     margin=0.5,
+#                                      margin_same_not_farther=5.0,
+                                     max_dist=500,
+                                     **kwargs):
     def loss(y_true, y_pred):
         """L2 norm for the distance, no flat."""
         delta = y_true - y_pred
@@ -78,7 +82,7 @@ def siamese_feature_discriminator_l2(obs, decoder, obs_delta_eps=1e-4, margin=1.
     obs_shuffled = obs[idxes]
 
     idxes_orig = torch.arange(start=0, end=batch_dim).to(obs.device)
-    target_incorrect = ((obs - obs_shuffled).flatten(start_dim=1).abs().sum(1) <\
+    target_close = ((obs - obs_shuffled).flatten(start_dim=1).pow(2).sum(1) <=\
                         obs_delta_eps).to(obs.device).detach()
 
     # distance_shuffle = loss(obs, obs_shuffled)
@@ -86,7 +90,15 @@ def siamese_feature_discriminator_l2(obs, decoder, obs_delta_eps=1e-4, margin=1.
 
     # print(torch.nn.ReLU()(margin - distance_f), torch.where)
 
-    return {'loss': torch.where(~target_incorrect, torch.nn.ReLU()(margin - distance_f), distance_f).mean(),
-            'metrics': {'distance_plus': distance_f[~target_incorrect].mean().item(),
-                        'distance_minus': distance_f[target_incorrect].mean().item()}
+#     torch.where(target_close,
+# #                                 torch.nn.ReLU()(distance_f - margin_same_not_farther),
+#                                 torch.nn.ReLU()(margin_different_not_closer - distance_f[~])
+#                                ).mean(),
+    
+    loss = torch.nn.ReLU()(margin - distance_f[~target_close]).mean()
+    loss_max_dist = torch.nn.ReLU()(distance_f - max_dist).mean()
+    
+    return {'loss': loss.mean() / margin + loss_max_dist.mean() / max_dist,
+            'metrics': {'distance_close': distance_f[target_close].mean().item(),
+                        'distance_far': distance_f[~target_close].mean().item()}
             }

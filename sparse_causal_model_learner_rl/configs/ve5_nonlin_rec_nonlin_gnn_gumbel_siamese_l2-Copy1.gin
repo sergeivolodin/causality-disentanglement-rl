@@ -200,3 +200,7 @@ graph_for_matrices.engine = 'dot'
 
 Config.keep_history = False
 Config.max_history_size = 100
+
+Normalizer.type_ = 'meanstd'
+ManyNetworkCombinedModel.input_batchnorm = True
+ExperienceReplayBuffer.buffer_limit_steps = 100000

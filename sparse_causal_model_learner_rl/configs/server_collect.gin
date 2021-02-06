@@ -1,0 +1,8 @@
+import sparse_causal_model_learner_rl.learners.rl_learner
+import sparse_causal_model_learner_rl.config
+
+Config.collect_remotely = True
+Config.future_buffer_size = 50
+Config.n_collectors = 10
+
+tune_run.resources_per_trial = {'gpu': 0.1, 'cpu': 11}
