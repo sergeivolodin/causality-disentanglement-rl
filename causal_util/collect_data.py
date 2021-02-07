@@ -52,6 +52,7 @@ class EnvDataCollector(Wrapper):
         self.rollouts = []
         self.current_rollout = []
         self.steps = 0
+        self.episodes = 0
 
 
     def step(self, action):
@@ -59,6 +60,8 @@ class EnvDataCollector(Wrapper):
         self.steps += 1
         self.current_rollout.append({'observation': obs, 'reward': rew, 'done': done,
                                      'info': info, 'action': action})
+        if done:
+            self.episodes += 1
         return (obs, rew, done, info)
 
     def flush(self):
