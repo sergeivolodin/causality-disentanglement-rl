@@ -1,0 +1,24 @@
+include 'common.gin'
+
+# disabling everything
+Config.metrics = {}
+Config.batch_training = False
+Config.shuffle = False
+Config.keep_history = False
+Config._update_function = []
+Config.losses = {}
+Config.optimizers = {}
+Config.execution = {}
+
+Config.loss_every = 999999999999999
+Config.graph_every = 9999999999999999
+Config.checkpoint_every = 9999999999999999999999
+Config.report_every = 999999999999
+Config.metrics_every = 99999999999999999
+
+Config.env_steps = 5000
+Config.collect_every = 1
+
+Config.model = None
+Config.decoder = None
+Config.reconstructor = None

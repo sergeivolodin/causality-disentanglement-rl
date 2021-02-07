@@ -1,8 +1,10 @@
 import gin
-import numpy as np
 
 
 @gin.configurable
-def episode_reward(episode_rewards, **kwargs):
+def episode_reward(done_y, episode_sum_rewards, **kwargs):
     """Compute mean episode reward."""
-    return np.mean(episode_rewards.detach().cpu().numpy()) if len(episode_rewards) else None
+    mask = (done_y == done_y.max())
+    if not mask.sum().item():
+        return None
+    return episode_sum_rewards[mask].mean()
