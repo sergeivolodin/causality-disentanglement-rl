@@ -2,7 +2,7 @@ import sparse_causal_model_learner_rl.learners.rl_data
 import sparse_causal_model_learner_rl.config
 
 # replay buffer size
-Config.buffer_steps = 10000
+Config.buffer_steps = 100000
 Config.minibatch_size = 5000
 
 Config.collect_remotely = True
