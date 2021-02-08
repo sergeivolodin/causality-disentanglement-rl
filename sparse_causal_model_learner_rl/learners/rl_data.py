@@ -170,6 +170,10 @@ class ExperienceReplayBuffer():
             self.observe(ray.get(f))
         return f_remaining
 
+    def collect_local(self, collector):
+        data = collector.collect_get_context()
+        self.observe(data)
+
     def check_keys(self):
         assert self.buffer, "Buffer is empty"
         left_keys = set(self.buffer.keys())
@@ -244,31 +248,49 @@ class ParallelContextCollector():
 
         self.config = config
         self.n_collectors = self.config.get('n_collectors', 3)
-        self.remote_rl_contexts = [RLContextRemote.remote(config=self.config,
-                                                          gin_config_str=gin.config_str())
-                                   for _ in range(self.n_collectors)]
 
-        self.replay_buffer = ExperienceReplayBufferRemote.remote(
-            config=self.config, collectors=self.remote_rl_contexts)
+        if self.n_collectors == 0:
+            self.rl_context = RLContext(config=self.config,
+                                        gin_config_str=gin.config_str())
+            self.replay_buffer = ExperienceReplayBuffer(config=self.config,
+                                                        collectors=self.remote_rl_contexts)
 
-        self.next_batch_refs = set()
+        else:
+            self.remote_rl_contexts = [RLContextRemote.remote(config=self.config,
+                                                              gin_config_str=gin.config_str())
+                                       for _ in range(self.n_collectors)]
+            self.replay_buffer = ExperienceReplayBufferRemote.remote(
+                config=self.config, collectors=[])
+            self.next_batch_refs = set()
+
+
         self.future_batch_size = self.config.get('future_batch_size', 10)
         self.collect_initial()
 
     def collect_initial(self):
-        ray.get(self.replay_buffer.collect.remote(
-            min_batches=self.config.get('collect_initial_batches', self.future_batch_size)))
+        if self.n_collectors == 0:
+            for _ in range(self.future_batch_size):
+                self.replay_buffer.collect_local(self.rl_context)
+        else:
+            ray.get(self.replay_buffer.collect.remote(
+                min_batches=self.config.get('collect_initial_batches', self.future_batch_size)))
 
     def collect_get_context(self):
-        # storing episodes into memory of the buffer
-        # will collect at least one batch of data
-        self.replay_buffer.collect.remote()
+        if self.n_collectors == 0:
+            for _ in range(self.future_batch_size):
+                self.replay_buffer.collect_local(self.rl_context)
 
-        # requesting shuffled batches
-        while len(self.next_batch_refs) < self.future_batch_size:
-            self.next_batch_refs.add(self.replay_buffer.sample_batch.remote())
+            return self.replay_buffer.sample_batch()
+        else:
+            # storing episodes into memory of the buffer
+            # will collect at least one batch of data
+            self.replay_buffer.collect.remote()
 
-        ready_refs, non_ready_refs = ray.wait(list(self.next_batch_refs), num_returns=1)
-        ready_ref = ready_refs[0]
-        self.next_batch_refs.remove(ready_ref)
-        return ray.get(ready_ref)
+            # requesting shuffled batches
+            while len(self.next_batch_refs) < self.future_batch_size:
+                self.next_batch_refs.add(self.replay_buffer.sample_batch.remote())
+
+            ready_refs, non_ready_refs = ray.wait(list(self.next_batch_refs), num_returns=1)
+            ready_ref = ready_refs[0]
+            self.next_batch_refs.remove(ready_ref)
+            return ray.get(ready_ref)
