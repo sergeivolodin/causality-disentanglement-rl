@@ -13,6 +13,9 @@ Config.future_episode_size = 10
 # number of batches to queue
 Config.future_batch_size = 10
 
-Config.n_collectors = 0
+Config.n_collectors = 7
 
-tune_run.resources_per_trial = {'gpu': 0, 'cpu': 5}
+tune_run.resources_per_trial = {'gpu': 0, 'cpu': 9}
+
+Config.train_steps = 500
+Config.collect_initial_batches = 100

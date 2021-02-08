@@ -323,6 +323,9 @@ class AbstractLearner(ABC):
                       'metrics': {'batch_index': self.batch_index,
                                   'batch_size': np.mean(batch_sizes) if batch_sizes else -1}}
 
+        for stats_key in filter(lambda x: x.startswith('context_stats_'), context.keys()):
+            epoch_info['metrics'][stats_key] = context[stats_key]
+
         # train using losses
         for opt_label in sorted(self.optimizer_objects.keys()):
             opt = self.optimizer_objects[opt_label]

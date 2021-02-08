@@ -6,11 +6,24 @@ import gym
 import numpy as np
 from tqdm import tqdm
 from tqdm.auto import tqdm
+from time import sleep
 
 from causal_util import load_env
 from causal_util.collect_data import EnvDataCollector, compute_reward_to_go
 from causal_util.helpers import one_hot_encode
 
+
+def ray_wait_all_non_blocking(futures):
+    f_ready = []
+    f_remaining = futures
+
+    while f_remaining:
+        f_ready_, f_remaining = ray.wait(f_remaining, num_returns=1, timeout=0)
+        if not f_ready_:
+            break
+        else:
+            f_ready.extend(f_ready_)
+    return f_ready, f_remaining
 
 class RLContext():
     """Collect data from an RL environment on a random policy."""
@@ -154,6 +167,8 @@ class ExperienceReplayBuffer():
         self.buffer = {}
         self.buffer_n = {}
         self.buffer_write_idx = {}
+        self.steps_sampled = 0
+        self.steps_collected = 0
 
     def collect(self, min_batches=1):
         while len(self.next_episode_refs) < max(min_batches, self.future_episode_size):
@@ -162,11 +177,25 @@ class ExperienceReplayBuffer():
             self.next_episode_refs.append(ref)
             logging.warning(f"Scheduling episode on {remote_id}")
 
+        n_pending_orig = len(self.next_episode_refs)
         self.next_episode_refs = self.collect_from(self.next_episode_refs, min_batches=min_batches)
+        n_pending_now = len(self.next_episode_refs)
+
+        return {'n_pending_orig': n_pending_orig,
+                'n_pending_now': n_pending_now,
+                'n_collected_now': n_pending_orig - n_pending_now,
+                'steps_collected': self.steps_collected,
+                'steps_sampled': self.steps_sampled,
+                'collected_sampled_ratio': 1. * self.steps_collected / (self.steps_sampled + 1e-3)
+                }
 
     def collect_from(self, futures, min_batches=1):
         """Collect from futures. Returns list of unprocessed elements."""
-        f_ready, f_remaining = ray.wait(futures, num_returns=min_batches)
+        if min_batches == 0: # don't wait for anything, but get all available items
+            f_ready, f_remaining = ray_wait_all_non_blocking(futures)
+        else:
+            f_ready, f_remaining = ray.wait(futures, num_returns=min_batches)
+
         for f in f_ready:
             logging.warning("Collecting episode")
             self.observe(ray.get(f))
@@ -204,6 +233,7 @@ class ExperienceReplayBuffer():
             for key in group:
                 pre_context_return[key] = self.buffer[key][idxes_return]
 
+        self.steps_sampled += len(pre_context_return[self.shuffle_together[0][0]])
         return pre_context_return
 
     def observe(self, pre_context):
@@ -242,6 +272,8 @@ class ExperienceReplayBuffer():
 
                 self.buffer_n[key] = min(self.buffer_steps, self.buffer_n[key])
 
+        self.steps_collected += len(pre_context[self.shuffle_together[0][0]])
+
 @gin.configurable
 class ParallelContextCollector():
     def __init__(self, config):
@@ -269,13 +301,33 @@ class ParallelContextCollector():
         self.future_batch_size = self.config.get('future_batch_size', 10)
         self.collect_initial()
 
-    def collect_initial(self):
+    def __del__(self):
+        if self.n_collectors:
+            self.next_batch_refs = set()
+            ray.kill(self.replay_buffer)
+
+            for c in self.remote_rl_contexts:
+                ray.kill(c)
+
+    def collect_initial(self, do_tqdm=True):
         if self.n_collectors == 0:
-            for _ in range(self.future_batch_size):
+            for _ in tqdm(range(self.future_batch_size),
+                          disable=not do_tqdm, desc="Initial buffer fill [local]"):
                 self.replay_buffer.collect_local(self.rl_context)
         else:
-            ray.get(self.replay_buffer.collect.remote(
-                min_batches=self.config.get('collect_initial_batches', self.future_batch_size)))
+            target = self.config.get('collect_initial_batches', self.future_batch_size)
+            collected = 0
+            with tqdm(total=target, disable=not do_tqdm, desc="Initial buffer fill") as pbar:
+                while collected < target:
+                    stats = ray.get(self.replay_buffer.collect.remote(
+                        min_batches=0))
+                    delta = stats['n_collected_now']
+
+                    if delta:
+                        pbar.update(delta)
+                        pbar.set_postfix(**stats)
+                        collected += delta
+                    sleep(0.1)
 
     def collect_get_context(self):
         if self.n_collectors == 0:
@@ -286,7 +338,8 @@ class ParallelContextCollector():
         else:
             # storing episodes into memory of the buffer
             # will collect at least one batch of data
-            self.replay_buffer.collect.remote()
+            stats = self.replay_buffer.collect.remote(
+                min_batches=self.config.get('wait_for_batches_collected', 0))
 
             # requesting shuffled batches
             while len(self.next_batch_refs) < self.future_batch_size:
@@ -295,4 +348,6 @@ class ParallelContextCollector():
             ready_refs, non_ready_refs = ray.wait(list(self.next_batch_refs), num_returns=1)
             ready_ref = ready_refs[0]
             self.next_batch_refs.remove(ready_ref)
-            return ray.get(ready_ref)
+            pre_context = ray.get(ready_ref)
+            pre_context.update({f"context_stats_{x}": y for x, y in stats.items()})
+            return pre_context
