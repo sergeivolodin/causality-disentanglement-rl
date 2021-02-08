@@ -14,3 +14,4 @@ Config.future_episode_size = 20
 Config.future_batch_size = 20
 
 Config.n_collectors = 7
+Config.collect_initial_steps = 100000
