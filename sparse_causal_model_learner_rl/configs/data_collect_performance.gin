@@ -13,8 +13,8 @@ Config.execution = {}
 Config.loss_every = 999999999999999
 Config.graph_every = 9999999999999999
 Config.checkpoint_every = 9999999999999999999999
-Config.report_every = 999999999999
-Config.metrics_every = 99999999999999999
+Config.report_every = 10
+Config.metrics_every = 10
 
 Config.env_steps = 5000
 Config.collect_every = 1

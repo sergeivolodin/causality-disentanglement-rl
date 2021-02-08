@@ -8,10 +8,10 @@ Config.minibatch_size = 5000
 Config.collect_remotely = True
 
 # number of episodes in the queue
-Config.future_episode_size = 10
+Config.future_episode_size = 20
 
 # number of batches to queue
-Config.future_batch_size = 10
+Config.future_batch_size = 20
 
 Config.n_collectors = 7
 

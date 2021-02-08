@@ -175,7 +175,7 @@ class ExperienceReplayBuffer():
             remote_id = np.random.choice(self.n_collectors)
             ref = self.collectors[remote_id].collect_get_context.remote()
             self.next_episode_refs.append(ref)
-            logging.warning(f"Scheduling episode on {remote_id}")
+            # logging.warning(f"Scheduling episode on {remote_id}")
 
         n_pending_orig = len(self.next_episode_refs)
         self.next_episode_refs = self.collect_from(self.next_episode_refs, min_batches=min_batches)
@@ -197,7 +197,7 @@ class ExperienceReplayBuffer():
             f_ready, f_remaining = ray.wait(futures, num_returns=min_batches)
 
         for f in f_ready:
-            logging.warning("Collecting episode")
+            # logging.warning("Collecting episode")
             self.observe(ray.get(f))
         return f_remaining
 
@@ -296,6 +296,7 @@ class ParallelContextCollector():
             self.replay_buffer = ExperienceReplayBufferRemote.remote(
                 config=self.config, collectors=self.remote_rl_contexts)
             self.next_batch_refs = set()
+            self.stats_ref = None
 
 
         self.future_batch_size = self.config.get('future_batch_size', 10)
@@ -338,8 +339,15 @@ class ParallelContextCollector():
         else:
             # storing episodes into memory of the buffer
             # will collect at least one batch of data
-            stats = self.replay_buffer.collect.remote(
-                min_batches=self.config.get('wait_for_batches_collected', 0))
+            if self.stats_ref is None:
+                self.stats_ref = self.replay_buffer.collect.remote(
+                    min_batches=self.config.get('wait_for_batches_collected', 0))
+
+            stats_ready, _ = ray.wait([self.stats_ref], timeout=0)
+            stats = {}
+            if stats_ready:
+                stats = ray.get(self.stats_ref)
+                self.stats_ref = None
 
             # requesting shuffled batches
             while len(self.next_batch_refs) < self.future_batch_size:
