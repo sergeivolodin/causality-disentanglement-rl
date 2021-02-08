@@ -14,8 +14,3 @@ Config.future_episode_size = 20
 Config.future_batch_size = 20
 
 Config.n_collectors = 7
-
-tune_run.resources_per_trial = {'gpu': 0, 'cpu': 9}
-
-Config.train_steps = 500
-Config.collect_initial_batches = 100

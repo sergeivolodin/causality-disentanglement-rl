@@ -22,3 +22,9 @@ Config.collect_every = 1
 Config.model = None
 Config.decoder = None
 Config.reconstructor = None
+
+
+tune_run.resources_per_trial = {'gpu': 0, 'cpu': 9}
+
+Config.train_steps = 5000
+Config.collect_initial_batches = 100
