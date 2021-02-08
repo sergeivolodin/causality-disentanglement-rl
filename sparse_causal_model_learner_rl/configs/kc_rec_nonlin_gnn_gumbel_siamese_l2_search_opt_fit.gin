@@ -1,0 +1,28 @@
+import gin_tune
+include 'kc_rec_nonlin_gnn_gumbel_siamese_l2-Copy1.gin'
+tune_run.num_samples = 4
+
+# TUNE CONFIG
+lr/loguniform.lower = 1e-5
+lr/loguniform.upper = 1e-1
+
+b1/choice.categories = [0.5, 0.8, 0.9, 0.99, 0.999, 0.9999]
+b2/choice.categories = [0.5, 0.8, 0.9, 0.99, 0.999, 0.9999]
+
+iters/choice.categories = [1, 2, 3, 4, 5]
+
+ratio/choice.categories = [0.1, 0.5, 0.7]
+# /TUNE CONFIG
+
+opt1/Optimizer.name = 'Adam'
+opt1/Optimizer.lr = @lr/loguniform()
+opt1/Optimizer.betas = (@b1/choice(), @b2/choice())
+
+Config.optimizers = {'opt1': @opt1/Optimizer}
+
+Config.execution = {'opt1': 'non_sparse_fit',}
+Config.optim_params = {'opt1': ['non_sparse_model', 'decoder'],}
+Config.opt_iterations = {'opt1': @iters/choice(),}
+
+Config.train_steps = 10000
+Config.min_collected_sample_ratio = @ratio/choice()

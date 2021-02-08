@@ -186,7 +186,7 @@ siamese_feature_discriminator_l2.margin = 0.1
 Config.report_every = 5
 Config.metrics_every = 5
 
-tune_run.resources_per_trial = {'gpu': 0.1, 'cpu': 1}
+tune_run.resources_per_trial = {'gpu': 0.3, 'cpu': 8}
 
 Config.graph_every = 20
 
@@ -203,4 +203,5 @@ Config.max_history_size = 100
 
 Normalizer.type_ = 'meanstd'
 ManyNetworkCombinedModel.input_batchnorm = True
-ExperienceReplayBuffer.buffer_limit_steps = 100000
+
+tune_run.queue_trials = False

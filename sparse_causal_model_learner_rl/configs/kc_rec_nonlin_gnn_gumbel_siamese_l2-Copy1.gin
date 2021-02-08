@@ -24,7 +24,7 @@ tune_run.num_samples = 2
 
 Config.loss_every = 1000000000000000
 
-model_gnn/FCCombinedModel.hidden_sizes = [60, 60, 60]
+model_gnn/FCCombinedModel.hidden_sizes = [100, 100, 100]
 model_gnn/FCCombinedModel.activation_cls = @ReLU
 
 WithInputSwitch.give_mask = True
@@ -208,3 +208,8 @@ graph_for_matrices.engine = 'dot'
 
 Config.keep_history = False
 Config.max_history_size = 100
+
+Normalizer.type_ = 'meanstd'
+ManyNetworkCombinedModel.input_batchnorm = True
+
+

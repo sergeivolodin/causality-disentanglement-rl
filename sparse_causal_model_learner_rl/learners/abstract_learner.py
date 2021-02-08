@@ -164,7 +164,11 @@ class AbstractLearner(ABC):
         self.create_trainables()
         tqdm_ = tqdm if do_tqdm else (lambda x: x)
         for _ in tqdm_(range(self.config['train_steps'])):
-            self._epoch()
+            if self.config.get('detect_anomaly', False):
+                with torch.autograd.detect_anomaly():
+                    self._epoch()
+            else:
+                self._epoch()
             self.config.update_communicator()
 
     @abstractmethod

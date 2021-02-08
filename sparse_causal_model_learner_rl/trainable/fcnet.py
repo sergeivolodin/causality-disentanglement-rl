@@ -4,6 +4,7 @@ from torch import nn
 import gin
 
 ReLU = gin.external_configurable(nn.ReLU)
+LeakyReLU = gin.external_configurable(nn.LeakyReLU)
 Tanh = gin.external_configurable(nn.Tanh)
 Sigmoid = gin.external_configurable(nn.Sigmoid)
 
