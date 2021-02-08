@@ -16,7 +16,8 @@ class RLContext():
     """Collect data from an RL environment on a random policy."""
     def __init__(self, config, gin_config_str=None):
         if gin_config_str:
-            gin.parse_config(gin_config_str)
+            with gin.unlock_config():
+                gin.parse_config(gin_config_str)
         self.config = config
         self.env = self.create_env()
         self.collector = EnvDataCollector(self.env)
@@ -36,7 +37,8 @@ class RLContext():
         """Create the RL environment."""
         """Create an environment according to config."""
         if 'env_config_file' in self.config:
-            gin.parse_config_file(self.config['env_config_file'])
+            with gin.unlock_config():
+                gin.parse_config_file(self.config['env_config_file'])
         return load_env()
 
     def sample_action(self, obs):
@@ -253,14 +255,14 @@ class ParallelContextCollector():
             self.rl_context = RLContext(config=self.config,
                                         gin_config_str=gin.config_str())
             self.replay_buffer = ExperienceReplayBuffer(config=self.config,
-                                                        collectors=self.remote_rl_contexts)
+                                                        collectors=[])
 
         else:
             self.remote_rl_contexts = [RLContextRemote.remote(config=self.config,
                                                               gin_config_str=gin.config_str())
                                        for _ in range(self.n_collectors)]
             self.replay_buffer = ExperienceReplayBufferRemote.remote(
-                config=self.config, collectors=[])
+                config=self.config, collectors=self.remote_rl_contexts)
             self.next_batch_refs = set()
 
 

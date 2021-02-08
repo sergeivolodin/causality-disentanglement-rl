@@ -113,7 +113,7 @@ class KeyChestEnvironment(object):
                  return_features_xy=False):
         """Environment with keys and chests."""
         self.initial_maps = deepcopy(labyrinth_maps)
-        self.maps = deepcopy(labyrinth_maps)
+        self.maps = {x: np.array(y, dtype=np.bool) for x, y in labyrinth_maps.items()}
         self.executor = DelayedExecutor()
         self.delay = 1
         self.shape = self.maps['empty'].shape
@@ -202,30 +202,32 @@ class KeyChestEnvironment(object):
         dx = dx1 + dx2
 
         shape = (sx + dx, sy + dy)
-        out = {obj: np.full(fill_value=False, shape=shape, dtype=np.bool)
-               for obj in self.OBJECTS}
+        result = np.full(fill_value=False, shape=(len(self.OBJECTS), *shape),
+                         dtype=np.bool)
 
-        fill_n(out['health'], 0, self.health)
-        fill_n(out['keys_collected'], self.food_rows, self.keys)
+        def fill_progress_bars(result):
+            fill_n(result[self.OBJECTS.index('health')], 0, self.health)
+            fill_n(result[self.OBJECTS.index('keys_collected')], self.food_rows, self.keys)
 
-        out['wall'][dx1 - 1, :] = True
-        out['wall'][-1, :] = True
-        out['wall'][dx1 - 1:, 0] = True
-        out['wall'][dx1 - 1:, -1] = True
-        for obj in self.OBJECTS:
-            mask = self.maps[obj] > 0
-            out[obj][dx1:-dx2, dy1:-dy2][mask] = True
+        def fill_wall(result):
+            result[self.OBJECTS.index('wall'), dx1 - 1, :] = True
+            result[self.OBJECTS.index('wall'), -1, :] = True
+            result[self.OBJECTS.index('wall'), dx1 - 1:, 0] = True
+            result[self.OBJECTS.index('wall'), dx1 - 1:, -1] = True
 
-        # format: C x H x W
-        result = 1. * np.array([out[obj] for obj in self.OBJECTS])
+        def copy_objects(result):
+            # for idx, obj in enumerate(self.OBJECTS):
+            result[:, dx1:-dx2, dy1:-dy2] = [self.maps[obj] for obj in self.OBJECTS]
 
-        # format: W x H x C
-        result = np.swapaxes(result, 0, 2)
+        fill_progress_bars(result)
+        fill_wall(result)
+        copy_objects(result)
 
-        # format: H x W x C
-        result = np.swapaxes(result, 0, 1)
+        def reshape(result):
+            # format: C x H x W -> H x W x C
+            return np.transpose(result, (1, 2, 0)).astype(np.float32)
 
-        result = np.array(result, dtype=np.float32)
+        result = reshape(result)
 
         return result
 
