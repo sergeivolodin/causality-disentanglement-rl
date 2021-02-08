@@ -6,7 +6,7 @@ import gym
 import numpy as np
 from tqdm import tqdm
 from tqdm.auto import tqdm
-from time import sleep
+from time import sleep, time
 
 from causal_util import load_env
 from causal_util.collect_data import EnvDataCollector, compute_reward_to_go
@@ -160,6 +160,7 @@ class ExperienceReplayBuffer():
 
         self.next_episode_refs = []
         self.future_episode_size = self.config.get('future_episode_size', 10)
+        self.min_collected_sample_ratio = self.config.get('min_collected_sample_ratio', 0.01)
 
         self.reset()
 
@@ -170,24 +171,49 @@ class ExperienceReplayBuffer():
         self.steps_sampled = 0
         self.steps_collected = 0
 
-    def collect(self, min_batches=1):
+    def collected_sampled_ratio(self, eps=1e-3):
+        return 1. * self.steps_collected / (self.steps_sampled + eps)
+
+    def collect_one_iteration(self, min_batches=1):
         while len(self.next_episode_refs) < max(min_batches, self.future_episode_size):
             remote_id = np.random.choice(self.n_collectors)
             ref = self.collectors[remote_id].collect_get_context.remote()
             self.next_episode_refs.append(ref)
             # logging.warning(f"Scheduling episode on {remote_id}")
 
-        n_pending_orig = len(self.next_episode_refs)
-        self.next_episode_refs = self.collect_from(self.next_episode_refs, min_batches=min_batches)
-        n_pending_now = len(self.next_episode_refs)
+        self.next_episode_refs = self.collect_from(self.next_episode_refs,
+                                                   min_batches=min_batches)
 
-        return {'n_pending_orig': n_pending_orig,
-                'n_pending_now': n_pending_now,
-                'n_collected_now': n_pending_orig - n_pending_now,
-                'steps_collected': self.steps_collected,
-                'steps_sampled': self.steps_sampled,
-                'collected_sampled_ratio': 1. * self.steps_collected / (self.steps_sampled + 1e-3)
-                }
+
+    def collect(self, min_batches=1, enable_wait=True):
+        steps_old = self.steps_collected
+
+        t1 = time()
+        iters = 0
+        stats = {}
+        while (self.collected_sampled_ratio() <= self.min_collected_sample_ratio) or not enable_wait:
+            self.collect_one_iteration(min_batches=min_batches)
+            iters += 1
+            if not enable_wait:
+                break
+            elif iters >= 2:
+                sleep(0.1)
+        t2 = time()
+
+        steps_new = self.steps_collected
+
+        stats.update({
+            'steps_collected': self.steps_collected,
+            'steps_sampled': self.steps_sampled,
+            'steps_collected_laps': 1. * self.steps_collected / self.buffer_steps,
+            'steps_sampled_laps': 1. * self.steps_sampled / self.buffer_steps,
+            'collected_sampled_ratio': self.collected_sampled_ratio(),
+            'collect_time_s': t2 - t1,
+            'collect_iters': iters,
+            'pending_refs': len(self.next_episode_refs),
+            'steps_collected_now': steps_new - steps_old,
+        })
+        return stats
 
     def collect_from(self, futures, min_batches=1):
         """Collect from futures. Returns list of unprocessed elements."""
@@ -316,13 +342,13 @@ class ParallelContextCollector():
                           disable=not do_tqdm, desc="Initial buffer fill [local]"):
                 self.replay_buffer.collect_local(self.rl_context)
         else:
-            target = self.config.get('collect_initial_batches', self.future_batch_size)
+            target = self.config.get('collect_initial_steps', 1000)
             collected = 0
             with tqdm(total=target, disable=not do_tqdm, desc="Initial buffer fill") as pbar:
                 while collected < target:
                     stats = ray.get(self.replay_buffer.collect.remote(
-                        min_batches=0))
-                    delta = stats['n_collected_now']
+                        min_batches=0, enable_wait=False))
+                    delta = stats['steps_collected_now']
 
                     if delta:
                         pbar.update(delta)
@@ -341,7 +367,9 @@ class ParallelContextCollector():
             # will collect at least one batch of data
             if self.stats_ref is None:
                 self.stats_ref = self.replay_buffer.collect.remote(
-                    min_batches=self.config.get('wait_for_batches_collected', 0))
+                    min_batches=self.config.get('wait_for_batches_collected', 0),
+                    enable_wait=True
+                )
 
             stats_ready, _ = ray.wait([self.stats_ref], timeout=0)
             stats = {}
