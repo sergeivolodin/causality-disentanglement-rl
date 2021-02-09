@@ -153,6 +153,7 @@ class AbstractLearner(ABC):
         self._check_execution()
 
     def checkpoint(self, directory):
+        logging.warning(f"Checkpointing trainer {self}")
         ckpt = os.path.join(directory, "checkpoint")
         with open(ckpt, 'wb') as f:
             pickle.dump(self, f, protocol=2)

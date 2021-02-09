@@ -392,6 +392,7 @@ class ParallelContextCollector():
                     sleep(0.1)
 
     def collect_get_context(self):
+#         logging.warning(f"Collecting data collect_get_context()...")
         if self.n_collectors == 0:
             for _ in range(self.future_batch_size):
                 self.replay_buffer.collect_local(self.rl_context)
@@ -421,4 +422,7 @@ class ParallelContextCollector():
             self.next_batch_refs.remove(ready_ref)
             pre_context = ray.get(ready_ref)
             pre_context.update({f"context_stats_{x}": y for x, y in stats.items()})
+            
+#             logging.warning(f"Collecting data FINISHED collect_get_context()...")
+            
             return pre_context
