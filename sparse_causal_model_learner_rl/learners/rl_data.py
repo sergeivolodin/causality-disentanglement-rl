@@ -12,6 +12,7 @@ from causal_util import load_env
 from causal_util.collect_data import EnvDataCollector, compute_reward_to_go
 from causal_util.helpers import one_hot_encode
 from .rl_data_multi_step import get_multi_step_rl_context
+from causal_util.helpers import one_hot_encode_vectorized
 
 
 def ray_wait_all_non_blocking(futures):
@@ -154,6 +155,10 @@ class RLContext():
                 new_key_name = f"multistep_{steps}_{key}"
                 assert new_key_name not in context, f"Key {new_key_name} already" \
                                                     f" in context {steps} {context.keys()}"
+                if 'act' in key and self.to_onehot:
+                    val = one_hot_encode_vectorized(batch_size=len(val),
+                                                    n=self.action_shape[0],
+                                                    values=val)
                 context[new_key_name] = val
 
         return context
