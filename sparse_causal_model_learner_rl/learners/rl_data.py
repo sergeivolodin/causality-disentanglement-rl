@@ -14,6 +14,23 @@ from causal_util.helpers import one_hot_encode
 from .rl_data_multi_step import get_multi_step_rl_context
 
 
+def get_shuffle_together(config):
+    """Get which parameters need to be shuffled together, including multi-step values."""
+    shuffle_together = config.get('shuffle_together', [])
+    data_multistep = config.get('rl_multistep', [])
+    for steps in data_multistep:
+        group = []
+        for s in range(1, steps + 1):
+            group.append(f'multistep_{steps}_obs_{s}')
+        for s in range(1, steps):
+            group.append(f'multistep_{steps}_act_{s}')
+            group.append(f'multistep_{steps}_rew_{s}')
+            group.append(f'multistep_{steps}_done_{s}')
+        shuffle_together.append(group)
+
+    return shuffle_together
+
+
 def ray_wait_all_non_blocking(futures):
     """Get all futures which are ready right now."""
     f_ready = []
@@ -150,8 +167,9 @@ class RLContext():
         for steps in self.data_multistep:
             n_step_ctx = get_multi_step_rl_context(self.collector, n_steps_forward=steps,
                                                    return_intermediate=False)
-            for key, val in n_step_ctx:
+            for key, val in n_step_ctx.items():
                 new_key_name = f"multistep_{steps}_{key}"
+                assert isinstance(val, np.ndarray), f"multi-step value must be np.array {val}"
                 assert new_key_name not in context, f"Key {new_key_name} already" \
                                                     f" in context {steps} {context.keys()}"
                 context[new_key_name] = val
@@ -168,7 +186,7 @@ class ExperienceReplayBuffer():
         self.collectors = collectors
         self.n_collectors = len(self.collectors)
         self.buffer_steps = self.config.get('buffer_steps', 1000000)
-        self.shuffle_together = self.config.get('shuffle_together', [])
+        self.shuffle_together = get_shuffle_together(self.config)
         self.minibatch_size = self.config.get('minibatch_size', 5000)
 
         self.next_episode_refs = []
