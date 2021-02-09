@@ -42,7 +42,9 @@ class CausalModelLearnerRL(AbstractLearner):
         self.model_kwargs = {'feature_shape': self.feature_shape,
                              'action_shape': self.action_shape,
                              'observation_shape': self.observation_shape,
-                             'additional_feature_shape': self.additional_feature_shape}
+                             'additional_feature_shape': self.additional_feature_shape,
+                             'total_feature_shape': (self.feature_shape[0] +
+                                                     self.additional_feature_shape[0],)}
 
         logging.info(self.model_kwargs)
 

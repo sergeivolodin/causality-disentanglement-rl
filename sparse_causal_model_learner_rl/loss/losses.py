@@ -2,6 +2,7 @@ import torch
 from sparse_causal_model_learner_rl.loss import loss
 import gin
 import numpy as np
+from .helpers import gather_additional_features
 
 
 @gin.configurable
@@ -118,7 +119,8 @@ def fit_loss(obs_x, obs_y, action_x, decoder, model, additional_feature_keys,
     have_additional = False
     if additional_feature_keys:
         have_additional = True
-        add_features_y = torch.cat([kwargs[k] for k in additional_feature_keys], dim=1)
+        add_features_y = gather_additional_features(additional_feature_keys=additional_feature_keys,
+                                                    **kwargs)
         f_t1 = torch.cat([f_t1, add_features_y], dim=1)
 
     if divide_by_std:

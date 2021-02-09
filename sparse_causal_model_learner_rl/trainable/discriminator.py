@@ -1,6 +1,7 @@
 import gin
 import torch
 from torch import nn
+from .fcnet import IdentityNet
 
 
 @gin.configurable
@@ -81,6 +82,29 @@ class CausalFeatureModelDiscriminator(ModelDiscriminator):
                                             'f_t1': self.feature_embedding_dim},
                       input_shapes_dict={'f_t': self.feature_shape,
                                          'f_t1': self.feature_shape},
+                      **kwargs)
+
+@gin.configurable
+class CausalFeatureActionModelDiscriminator(ModelDiscriminator):
+    """Discriminate between correct next features and wrong next features, given actions."""
+
+    def __init__(self, total_feature_shape, action_shape,
+                 feature_shape,
+                 feature_embedding_dim=10, **kwargs):
+        self.total_feature_shape = total_feature_shape
+        self.feature_shape = feature_shape
+        self.action_shape = action_shape
+        self.feature_embedding_dim = feature_embedding_dim
+
+        kwargs.get('input_embedder_cls', {})['a_t'] = IdentityNet
+
+        super(CausalFeatureActionModelDiscriminator, self) \
+            .__init__(input_embedding_dims={'f_t': self.feature_embedding_dim,
+                                            'f_t1': self.feature_embedding_dim,
+                                            'a_t': self.action_shape[0]},
+                      input_shapes_dict={'f_t': self.feature_shape,
+                                         'f_t1': self.total_feature_shape,
+                                         'a_t': self.action_shape},
                       **kwargs)
 
 
