@@ -14,7 +14,7 @@ from sparse_causal_model_learner_rl.visual.learner_visual import plot_model, gra
     select_threshold
 from sparse_causal_model_learner_rl.visual.learner_visual import total_loss, loss_and_history, \
     plot_contour, plot_3d
-from .rl_data import RLContext, ParallelContextCollector
+from .rl_data import RLContext, ParallelContextCollector, get_shuffle_together
 
 
 @gin.register
@@ -49,7 +49,7 @@ class CausalModelLearnerRL(AbstractLearner):
         self.collect_remotely = self.config.get('collect_remotely', False)
         if self.collect_remotely:
             self.remote_rl_context = ParallelContextCollector(config=self.config)
-        self.shuffle_together = self.config.get('shuffle_together', [])
+        self.shuffle_together = get_shuffle_together(self.config)
 
 
     def collect_steps(self):

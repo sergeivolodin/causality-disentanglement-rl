@@ -1,7 +1,6 @@
 import numpy as np
 import gym
 import gin
-from stable_baselines.common.env_checker import check_env
 from causal_util.collect_data import EnvDataCollector
 
 
