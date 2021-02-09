@@ -174,8 +174,7 @@ class RLContext():
                 assert new_key_name not in context, f"Key {new_key_name} already" \
                                                     f" in context {steps} {context.keys()}"
                 if 'act' in key and self.to_onehot:
-                    val = one_hot_encode_vectorized(batch_size=len(val),
-                                                    n=self.action_shape[0],
+                    val = one_hot_encode_vectorized(n=self.action_shape[0],
                                                     values=val)
                 context[new_key_name] = val
 

@@ -24,13 +24,14 @@ def one_hot_encode(n, value):
     result[value] = 1
     return result
 
-def one_hot_encode_vectorized(batch_size, n, values):
+def one_hot_encode_vectorized(n, values):
     """Get a one-hotencoding."""
+    batch_size = len(values)
     assert all(values < n)
     assert all(values >= 0)
     values = values.astype(np.int32)
     result = np.zeros((batch_size, n), dtype=np.float32)
-    result[:, values] = 1
+    result[range(batch_size), values] = 1
     return result
 
 def flatten_dict_keys(dct, prefix='', separator='/'):
