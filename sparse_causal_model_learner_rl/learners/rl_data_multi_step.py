@@ -47,11 +47,11 @@ def get_multi_step_rl_context(collector, n_steps_forward=3, return_intermediate=
             curr_slice_obs = slice(s - 1, -(n_steps_forward - s))
             curr_slice = slice_with_0_end(s - 1, -(n_steps_forward - s) + 1)
             if s == 1 or return_intermediate:
-                result[f'obs_{s}'] = observations[curr_slice_obs]
-                result[f'done_{s}'] = dones[curr_slice]
-            result[f'act_{s}'] = actions[curr_slice]
-            result[f'rew_{s}'] = rews[curr_slice]
-        result[f'obs_{n_steps_forward}'] = observations[n_steps_forward - 1:]
+                result[f'obs_{s}'].extend(observations[curr_slice_obs])
+                result[f'done_{s}'].extend(dones[curr_slice])
+            result[f'act_{s}'].extend(actions[curr_slice])
+            result[f'rew_{s}'].extend(rews[curr_slice])
+        result[f'obs_{n_steps_forward}'].extend(observations[n_steps_forward - 1:])
 
     result = {x: np.array(y) for x, y in result.items()}
 

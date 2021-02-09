@@ -166,8 +166,8 @@ class RLContext():
 
         for steps in self.data_multistep:
             n_step_ctx = get_multi_step_rl_context(self.collector, n_steps_forward=steps,
-                                                   return_intermediate=False)
             for key, val in n_step_ctx.items():
+                                                   return_intermediate=True)
                 new_key_name = f"multistep_{steps}_{key}"
                 assert isinstance(val, np.ndarray), f"multi-step value must be np.array {val}"
                 assert new_key_name not in context, f"Key {new_key_name} already" \
