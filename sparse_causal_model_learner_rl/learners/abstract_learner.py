@@ -163,7 +163,7 @@ class AbstractLearner(ABC):
         """Train (many epochs)."""
         self.create_trainables()
         tqdm_ = tqdm if do_tqdm else (lambda x: x)
-        for _ in tqdm_(range(self.config['train_steps'])):
+        for _ in tqdm_(range(self.epochs, self.config['train_steps'])):
             if self.config.get('detect_anomaly', False):
                 with torch.autograd.detect_anomaly():
                     self._epoch()

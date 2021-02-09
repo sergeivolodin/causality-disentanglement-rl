@@ -43,7 +43,7 @@ class IdentityNet(nn.Module):
 class FCNet(nn.Module):
     """Fully-connected neural network."""
     def __init__(self, input_shape, output_shape, hidden_sizes, activation_cls,
-                 add_scaler=False):
+                 add_scaler=False, add_input_batchnorm=False):
         super().__init__()
 
         assert len(input_shape) == 1
@@ -74,8 +74,13 @@ class FCNet(nn.Module):
 
         if add_scaler:
             self.scaler = Scaler(shape=output_shape)
+            
+        if add_input_batchnorm:
+            self.bn = torch.nn.BatchNorm1d(num_features=self.input_dim)
 
     def forward(self, x):
+        if hasattr(self, 'bn'):
+            x = self.bn(x)
         for i, fc in enumerate(self.fc):
             x = fc(x)
             if self.activation[i] is not None:

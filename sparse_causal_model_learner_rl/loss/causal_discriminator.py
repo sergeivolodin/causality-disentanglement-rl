@@ -67,10 +67,11 @@ def feature_causal_gan(obs_x, action_x, obs_y, model, decoder,
                        additional_feature_keys,
                        causal_feature_action_model_discriminator,
                        obs_delta_eps=1e-3,
+                       add_mse_coeff=None,
                        loss_type=None,
                        **kwargs):
     """GAN loss where the discriminator classifies correct/incorrect causal pairs."""
-    assert loss_type in ['generator', 'discriminator'], f"Wrong loss type {loss_type}"
+    assert loss_type in ['generator', 'discriminator', 'only_contrastive'], f"Wrong loss type {loss_type}"
     batch_dim = len(obs_x)
     device = obs_x.device
 
@@ -113,6 +114,8 @@ def feature_causal_gan(obs_x, action_x, obs_y, model, decoder,
         ans_model = torch.ones((batch_dim,), device=device, dtype=torch.float32)
     elif loss_type == 'discriminator':  # discriminator must see issues with the generator
         ans_model = torch.zeros((batch_dim,), device=device, dtype=torch.float32)
+    elif loss_type == 'only_contrastive':
+        ans_model = None
     else:
         raise ValueError(f"Wrong loss_type: {loss_type}")
 
@@ -120,9 +123,20 @@ def feature_causal_gan(obs_x, action_x, obs_y, model, decoder,
 
     loss_env = criterion(logits_environment.view(-1), ans_env)
     loss_env_permuted = criterion(logits_permuted.view(-1), ans_env_permuted)
-    loss_model = criterion(logits_model.view(-1), ans_model)
+    if loss_type == 'only_contrastive':
+        loss_model = torch.zeros(1)
+    else:
+        loss_model = criterion(logits_model.view(-1), ans_model)
 
-    loss = loss_env + loss_env_permuted + loss_model
+    mse_model_pred = (f_y_pred - f_y_all).pow(2).sum(1).mean()
+    
+    if loss_type == 'generator' and add_mse_coeff is not None:
+        loss_model = loss_model + add_mse_coeff * mse_model_pred
+        
+    if loss_type == 'only_contrastive':
+        loss = loss_env + loss_env_permuted
+    else:
+        loss = loss_env + loss_env_permuted + loss_model
 
     metrics = {
         'loss_env': loss_env.item(),
@@ -131,6 +145,7 @@ def feature_causal_gan(obs_x, action_x, obs_y, model, decoder,
         'mean_logits_env': logits_environment.mean().item(),
         'mean_logits_env_permuted': logits_permuted.mean().item(),
         'mean_logits_model': logits_model.mean().item(),
+        'mse_model_pred': mse_model_pred.item(),
     }
 
     return {'loss': loss,
