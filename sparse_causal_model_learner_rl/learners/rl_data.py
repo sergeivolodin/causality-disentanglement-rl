@@ -11,6 +11,7 @@ from time import sleep, time
 from causal_util import load_env
 from causal_util.collect_data import EnvDataCollector, compute_reward_to_go
 from causal_util.helpers import one_hot_encode
+from .rl_data_multi_step import get_multi_step_rl_context
 
 
 def ray_wait_all_non_blocking(futures):
@@ -37,6 +38,7 @@ class RLContext():
         self.env = self.create_env()
         self.collector = EnvDataCollector(self.env)
         self.vf_gamma = self.config.get('vf_gamma', 1.0)
+        self.data_multistep = self.config.get('rl_multistep', [])
 
         # Discrete action -> one-hot encoding
         if isinstance(self.env.action_space, gym.spaces.Discrete):
@@ -144,6 +146,15 @@ class RLContext():
                    'obs': obs,
                    'reward_to_go': reward_to_go,
                    'episode_sum_rewards': episode_sum_rewards}
+
+        for steps in self.data_multistep:
+            n_step_ctx = get_multi_step_rl_context(self.collector, n_steps_forward=steps,
+                                                   return_intermediate=False)
+            for key, val in n_step_ctx:
+                new_key_name = f"multistep_{steps}_{key}"
+                assert new_key_name not in context, f"Key {new_key_name} already" \
+                                                    f" in context {steps} {context.keys()}"
+                context[new_key_name] = val
 
         return context
 
