@@ -14,6 +14,7 @@ from causal_util.helpers import one_hot_encode
 
 
 def ray_wait_all_non_blocking(futures):
+    """Get all futures which are ready right now."""
     f_ready = []
     f_remaining = futures
 
@@ -24,6 +25,7 @@ def ray_wait_all_non_blocking(futures):
         else:
             f_ready.extend(f_ready_)
     return f_ready, f_remaining
+
 
 class RLContext():
     """Collect data from an RL environment on a random policy."""
