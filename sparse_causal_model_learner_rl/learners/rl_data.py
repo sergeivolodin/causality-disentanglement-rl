@@ -149,7 +149,7 @@ class RLContext():
 
         for steps in self.data_multistep:
             n_step_ctx = get_multi_step_rl_context(self.collector, n_steps_forward=steps,
-                                                   return_intermediate=False)
+                                                   return_intermediate=True)
             for key, val in n_step_ctx:
                 new_key_name = f"multistep_{steps}_{key}"
                 assert new_key_name not in context, f"Key {new_key_name} already" \
