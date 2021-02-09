@@ -63,7 +63,7 @@ def siamese_feature_discriminator(obs, decoder, causal_feature_model_discriminat
     return contrastive_loss_permute(decoder(obs), decoder(obs), fcn, invert_labels=False)
 
 @gin.configurable
-def feature_causal_gan(obs_x, act_x, obs_y, model, decoder,
+def feature_causal_gan(obs_x, action_x, obs_y, model, decoder,
                        additional_feature_keys,
                        causal_feature_action_model_discriminator,
                        obs_delta_eps=1e-3,
@@ -86,20 +86,26 @@ def feature_causal_gan(obs_x, act_x, obs_y, model, decoder,
     idxes = torch.randperm(batch_dim, device=device)
     f_y_all_permuted = f_y_all[idxes]
     obs_y_permuted = obs_y[idxes]
-    act_permuted = act_x[idxes]
+    act_permuted = action_x[idxes]
 
     # predicted features
-    f_y_pred = model(f_t=f_x, a_t=act_x)
+    if loss_type == 'discriminator':
+        # do not allow the decoder to break the model
+        # rather, the discriminator must find issues with the model itself.
+        f_x_feed = f_x.detach()
+    else:
+        f_x_feed = f_x
+    f_y_pred = model(f_t=f_x_feed, a_t=action_x, all=True)
 
-    logits_environment = causal_feature_action_model_discriminator(f_t=f_x, a_t=act_x, f_t1=f_y_all)
-    logits_model = causal_feature_action_model_discriminator(f_t=f_x, a_t=act_x, f_t1=f_y_pred)
-    logits_permuted = causal_feature_action_model_discriminator(f_t=f_x, a_t=act_x, f_t1=f_y_all_permuted)
+    logits_environment = causal_feature_action_model_discriminator(f_t=f_x, a_t=action_x, f_t1=f_y_all)
+    logits_model = causal_feature_action_model_discriminator(f_t=f_x_feed, a_t=action_x, f_t1=f_y_pred)
+    logits_permuted = causal_feature_action_model_discriminator(f_t=f_x, a_t=action_x, f_t1=f_y_all_permuted)
 
     # prediction = 1 -> correct pair
     # prediction = 0 -> incorrect pair
     env_permuted_obs_close = ((obs_y_permuted - obs_y).flatten(start_dim=1).pow(2).sum(1) +
-                              (act_permuted - act_x).flatten(start_dimm=1).pow(2).sum(1) <=
-                              obs_delta_eps).to(device).detach()
+                              (act_permuted - action_x).flatten(start_dim=1).pow(2).sum(1) <=
+                              obs_delta_eps).to(device).to(torch.float32).detach()
     ans_env = torch.ones((batch_dim,), device=device, dtype=torch.float32)
     ans_env_permuted = env_permuted_obs_close  # act+obs close -> same features -> must output 1, otherwise 0
 
@@ -122,9 +128,9 @@ def feature_causal_gan(obs_x, act_x, obs_y, model, decoder,
         'loss_env': loss_env.item(),
         'loss_env_permuted': loss_env_permuted.item(),
         'loss_model': loss_model.item(),
-        'mean_logits_env': logits_environment.mean(),
-        'mean_logits_env_permuted': logits_permuted.mean(),
-        'mean_logits_model': logits_model.mean(),
+        'mean_logits_env': logits_environment.mean().item(),
+        'mean_logits_env_permuted': logits_permuted.mean().item(),
+        'mean_logits_model': logits_model.mean().item(),
     }
 
     return {'loss': loss,
