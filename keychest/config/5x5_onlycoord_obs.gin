@@ -1,0 +1,7 @@
+import causal_util.helpers
+import keychest.keychestenv
+include '5x5_onlycoord.gin'
+
+KeyChestEnvironment.flatten_observation = True
+KeyChestEnvironment.return_rgb = False
+KeyChestEnvironment.return_features_xy = False
