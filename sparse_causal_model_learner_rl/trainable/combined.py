@@ -65,6 +65,7 @@ class CombinedLinearLayer(nn.Module):
 class FCCombinedModel(AbstractCombinedModel):
     def __init__(self, hidden_sizes, activation_cls=nn.ReLU,
                  input_reshape=False,
+                 add_input_batchnorm=False,
                  **kwargs):
         super(FCCombinedModel, self).__init__(**kwargs)
         self.hidden_sizes = hidden_sizes
@@ -90,9 +91,14 @@ class FCCombinedModel(AbstractCombinedModel):
 
             # for torch to keep track of variables
             setattr(self, f'fc%02d' % i, self.fc[-1])
+        if add_input_batchnorm:
+            self.bn = nn.BatchNorm1d(self.input_dim)
 
     def forward(self, x):
         if self.input_reshape:
+            if hasattr(self, 'bn'):
+                x = self.bn(x)
+
             x = x.view(*x.shape, 1).expand(*[-1] * len(x.shape), self.n_models)
 
         for i, fc in enumerate(self.fc):

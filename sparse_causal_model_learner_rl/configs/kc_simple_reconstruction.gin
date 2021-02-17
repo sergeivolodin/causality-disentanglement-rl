@@ -24,7 +24,7 @@ tune_run.num_samples = 1
 
 Config.loss_every = 1000000000000000
 
-model_gnn/FCCombinedModel.hidden_sizes = [100, 100, 100]
+model_gnn/FCCombinedModel.hidden_sizes = [200, 200, 200]
 model_gnn/FCCombinedModel.activation_cls = @ReLU
 
 WithInputSwitch.give_mask = True
@@ -60,13 +60,14 @@ Config.model = @sparse_model/ManyNetworkCombinedModel
 Config.non_sparse_model = @non_sparse_model/ManyNetworkCombinedModel
 Config.reconstructor = @ModelReconstructor
 
-ModelReconstructor.model_cls = @reconstructor/FCNet
-reconstructor/FCNet.hidden_sizes = [50, 693]
-reconstructor/FCNet.activation_cls = @Tanh
-reconstructor/FCNet.add_input_batchnorm = True
+ModelReconstructor.model_cls = @reconstructor/FCCombinedModel
+reconstructor/FCCombinedModel.hidden_sizes = [512, 1024]
+reconstructor/FCCombinedModel.activation_cls = @Tanh
+reconstructor/FCCombinedModel.add_input_batchnorm = True
+reconstructor/FCCombinedModel.input_reshape = True
 
 
-decoder/FCNet.hidden_sizes = [693, 50]
+decoder/FCNet.hidden_sizes = [1024]
 decoder/FCNet.activation_cls = @Tanh
 decoder/FCNet.add_input_batchnorm = True
 ModelDecoder.model_cls = @decoder/FCNet
