@@ -63,9 +63,12 @@ class CombinedLinearLayer(nn.Module):
 
 @gin.configurable
 class FCCombinedModel(AbstractCombinedModel):
-    def __init__(self, hidden_sizes, activation_cls=nn.ReLU, **kwargs):
+    def __init__(self, hidden_sizes, activation_cls=nn.ReLU,
+                 input_reshape=False,
+                 **kwargs):
         super(FCCombinedModel, self).__init__(**kwargs)
         self.hidden_sizes = hidden_sizes
+        self.input_reshape = input_reshape
         if callable(activation_cls):
             self.activation = [activation_cls()] * len(self.hidden_sizes) + [None]
         elif isinstance(activation_cls, list):
@@ -89,6 +92,9 @@ class FCCombinedModel(AbstractCombinedModel):
             setattr(self, f'fc%02d' % i, self.fc[-1])
 
     def forward(self, x):
+        if self.input_reshape:
+            x = x.view(*x.shape, 1).expand(*[-1] * len(x.shape), self.n_models)
+
         for i, fc in enumerate(self.fc):
             x = fc(x)
             if self.activation[i] is not None:
