@@ -82,7 +82,7 @@ opt4/Optimizer.lr = 1e-3
 opt5/Optimizer.name = 'Adam'
 opt5/Optimizer.lr = 1e-3
 
-Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer, 'opt3': @opt3/Optimizer}#, 'opt4': @opt4/Optimizer, 'opt5': @opt5/Optimizer}
+Config.optimizers = {'opt1': @opt1/Optimizer}#, 'opt2': @opt2/Optimizer, 'opt3': @opt3/Optimizer}#, 'opt4': @opt4/Optimizer, 'opt5': @opt5/Optimizer}
 
 LOSSES_OTHER = ['fit', 'fit_all_on', 'non_sparse_fit', 'reconstruction']
 LOSSES_SPARSE = ['sparsity', 'fit']
