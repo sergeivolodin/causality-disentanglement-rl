@@ -15,23 +15,31 @@ class Normalizer(object):
         self.once = once
         self.dim = dim
 
-    def unnormalize(self, outp, eps=1e-8):
-        outp = outp.clone()
+        self.std_eps = 1e-8
+        self.minmax_eps = 1e-3
+
+    def unnormalize(self, outp):
+        if hasattr(outp, 'clone'):  # torch tensor
+            outp = outp.clone()
+        elif hasattr(outp, 'copy'):  # numpy array
+            outp = outp.copy()
+        else:
+            raise ValueError(f"Expecting a numpy array or a Torch tensor, got: {type(outp)}")
 
         if self.type_ == 'minmax':
             outp /= 2 # -0.5, 0.5
             outp += 0.5 # 0, 1
-            outp *= (1e-3 + self.max - self.min)
+            outp *= (self.minmax_eps + self.max - self.min)
             outp += self.min
             return outp
         elif self.type_ == 'meanstd':
-            outp *= (1e-8 + self.std)
+            outp *= (self.std_eps + self.std)
             outp += self.mean
             return outp
         else:
             raise NotImplementedError(self.type_)
 
-    def maybe_normalize(self, inp, eps=1e-8):
+    def maybe_normalize(self, inp):
         if not self.computed or not self.once:
             self.mean = np.mean(inp, axis=self.dim)
             self.std = np.std(inp, axis=self.dim)
@@ -40,11 +48,15 @@ class Normalizer(object):
             self.computed = True
 
         if self.type_ == 'meanstd':
-            return (inp - self.mean) / (eps + self.std)
+            return (inp - self.mean) / (self.std_eps + self.std)
         elif self.type_ == 'minmax':
-            return 2 * ((inp - self.min) / (1e-3 + self.max - self.min) - 0.5)
+            return 2 * ((inp - self.min) / (self.minmax_eps + self.max - self.min) - 0.5)
         else:
             raise NotImplementedError(f"Wrong type {self.type_}")
+
+    def __repr__(self):
+        return f"<Normalizer type={self.type_} computed={self.computed}" \
+               f" shape={self.mean.shape if self.mean is not None else None}>"
 
 
 @gin.configurable
