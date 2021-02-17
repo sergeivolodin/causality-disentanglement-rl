@@ -25,7 +25,7 @@ tune_run.num_samples = 1
 Config.loss_every = 1000000000000000
 
 model_gnn/FCCombinedModel.hidden_sizes = [100, 100, 100]
-model_gnn/FCCombinedModel.activation_cls = @ReLU
+model_gnn/FCCombinedModel.activation_cls = @LeakyReLU
 
 WithInputSwitch.give_mask = True
 WithInputSwitch.model_cls = @model_gnn/FCCombinedModel
@@ -56,8 +56,8 @@ Config.non_sparse_model = @non_sparse_model/ManyNetworkCombinedModel
 Config.reconstructor = @ModelReconstructor
 
 ModelReconstructor.model_cls = @reconstructor/FCCombinedModel
-reconstructor/FCCombinedModel.hidden_sizes = [64]
-reconstructor/FCCombinedModel.activation_cls = [@Tanh, None]
+reconstructor/FCCombinedModel.hidden_sizes = [64, 1]
+reconstructor/FCCombinedModel.activation_cls = [@Tanh, @Tanh, None]
 reconstructor/FCCombinedModel.add_input_batchnorm = True
 reconstructor/FCCombinedModel.input_reshape = True
 
