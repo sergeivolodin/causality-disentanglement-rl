@@ -205,6 +205,7 @@ class ExperienceReplayBuffer():
         self.buffer_write_idx = {}
         self.steps_sampled = 0
         self.steps_collected = 0
+        self.collect_one_iteration(min_batches=1)
         return {'info': 'buffer cleaned'}
 
     def collected_sampled_ratio(self, eps=1e-3):
@@ -390,11 +391,6 @@ class ParallelContextCollector():
 
             target = self.config.get('collect_initial_steps', 1000)
             collected = 0
-            stats = ray.get(self.replay_buffer.collect.remote(
-                min_batches=0, enable_wait=False))
-            delta = stats['steps_collected_now']
-            if delta:
-                collected = delta
 
             with tqdm(initial=collected, total=target, disable=not do_tqdm, desc="Initial buffer fill") as pbar:
                 while collected < target:
