@@ -262,20 +262,26 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
     if delta_first_std is not None:
         loss = loss / delta_first_std.pow(2)
 
+    loss = loss.sum(1)
+
     if add_fcons:  # ensure that model(f) ~ f_t1
-        f_next_pred = model(decoder(obs_x).detach(), action_x, all=True, **model_forward_kwargs)
-        f_next_pred = f_next_pred[:, :model.n_features]
-        f_next_true = decoder(obs_y).detach()
+        f_next_pred = f_t1_f #model(decoder(obs_x).detach(), action_x, all=True, **model_forward_kwargs)
+        #f_next_pred = f_next_pred[:, :model.n_features]
+        f_next_true = decoder(obs_y)#.detach()
         loss_fcons = (f_next_pred - f_next_true).pow(2)
-        loss_fcons = torch.cat([loss_fcons, torch.zeros_like(add_features_y)], dim=1)
-        loss = loss + loss_fcons
+        if divide_by_std:
+            delta_fcons_std = f_next_true.std(0).unsqueeze(0)
+            delta_fcons_std = torch.where(delta_fcons_std < std_eps, torch.ones_like(delta_fcons_std), delta_fcons_std)
+            loss_fcons = loss_fcons / delta_fcons_std.pow(2)
+        loss += loss_fcons.sum(1)
+
     else:
         loss_fcons = None
 
     if fill_switch_grad:
-        manual_switch_gradient(loss.sum(1), model)
+        manual_switch_gradient(loss, model)
         
-    loss = loss.sum(1).mean(0)        
+    loss = loss.mean(0)        
 
     metrics = {'mean_feature': f_t1_pred.mean(0).detach().cpu().numpy(),
                'std_feature': f_t1_pred.std(0).detach().cpu().numpy(),

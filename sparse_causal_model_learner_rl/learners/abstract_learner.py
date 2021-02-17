@@ -342,7 +342,9 @@ class AbstractLearner(ABC):
                     loss = self.config['losses'][loss_label]
                     value = loss['fcn'](**context, opt_label=opt_label)
                     if isinstance(value, dict):
-                        epoch_info['metrics'].update(value.get('metrics', {}))
+                        if loss_label not in epoch_info['metrics']:
+                            epoch_info['metrics'][loss_label] = {}
+                        epoch_info['metrics'][loss_label] = value.get('metrics', {})
                         value = value['loss']
                     coeff = loss['coeff']
                     epoch_info['losses'][f"{opt_label}/{loss_label}/coeff"] = coeff
