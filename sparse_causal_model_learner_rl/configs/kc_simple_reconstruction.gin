@@ -24,7 +24,7 @@ tune_run.num_samples = 1
 
 Config.loss_every = 1000000000000000
 
-model_gnn/FCCombinedModel.hidden_sizes = [100, 100, 100]
+model_gnn/FCCombinedModel.hidden_sizes = [300, 300, 300]  # tuning...
 model_gnn/FCCombinedModel.activation_cls = @LeakyReLU
 
 WithInputSwitch.give_mask = True
@@ -56,14 +56,14 @@ Config.non_sparse_model = @non_sparse_model/ManyNetworkCombinedModel
 Config.reconstructor = @ModelReconstructor
 
 ModelReconstructor.model_cls = @reconstructor/FCCombinedModel
-reconstructor/FCCombinedModel.hidden_sizes = [64, 5]
-reconstructor/FCCombinedModel.activation_cls = [@Tanh, @Tanh, None]
+reconstructor/FCCombinedModel.hidden_sizes = [64, 5] # need a list of coordinates act(x-xi). 5 to prevent slow fit
+reconstructor/FCCombinedModel.activation_cls = [@Tanh, @LeakyReLU, None]
 reconstructor/FCCombinedModel.add_input_batchnorm = True
 reconstructor/FCCombinedModel.input_reshape = True
 
 
-decoder/FCNet.hidden_sizes = [1024]
-decoder/FCNet.activation_cls = @Tanh
+decoder/FCNet.hidden_sizes = [128]  # should be enough -- just need to sum the coordinate actually
+decoder/FCNet.activation_cls = @LeakyReLU
 decoder/FCNet.add_input_batchnorm = True
 ModelDecoder.model_cls = @decoder/FCNet
 ModelDecoder.use_batchnorm = False
