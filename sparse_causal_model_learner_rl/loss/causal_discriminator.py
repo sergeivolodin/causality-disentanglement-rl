@@ -191,5 +191,5 @@ def siamese_feature_discriminator_l2(obs, decoder, obs_delta_eps=1e-3,
     
     return {'loss': loss.mean() / margin + loss_max_dist.mean() / max_dist,
             'metrics': {'distance_close': distance_f[target_close].mean().item(),
-                        'distance_far': distance_f[~target_close].mean().item()}
+                        'distance_far': distance_f[~target_close].mean().item(),}
             }
