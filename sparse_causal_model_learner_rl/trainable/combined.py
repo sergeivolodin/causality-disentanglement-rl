@@ -67,9 +67,16 @@ class FCCombinedModel(AbstractCombinedModel):
                  input_reshape=False,
                  add_input_batchnorm=False,
                  **kwargs):
-        super(FCCombinedModel, self).__init__(**kwargs)
         self.hidden_sizes = hidden_sizes
         self.input_reshape = input_reshape
+
+        if self.input_reshape:
+            assert len(kwargs['output_shape']) == 1
+            kwargs['n_models'] = kwargs['output_shape'][0]
+            kwargs['output_shape'] = (1,)
+
+        super(FCCombinedModel, self).__init__(**kwargs)
+
         if callable(activation_cls):
             self.activation = [activation_cls()] * len(self.hidden_sizes) + [None]
         elif isinstance(activation_cls, list):
@@ -83,6 +90,7 @@ class FCCombinedModel(AbstractCombinedModel):
         assert len(self.activation) == len(self.hidden_sizes) + 1, (self.activation,
                                                                     self.hidden_sizes)
         self.dims = [self.input_dim] + self.hidden_sizes + [self.output_dim]
+        print(self.dims, self.n_models)
         self.fc = []
         for i in range(1, len(self.dims)):
             self.fc.append(
