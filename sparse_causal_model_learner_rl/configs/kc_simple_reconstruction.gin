@@ -207,7 +207,7 @@ Config.metrics_every = 5
 
 tune_run.resources_per_trial = {'gpu': 0.1, 'cpu': 1}
 
-Config.graph_every = 20
+Config.graph_every = 1000#20
 
 plot_model.vmin = -1.0
 plot_model.vmax = 1.0
