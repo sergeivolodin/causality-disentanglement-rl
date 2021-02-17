@@ -20,7 +20,7 @@ import sparse_causal_model_learner_rl.visual.learner_visual
 import sparse_causal_model_learner_rl.trainable.combined
 include 'rec_nonlin_gnn.gin'
 
-tune_run.num_samples = 2
+tune_run.num_samples = 1
 
 Config.loss_every = 1000000000000000
 
@@ -111,8 +111,6 @@ smooth.do_log = True
 fit_loss_smooth/smooth.orig_key = '/fit/value'
 non_sparse_fit_loss_smooth/smooth.orig_key = '/non_sparse_fit/value'
 
-fit_loss.divide_by_std = False
-
 mult_sparsity_gap.sparse_key = 'fit_loss_smooth'
 mult_sparsity_gap.non_sparse_key = 'non_sparse_fit_loss_smooth'
 
@@ -138,6 +136,9 @@ Config.losses = {'fit': {'fcn': @fit/fit_loss, 'coeff': 1.0},
                  'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 1.0},
                  'fit_all_on': {'fcn': @all_on/fit_loss, 'coeff': 1.0},
                 }
+
+reconstruction_loss.relative = True
+fit_loss.divide_by_std = True
 
 fit/fit_loss.fill_switch_grad = True
 

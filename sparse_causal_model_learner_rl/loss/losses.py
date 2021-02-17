@@ -4,11 +4,29 @@ import gin
 import numpy as np
 from .helpers import gather_additional_features
 
+@gin.configurable
+def MSERelative(pred, target, eps=1e-6):
+    """Relative MSE loss."""
+    ds_rec_obs = rec(decoder(ds_obs))
+    delta = pred - target
+    delta_magnitude = target.std(0).unsqueeze(0)
+        
+    delta_magnitude = torch.where(delta_magnitude < eps,
+                                  torch.ones_like(delta_magnitude),
+                                  delta_magnitude)
+    
+    delta = delta / delta_magnitude    
+    delta = delta.pow(2).sum(1).mean()
+    return delta
+    
 
 @gin.configurable
-def reconstruction_loss(obs, decoder, reconstructor, **kwargs):
+def reconstruction_loss(obs, decoder, reconstructor, relative=False, **kwargs):
     """Ensure that the decoder is not degenerate by fitting a reconstructor."""
-    mse = torch.nn.MSELoss()
+    if relative:
+        mse = MSERelative
+    else:
+        mse = torch.nn.MSELoss()
     return mse(reconstructor(decoder(obs)), obs)
 
 def square(t):
@@ -107,7 +125,7 @@ def fit_loss(obs_x, obs_y, action_x, decoder, model, additional_feature_keys,
              fill_switch_grad=False,
              opt_label=None,
              divide_by_std=True,
-             std_eps=0.05,
+             std_eps=1e-6,
              **kwargs):
     """Ensure that the model fits the features data."""
 
@@ -124,8 +142,10 @@ def fit_loss(obs_x, obs_y, action_x, decoder, model, additional_feature_keys,
         f_t1 = torch.cat([f_t1, add_features_y], dim=1)
 
     if divide_by_std:
-        f_t1_std = (fit_loss_median_std.forward(f_t1, save=opt_label is not None).view(1, -1))
-        f_t1_std = torch.max(torch.ones_like(f_t1_std) * std_eps, f_t1_std).detach()
+#         f_t1_std = (fit_loss_median_std.forward(f_t1, save=opt_label is not None).view(1, -1))
+#         f_t1_std = torch.max(torch.ones_like(f_t1_std) * std_eps, f_t1_std).detach()
+        f_t1_std = f_t1.std(0).unsqueeze(0)
+        f_t1_std = torch.where(f_t1_std < eps, torch.ones_like(f_t1_std), f_t1_std)
     else:
         f_t1_std = None
         
