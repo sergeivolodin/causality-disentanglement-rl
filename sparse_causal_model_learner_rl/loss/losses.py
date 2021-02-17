@@ -104,9 +104,15 @@ def manual_switch_gradient(loss_delta_noreduce, model, eps=1e-5):
     """
     mask = model.model.last_mask
     input_dim = model.n_features + model.n_actions
+    output_dim = model.n_features + model.n_additional_features
 
     delta = loss_delta_noreduce
-    delta_expanded = delta.view(delta.shape[0], 1, delta.shape[1]).expand(-1, input_dim, -1)
+
+    # if have two dimensions, assuming delta in the form of (batch, n_output_features)
+    if len(delta.shape) == 2:
+        delta_expanded = delta.view(delta.shape[0], 1, delta.shape[1]).expand(-1, input_dim, -1)
+    elif len(delta.shape) == 1:  # assuming shape (batch, )
+        delta_expanded = delta.view(delta.shape[0], 1, 1).expand(-1, input_dim, output_dim)
     mask_coeff = (mask - 0.5) * 2
 
     mask_pos = mask
@@ -208,6 +214,84 @@ def fit_loss(obs_x, obs_y, action_x, decoder, model, additional_feature_keys,
         metrics['rec_fit_y'] = loss_rec_y.item()
 
 
+    return {'loss': loss,
+            'metrics': metrics}
+
+@gin.configurable
+def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_feature_keys,
+             reconstructor,
+             model_forward_kwargs=None,
+             fill_switch_grad=False,
+             opt_label=None,
+             add_fcons=True,
+             divide_by_std=True,
+             std_eps=1e-6,
+             **kwargs):
+    """Ensure that the model fits the features data."""
+
+    if model_forward_kwargs is None:
+        model_forward_kwargs = {}
+    
+    have_additional = False
+    if additional_feature_keys:
+        have_additional = True
+        add_features_y = gather_additional_features(additional_feature_keys=additional_feature_keys,
+                                                    **kwargs)
+
+        
+    f_t1_pred = model(decoder(obs_x), action_x, all=have_additional, **model_forward_kwargs)
+    f_t1_f = f_t1_pred[:, :model.n_features]
+    obs_y_pred = reconstructor(f_t1_f)
+    delta_first = obs_y.flatten(start_dim=1)
+    delta_second = obs_y_pred.flatten(start_dim=1)
+
+    if additional_feature_keys:
+        f_t1_fadd = f_t1_pred[:, model.n_features:]
+        delta_first = torch.cat([delta_first, add_features_y], dim=1)
+        delta_second = torch.cat([delta_second, f_t1_fadd], dim=1)
+    
+    delta = delta_first - delta_second
+
+    if divide_by_std:
+        delta_first_std = delta_first.std(0).unsqueeze(0)
+        delta_first_std = torch.where(delta_first_std < std_eps, torch.ones_like(delta_first_std), delta_first_std)
+    else:
+        delta_first_std = None
+
+    loss = delta.pow(2)
+    if delta_first_std is not None:
+        loss = loss / delta_first_std.pow(2)
+
+    loss = loss.sum(1)
+
+    if add_fcons:  # ensure that model(f) ~ f_t1
+        f_next_pred = f_t1_f #model(decoder(obs_x).detach(), action_x, all=True, **model_forward_kwargs)
+        #f_next_pred = f_next_pred[:, :model.n_features]
+        f_next_true = decoder(obs_y)#.detach()
+        loss_fcons = (f_next_pred - f_next_true).pow(2)
+        if divide_by_std:
+            delta_fcons_std = f_next_true.std(0).unsqueeze(0)
+            delta_fcons_std = torch.where(delta_fcons_std < std_eps, torch.ones_like(delta_fcons_std), delta_fcons_std)
+            loss_fcons = loss_fcons / delta_fcons_std.pow(2)
+        loss += loss_fcons.sum(1)
+
+    else:
+        loss_fcons = None
+
+    if fill_switch_grad:
+        manual_switch_gradient(loss, model)
+        
+    loss = loss.mean(0)        
+
+    metrics = {'mean_feature': f_t1_pred.mean(0).detach().cpu().numpy(),
+               'std_feature': f_t1_pred.std(0).detach().cpu().numpy(),
+               'min_feature': f_t1_pred.min().item(),
+               'max_feature': f_t1_pred.max().item(),
+               'loss_fcons': loss_fcons.sum(1).mean(0).item() if loss_fcons is not None else 0.0,
+               'std_obs_avg': delta_first_std.detach().cpu().numpy() if delta_first_std is not None else 0.0,
+               'inv_std_obs_avg': delta_first_std.detach().cpu().numpy() if delta_first_std is not None else 0.0}
+    metrics['rec_fit_acc_01_agg'] = delta_01_obs(obs_y, obs_y_pred).item()
+    
     return {'loss': loss,
             'metrics': metrics}
 
