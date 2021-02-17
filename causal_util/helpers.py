@@ -8,6 +8,11 @@ import logging
 import pickle
 import io
 
+def set_default_logger_level(level):
+    """Set the verbosity level of the default logger."""
+    logging.basicConfig()
+    logging.getLogger().setLevel(level)
+
 
 class CPU_Unpickler(pickle.Unpickler):
     """Unpickle GPU learner into CPU."""

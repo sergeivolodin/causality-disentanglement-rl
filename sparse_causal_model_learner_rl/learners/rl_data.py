@@ -205,6 +205,7 @@ class ExperienceReplayBuffer():
         self.buffer_write_idx = {}
         self.steps_sampled = 0
         self.steps_collected = 0
+        return {'info': 'buffer cleaned'}
 
     def collected_sampled_ratio(self, eps=1e-3):
         if self.steps_sampled == 0:
@@ -375,10 +376,18 @@ class ParallelContextCollector():
 
     def collect_initial(self, do_tqdm=True):
         if self.n_collectors == 0:
+            # resetting the local buffer
+            info = self.replay_buffer.reset()
+            logging.info(f"Buffer reset response: {info}")
+
             for _ in tqdm(range(self.future_batch_size),
                           disable=not do_tqdm, desc="Initial buffer fill [local]"):
                 self.replay_buffer.collect_local(self.rl_context)
         else:
+            # resetting the remote buffer
+            info = ray.get(self.replay_buffer.reset.remote())
+            logging.info(f"Buffer reset response: {info}")
+
             target = self.config.get('collect_initial_steps', 1000)
             collected = 0
             with tqdm(total=target, disable=not do_tqdm, desc="Initial buffer fill") as pbar:

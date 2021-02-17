@@ -11,6 +11,7 @@ import gin
 import sys
 from sparse_causal_model_learner_rl.config import Config
 from sparse_causal_model_learner_rl.sacred_gin_tune.sacred_wrapper import load_config_files, main_fcn, learner_gin_sacred
+from causal_util.helpers import set_default_logger_level
 
 parser = argparse.ArgumentParser(description="Causal learning experiment")
 parser.add_argument('--config', type=str, required=True, action='append')
@@ -37,8 +38,7 @@ if __name__ == '__main__':
 
     if args.nowrap:
         # useful for debugging/testing
-        logging.basicConfig()
-        logging.getLogger().setLevel(logging.DEBUG)
+        set_default_logger_level(logging.DEBUG)
         load_config_files(config)
         gin.finalize()
         config = Config()
