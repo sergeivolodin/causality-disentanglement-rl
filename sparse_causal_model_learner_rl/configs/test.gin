@@ -50,3 +50,5 @@ Config.optimizers = {'opt1': @opt1/Optimizer}
 Config.execution = {'opt1': ['reconstruction', 'fit', 'sparsity']}
 
 LinearModel.use_bias = False
+
+fit_loss.report_rec_y = False

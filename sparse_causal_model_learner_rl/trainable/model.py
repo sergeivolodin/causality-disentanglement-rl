@@ -20,6 +20,9 @@ class Model(nn.Module):
         if len(self.additional_feature_shape) == 0:
             self.additional_feature_shape = (1,)
 
+        if len(self.feature_shape) == 1:
+            self.n_features = self.feature_shape[0]
+
     def forward(self, f_t, a_t, additional=False, all=False):
         return NotImplementedError
 
