@@ -91,21 +91,21 @@ Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer, 'opt3': @
 LOSSES_OTHER = ['fit', 'fit_all_on', 'non_sparse_fit', 'reconstruction']
 LOSSES_SPARSE = ['sparsity', 'fit']
 #LOSSES_ALL = ['fit', 'fit_all_on', 'non_sparse_fit', 'reconstruction', 'sparsity']
-LOSSES_ALL = ['reconstruction']
+LOSSES_ALL = ['reconstruction', 'non_sparse_fit']
 
 Config.execution = {'opt1': %LOSSES_ALL,
-                    'opt2': %LOSSES_ALL,
-                    'opt3': %LOSSES_ALL,
+                    #'opt2': %LOSSES_ALL,
+                    #'opt3': %LOSSES_ALL,
                     #'opt4': ['discriminate_siamese', 'non_sparse_fit'], # w/o sparsity, only model (for fit)
                     #'opt5': ['fit', 'fit_all_on'],
                     }
-Config.optim_params = {'opt1': ['model.switch__params'], # switch learning
-                       'opt2': ['model', 'decoder', 'reconstructor'], # representation learning
-                       'opt3': ['non_sparse_model'], # reference model learning
+Config.optim_params = {'opt1': ['model', 'non_sparse_model', 'decoder', 'reconstructor'], # switch learning
+                       #'opt2': ['decoder', 'reconstructor'], # representation learning
+                       #'opt3': ['non_sparse_model'], # reference model learning
                        #'opt4': ['decoder'], # representation learning
                        #'opt5': ['model.model__params'],
                        }
-Config.opt_iterations = {'opt1': 1, 'opt2': 2, 'opt3': 5}#, 'opt4': 6, 'opt5': 4,}
+Config.opt_iterations = {'opt1': 2}#, 'opt2': 2, 'opt3': 5}#, 'opt4': 6, 'opt5': 4,}
 
 smooth.smooth_steps = 20
 smooth.do_log = True
