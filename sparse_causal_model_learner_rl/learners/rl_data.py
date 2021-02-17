@@ -207,7 +207,9 @@ class ExperienceReplayBuffer():
         self.steps_collected = 0
 
     def collected_sampled_ratio(self, eps=1e-3):
-        return 1. * self.steps_collected / (self.steps_sampled + eps)
+        if self.steps_sampled == 0:
+            return 1.
+        return 1. * self.steps_collected / self.steps_sampled
 
     def collect_one_iteration(self, min_batches=1):
         while len(self.next_episode_refs) < max(min_batches, self.future_episode_size):

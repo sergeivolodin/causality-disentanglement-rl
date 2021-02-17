@@ -7,7 +7,6 @@ from .helpers import gather_additional_features
 @gin.configurable
 def MSERelative(pred, target, eps=1e-6):
     """Relative MSE loss."""
-    ds_rec_obs = rec(decoder(ds_obs))
     delta = pred - target
     delta_magnitude = target.std(0).unsqueeze(0)
         
@@ -18,16 +17,46 @@ def MSERelative(pred, target, eps=1e-6):
     delta = delta / delta_magnitude    
     delta = delta.pow(2).sum(1).mean()
     return delta
-    
 
+def thr_half(tensor):
+    """Get the middle between min/max over batch dimension."""
+    m = tensor.min(0, keepdim=True).values
+    M = tensor.max(0, keepdim=True).values
+    return m, (M - m) / 2.0
+    
+def delta_01_obs(obs, rec_dec_obs):
+    """Compute accuracy between observations and reconstructed observations."""
+    m1, d1 = thr_half(obs)
+    thr1 = m1 + d1
+    
+    m2, d2 = thr_half(rec_dec_obs)
+    thr2 = m2 + d2
+    
+    delta_01 = 1. * ((obs > thr1) == (rec_dec_obs > thr2))
+    delta_01 = torch.where(d1.repeat(obs.shape[0], 1) != 0,
+                           delta_01, torch.ones_like(delta_01))
+    delta_01_agg = delta_01.mean(1).mean(0)
+    return delta_01_agg
+    
 @gin.configurable
-def reconstruction_loss(obs, decoder, reconstructor, relative=False, **kwargs):
+def reconstruction_loss(obs, decoder, reconstructor, relative=False,
+                        report_01=True,
+                        **kwargs):
     """Ensure that the decoder is not degenerate by fitting a reconstructor."""
     if relative:
         mse = MSERelative
     else:
         mse = torch.nn.MSELoss()
-    return mse(reconstructor(decoder(obs)), obs)
+        
+    rec_dec_obs = reconstructor(decoder(obs))
+    metrics = {}
+    loss = mse(rec_dec_obs, obs)
+    
+    if report_01:
+        metrics['rec_acc_01_agg'] = delta_01_obs(obs, rec_dec_obs).item()
+        
+    return {'loss': loss,
+            'metrics': metrics}
 
 def square(t):
     """Torch.square compat."""
@@ -67,7 +96,7 @@ def reconstruction_loss_value_function_reward_to_go(obs_x, decoder, value_predic
     return mse(value_predictor(decoder(obs_x)), reward_to_go * value_scaler)
 
 @gin.configurable
-def manual_switch_gradient(f_t1, f_t1_pred, model, f_t1_std=None, eps=1e-5):
+def manual_switch_gradient(loss_delta_noreduce, model, eps=1e-5):
     """Fill in the gradient of switch probas manually
 
     Assuming that the batch size is enough to estimate mean loss with
@@ -75,10 +104,8 @@ def manual_switch_gradient(f_t1, f_t1_pred, model, f_t1_std=None, eps=1e-5):
     """
     mask = model.model.last_mask
     input_dim = model.n_features + model.n_actions
-    delta = (f_t1 - f_t1_pred).pow(2)
-    if f_t1_std is not None:
-        delta = delta / f_t1_std.pow(2)
 
+    delta = loss_delta_noreduce
     delta_expanded = delta.view(delta.shape[0], 1, delta.shape[1]).expand(-1, input_dim, -1)
     mask_coeff = (mask - 0.5) * 2
 
@@ -117,10 +144,11 @@ class MedianStd():
         return med
     
 fit_loss_median_std = MedianStd()
-    
 
 @gin.configurable
 def fit_loss(obs_x, obs_y, action_x, decoder, model, additional_feature_keys,
+             reconstructor,
+             report_rec_y=True,
              model_forward_kwargs=None,
              fill_switch_grad=False,
              opt_label=None,
@@ -145,7 +173,7 @@ def fit_loss(obs_x, obs_y, action_x, decoder, model, additional_feature_keys,
 #         f_t1_std = (fit_loss_median_std.forward(f_t1, save=opt_label is not None).view(1, -1))
 #         f_t1_std = torch.max(torch.ones_like(f_t1_std) * std_eps, f_t1_std).detach()
         f_t1_std = f_t1.std(0).unsqueeze(0)
-        f_t1_std = torch.where(f_t1_std < eps, torch.ones_like(f_t1_std), f_t1_std)
+        f_t1_std = torch.where(f_t1_std < std_eps, torch.ones_like(f_t1_std), f_t1_std)
     else:
         f_t1_std = None
         
@@ -153,13 +181,14 @@ def fit_loss(obs_x, obs_y, action_x, decoder, model, additional_feature_keys,
 
     f_t1_pred = model(decoder(obs_x), action_x, all=have_additional, **model_forward_kwargs)
 
-    if fill_switch_grad:
-        manual_switch_gradient(f_t1, f_t1_pred, model, f_t1_std=f_t1_std)
-
     loss = (f_t1_pred - f_t1).pow(2)
     if f_t1_std is not None:
         loss = loss / f_t1_std.pow(2)
-    loss = loss.mean(1).mean()
+
+    if fill_switch_grad:
+        manual_switch_gradient(loss, model)
+        
+    loss = loss.mean(1).mean()        
 
     metrics = {'mean_feature': f_t1.mean(0).detach().cpu().numpy(),
                'std_feature': f_t1.std(0).detach().cpu().numpy(),
@@ -167,6 +196,17 @@ def fit_loss(obs_x, obs_y, action_x, decoder, model, additional_feature_keys,
                'max_feature': f_t1.max().item(),
                'std_feature_avg': f_t1_std.detach().cpu().numpy() if f_t1_std is not None else 0.0,
                'inv_std_feature_avg': 1/f_t1_std.detach().cpu().numpy() if f_t1_std is not None else 0.0}
+    
+    if reconstructor is not None and report_rec_y:
+        rec_obs_y = reconstructor(f_t1_pred[:, :model.n_features])
+        metric_01 = delta_01_obs(obs_y, rec_obs_y)
+        loss_rec_y = (rec_obs_y - obs_y).pow(2)
+        if f_t1_std is not None:
+            loss_rec_y = loss_rec_y / f_t1_std.pow(2)
+        loss_rec_y = loss_rec_y.sum(1).mean()
+        metrics['rec_fit_y_acc'] = metric_01.item()
+        metrics['rec_fit_y'] = loss_rec_y.item()
+
 
     return {'loss': loss,
             'metrics': metrics}

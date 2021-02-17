@@ -61,12 +61,12 @@ Config.non_sparse_model = @non_sparse_model/ManyNetworkCombinedModel
 Config.reconstructor = @ModelReconstructor
 
 ModelReconstructor.model_cls = @reconstructor/FCNet
-reconstructor/FCNet.hidden_sizes = [693]
+reconstructor/FCNet.hidden_sizes = [50, 693]
 reconstructor/FCNet.activation_cls = @Tanh
 reconstructor/FCNet.add_input_batchnorm = True
 
 
-decoder/FCNet.hidden_sizes = [50]
+decoder/FCNet.hidden_sizes = [693, 50]
 decoder/FCNet.activation_cls = @Tanh
 decoder/FCNet.add_input_batchnorm = True
 ModelDecoder.model_cls = @decoder/FCNet
@@ -90,7 +90,8 @@ Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer, 'opt3': @
 
 LOSSES_OTHER = ['fit', 'fit_all_on', 'non_sparse_fit', 'reconstruction']
 LOSSES_SPARSE = ['sparsity', 'fit']
-LOSSES_ALL = ['fit', 'fit_all_on', 'non_sparse_fit', 'reconstruction', 'sparsity']
+#LOSSES_ALL = ['fit', 'fit_all_on', 'non_sparse_fit', 'reconstruction', 'sparsity']
+LOSSES_ALL = ['reconstruction']
 
 Config.execution = {'opt1': %LOSSES_ALL,
                     'opt2': %LOSSES_ALL,
@@ -104,7 +105,7 @@ Config.optim_params = {'opt1': ['model.switch__params'], # switch learning
                        #'opt4': ['decoder'], # representation learning
                        #'opt5': ['model.model__params'],
                        }
-Config.opt_iterations = {'opt1': 1, 'opt2': 4, 'opt3': 5}#, 'opt4': 6, 'opt5': 4,}
+Config.opt_iterations = {'opt1': 1, 'opt2': 2, 'opt3': 5}#, 'opt4': 6, 'opt5': 4,}
 
 smooth.smooth_steps = 20
 smooth.do_log = True
@@ -121,9 +122,9 @@ Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
                   'episode_reward': @episode_reward,
                   'graph_entropy_ma': @entropy_action,
                   'graph_entropy_mf': @entropy_features,
-                  'threshold_annealer_threshold': @threshold_annealer_threshold,
-                  'fit_loss_smooth': @fit_loss_smooth/smooth,
-                  'non_sparse_fit_loss_smooth': @non_sparse_fit_loss_smooth/smooth,
+                 # 'threshold_annealer_threshold': @threshold_annealer_threshold,
+                  #'fit_loss_smooth': @fit_loss_smooth/smooth,
+                  #'non_sparse_fit_loss_smooth': @non_sparse_fit_loss_smooth/smooth,
                   '|last_mult_sparsity_gap': @mult_sparsity_gap}
 
 MIN_HYPER_ANNEAL = 1e-9
@@ -180,7 +181,7 @@ ModelResetter.reset_weights = False
 ModelResetter.reset_logits = False
 ModelResetter.reset_turn_on = False
 
-Config._update_function = [@AnnealerThresholdSelector, @ThresholdAnnealer, @ModelResetter]
+Config._update_function = []#@AnnealerThresholdSelector, @ThresholdAnnealer, @ModelResetter]
 
 ThresholdAnnealer.adjust_every = 100
 ThresholdAnnealer.factor_cool = 0.5
