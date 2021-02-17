@@ -129,24 +129,24 @@ Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
 
 MIN_HYPER_ANNEAL = 1e-9
 
-all_on/fit_loss.model_forward_kwargs = {'enable_switch': False}
+all_on/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': False}
 
-Config.losses = {'fit': {'fcn': @fit/fit_loss, 'coeff': 1.0},
+Config.losses = {'fit': {'fcn': @fit/fit_loss_obs_space, 'coeff': 1.0},
                  'sparsity': {'fcn': @sparsity_loss, 'coeff': %MIN_HYPER_ANNEAL},
                  'non_sparse_fit': {'fcn': @non_sparse_fit_loss/context_rewriter, 'coeff': 1},
                  'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 1.0},
-                 'fit_all_on': {'fcn': @all_on/fit_loss, 'coeff': 1.0},
+                 'fit_all_on': {'fcn': @all_on/fit_loss_obs_space, 'coeff': 1.0},
                 }
 
 reconstruction_loss.relative = True
-fit_loss.divide_by_std = True
+fit_loss_obs_space.divide_by_std = True
 
-fit/fit_loss.fill_switch_grad = True
+fit/fit_loss_obs_space.fill_switch_grad = True
 
 nonzero_proba_loss.eps = 0.5
 nonzero_proba_loss.do_abs = False
 
-non_sparse_fit_loss/context_rewriter.function = @fit_loss
+non_sparse_fit_loss/context_rewriter.function = @fit_loss_obs_space
 non_sparse_fit_loss/context_rewriter.rewrite = {'model': 'non_sparse_model'}
 
 ThresholdAnnealer.source_metric_key = 'fit_loss_smooth'
@@ -193,7 +193,7 @@ AnnealerThresholdSelector.multiplier = 5
 AnnealerThresholdSelector.adjust_every = 20
 AnnealerThresholdSelector.source_fit_loss_key = 'non_sparse_fit_loss_smooth'
 
-turn_on_features.loss_fcn = @fit_loss
+turn_on_features.loss_fcn = @fit_loss_obs_space
 
 # normalize input data
 Normalizer.once = True
