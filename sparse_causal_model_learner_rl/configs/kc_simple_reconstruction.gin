@@ -24,8 +24,8 @@ tune_run.num_samples = 1
 
 Config.loss_every = 1000000000000000
 
-model_gnn/FCCombinedModel.hidden_sizes = [100, 100, 100]
-model_gnn/FCCombinedModel.activation_cls = @ReLU
+model_gnn/FCCombinedModel.hidden_sizes = [300, 300, 300]  # tuning...
+model_gnn/FCCombinedModel.activation_cls = @LeakyReLU
 
 WithInputSwitch.give_mask = True
 WithInputSwitch.model_cls = @model_gnn/FCCombinedModel
@@ -56,14 +56,14 @@ Config.non_sparse_model = @non_sparse_model/ManyNetworkCombinedModel
 Config.reconstructor = @ModelReconstructor
 
 ModelReconstructor.model_cls = @reconstructor/FCCombinedModel
-reconstructor/FCCombinedModel.hidden_sizes = [64]
-reconstructor/FCCombinedModel.activation_cls = [@Tanh, None]
+reconstructor/FCCombinedModel.hidden_sizes = [64, 5] # need a list of coordinates act(x-xi). 5 to prevent slow fit
+reconstructor/FCCombinedModel.activation_cls = [@Tanh, @LeakyReLU, None]
 reconstructor/FCCombinedModel.add_input_batchnorm = True
 reconstructor/FCCombinedModel.input_reshape = True
 
 
-decoder/FCNet.hidden_sizes = [1024]
-decoder/FCNet.activation_cls = @Tanh
+decoder/FCNet.hidden_sizes = [128]  # should be enough -- just need to sum the coordinate actually
+decoder/FCNet.activation_cls = @LeakyReLU
 decoder/FCNet.add_input_batchnorm = True
 ModelDecoder.model_cls = @decoder/FCNet
 ModelDecoder.use_batchnorm = False
@@ -82,7 +82,7 @@ opt4/Optimizer.lr = 1e-3
 opt5/Optimizer.name = 'Adam'
 opt5/Optimizer.lr = 1e-3
 
-Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer, 'opt3': @opt3/Optimizer}#, 'opt4': @opt4/Optimizer, 'opt5': @opt5/Optimizer}
+Config.optimizers = {'opt1': @opt1/Optimizer}#, 'opt2': @opt2/Optimizer, 'opt3': @opt3/Optimizer}#, 'opt4': @opt4/Optimizer, 'opt5': @opt5/Optimizer}
 
 LOSSES_OTHER = ['fit', 'fit_all_on', 'non_sparse_fit', 'reconstruction']
 LOSSES_SPARSE = ['sparsity', 'fit']
@@ -207,7 +207,7 @@ Config.metrics_every = 5
 
 tune_run.resources_per_trial = {'gpu': 0.1, 'cpu': 1}
 
-Config.graph_every = 20
+Config.graph_every = 1000#20
 
 plot_model.vmin = -1.0
 plot_model.vmax = 1.0

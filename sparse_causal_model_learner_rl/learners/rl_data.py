@@ -390,7 +390,13 @@ class ParallelContextCollector():
 
             target = self.config.get('collect_initial_steps', 1000)
             collected = 0
-            with tqdm(total=target, disable=not do_tqdm, desc="Initial buffer fill") as pbar:
+            stats = ray.get(self.replay_buffer.collect.remote(
+                min_batches=0, enable_wait=False))
+            delta = stats['steps_collected_now']
+            if delta:
+                collected = delta
+
+            with tqdm(initial=collected, total=target, disable=not do_tqdm, desc="Initial buffer fill") as pbar:
                 while collected < target:
                     stats = ray.get(self.replay_buffer.collect.remote(
                         min_batches=0, enable_wait=False))
