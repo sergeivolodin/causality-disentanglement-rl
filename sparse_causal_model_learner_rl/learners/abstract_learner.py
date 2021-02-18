@@ -75,7 +75,7 @@ class AbstractLearner(ABC):
         self.config.update_communicator()
 
     # attributes to save to pickle files
-    PICKLE_DIRECTLY = ['history', 'epochs', 'epoch_info', 'config']
+    PICKLE_DIRECTLY = ['history', 'epochs', 'epoch_info', 'config', 'normalizers']
 
 
     def create_trainables(self):
@@ -211,7 +211,8 @@ class AbstractLearner(ABC):
             self.trainables[key].load_state_dict(dct['trainables_weights'][key])
 
     def __getstate__(self):
-        result = {k: getattr(self, k) for k in self.PICKLE_DIRECTLY}
+        result = {k: getattr(self, k) for k in self.PICKLE_DIRECTLY
+                  if hasattr(self, k)}
         result['trainables_weights'] = {k: v.state_dict() for k, v in self.trainables.items()}
         result['gin_config'] = gin.config_str()
         return result

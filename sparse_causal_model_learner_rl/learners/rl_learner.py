@@ -53,7 +53,6 @@ class CausalModelLearnerRL(AbstractLearner):
             self.remote_rl_context = ParallelContextCollector(config=self.config)
         self.shuffle_together = get_shuffle_together(self.config)
 
-
     def collect_steps(self):
         raise NotImplementedError("Use collect_and_get_context")
 

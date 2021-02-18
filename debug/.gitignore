@@ -1,4 +1,5 @@
 runs
+checkpoint
 mnist
 experiment_state*.json
 hall_of_fame*
