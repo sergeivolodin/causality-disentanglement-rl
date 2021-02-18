@@ -34,7 +34,7 @@ LearnableSwitch.sample_many = True
 LearnableSwitch.sample_threshold = 0.9 # after this value, always sample 1 to prevent vanishing grads
 
 Config.env_steps = 5000
-Config.collect_every = 5
+Config.collect_every = 1
 Config.batch_training = False
 Config.shuffle = False
 
