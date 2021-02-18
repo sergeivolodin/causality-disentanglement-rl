@@ -38,6 +38,7 @@ Config.collect_every = 10
 Config.batch_training = False
 Config.shuffle = False
 
+Config.decoder = @IdentityDecoder
 Config.reconstructor = None
 
 WithInputSwitch.switch_cls = @LearnableSwitchSimple
@@ -85,7 +86,8 @@ Config.optimizers = {'opt1': @opt1/Optimizer}#, 'opt2': @opt2/Optimizer, 'opt3':
 
 LOSSES_OTHER = ['fit', 'fit_all_on', 'non_sparse_fit', 'reconstruction']
 LOSSES_SPARSE = ['sparsity', 'fit']
-LOSSES_ALL = ['fit', 'fit_all_on', 'non_sparse_fit', 'reconstruction', 'sparsity']
+#LOSSES_ALL = ['fit', 'fit_all_on', 'non_sparse_fit', 'reconstruction', 'sparsity']
+LOSSES_ALL = ['reconstruction', 'non_sparse_fit']
 
 Config.execution = {'opt1': %LOSSES_ALL,
                     #'opt2': %LOSSES_ALL,
@@ -110,16 +112,16 @@ mult_sparsity_gap.sparse_key = 'fit_loss_smooth'
 mult_sparsity_gap.non_sparse_key = 'non_sparse_fit_loss_smooth'
 
 # using vanilla fit loss
-Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
-                  'threshold_features': @threshold_features, 'max_element_ma': @max_element_ma,
-                  'max_element_mf': @max_element_mf,
+Config.metrics = {#'nnz': @nnz, 'threshold_action': @threshold_action,
+                  #'threshold_features': @threshold_features, 'max_element_ma': @max_element_ma,
+                  #'max_element_mf': @max_element_mf,
                   'episode_reward': @episode_reward,
-                  'graph_entropy_ma': @entropy_action,
-                  'graph_entropy_mf': @entropy_features,
-                  'threshold_annealer_threshold': @threshold_annealer_threshold,
-                  'fit_loss_smooth': @fit_loss_smooth/smooth,
-                  'non_sparse_fit_loss_smooth': @non_sparse_fit_loss_smooth/smooth,
-                  '|last_mult_sparsity_gap': @mult_sparsity_gap
+                  #'graph_entropy_ma': @entropy_action,
+                  #'graph_entropy_mf': @entropy_features,
+                 # 'threshold_annealer_threshold': @threshold_annealer_threshold,
+                  #'fit_loss_smooth': @fit_loss_smooth/smooth,
+                  #'non_sparse_fit_loss_smooth': @non_sparse_fit_loss_smooth/smooth,
+                  #'|last_mult_sparsity_gap': @mult_sparsity_gap
 }
 
 MIN_HYPER_ANNEAL = 1e-9
@@ -176,7 +178,7 @@ ModelResetter.reset_weights = False
 ModelResetter.reset_logits = False
 ModelResetter.reset_turn_on = False
 
-Config._update_function = [@AnnealerThresholdSelector, @ThresholdAnnealer, @ModelResetter]
+Config._update_function = []#@AnnealerThresholdSelector, @ThresholdAnnealer, @ModelResetter]
 
 ThresholdAnnealer.adjust_every = 100
 ThresholdAnnealer.factor_cool = 0.5
@@ -206,7 +208,7 @@ Config.metrics_every = 5
 
 tune_run.resources_per_trial = {'gpu': 0.1, 'cpu': 1}
 
-Config.graph_every = 20
+Config.graph_every = 1000#20
 
 plot_model.vmin = -1.0
 plot_model.vmax = 1.0
