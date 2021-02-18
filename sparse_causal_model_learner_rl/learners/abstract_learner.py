@@ -335,10 +335,10 @@ class AbstractLearner(ABC):
         # train using losses
         for opt_label in sorted(self.optimizer_objects.keys()):
             opt = self.optimizer_objects[opt_label]
-            loss_local_cache = {}
 
             for _ in range(self.config.get('opt_iterations', {}).get(opt_label, 1)):
                 opt.zero_grad()
+                loss_local_cache = {}
                 total_loss = 0
                 for loss_label in self.config['execution'].get(opt_label, []):
                     loss = self.config['losses'][loss_label]

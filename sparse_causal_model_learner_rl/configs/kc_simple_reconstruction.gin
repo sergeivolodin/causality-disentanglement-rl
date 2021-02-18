@@ -34,7 +34,7 @@ LearnableSwitch.sample_many = True
 LearnableSwitch.sample_threshold = 0.9 # after this value, always sample 1 to prevent vanishing grads
 
 Config.env_steps = 5000
-Config.collect_every = 10
+Config.collect_every = 5
 Config.batch_training = False
 Config.shuffle = False
 
@@ -99,7 +99,7 @@ Config.optim_params = {'opt1': ['model', 'non_sparse_model', 'decoder', 'reconst
                        #'opt4': ['decoder'], # representation learning
                        #'opt5': ['model.model__params'],
                        }
-Config.opt_iterations = {'opt1': 2}#, 'opt2': 2, 'opt3': 5}#, 'opt4': 6, 'opt5': 4,}
+Config.opt_iterations = {'opt1': 1}#, 'opt2': 2, 'opt3': 5}#, 'opt4': 6, 'opt5': 4,}
 
 smooth.smooth_steps = 20
 smooth.do_log = True

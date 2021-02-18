@@ -272,7 +272,7 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
         f_next_pred = f_t1_f #model(decoder(obs_x).detach(), action_x, all=True, **model_forward_kwargs)
         #f_next_pred = f_next_pred[:, :model.n_features]
         if 'dec_obs_y' not in loss_local_cache:
-            loss_local_cache['dec_obs_y'] = decoder(obs_y
+            loss_local_cache['dec_obs_y'] = decoder(obs_y)
         f_next_true = loss_local_cache['dec_obs_y']#.detach()
         loss_fcons = (f_next_pred - f_next_true).pow(2)
         if divide_by_std:
