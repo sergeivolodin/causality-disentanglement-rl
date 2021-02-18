@@ -122,14 +122,14 @@ Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
                   '|last_mult_sparsity_gap': @mult_sparsity_gap
 }
 
-MIN_HYPER_ANNEAL = 1e-11
+MIN_HYPER_ANNEAL = 1e-9
 
 all_on/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': False}
 
 Config.losses = {'fit': {'fcn': @fit/fit_loss_obs_space, 'coeff': 1.0},
                  'sparsity': {'fcn': @sparsity_loss, 'coeff': %MIN_HYPER_ANNEAL},
                  'non_sparse_fit': {'fcn': @non_sparse_fit_loss/context_rewriter, 'coeff': 1},
-                 'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 1.0},
+                 'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 10.0},
                  'fit_all_on': {'fcn': @all_on/fit_loss_obs_space, 'coeff': 1.0},
                 }
 
@@ -207,12 +207,12 @@ Config.metrics_every = 5
 
 tune_run.resources_per_trial = {'gpu': 0.1, 'cpu': 1}
 
-Config.graph_every = 20
+Config.graph_every = 200
 
 plot_model.vmin = -1.0
 plot_model.vmax = 1.0
-Config.report_weights = True
-Config.report_weights_every = 100
+Config.report_weights = False
+Config.report_weights_every = 1000
 
 graph_for_matrices.additional_features = %ADDITIONAL_FEATURES
 graph_for_matrices.engine = 'dot'

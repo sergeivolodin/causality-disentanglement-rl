@@ -335,13 +335,15 @@ class AbstractLearner(ABC):
         # train using losses
         for opt_label in sorted(self.optimizer_objects.keys()):
             opt = self.optimizer_objects[opt_label]
+            loss_local_cache = {}
 
             for _ in range(self.config.get('opt_iterations', {}).get(opt_label, 1)):
                 opt.zero_grad()
                 total_loss = 0
                 for loss_label in self.config['execution'].get(opt_label, []):
                     loss = self.config['losses'][loss_label]
-                    value = loss['fcn'](**context, opt_label=opt_label)
+                    value = loss['fcn'](**context, opt_label=opt_label,
+                                        loss_local_cache=loss_local_cache)
                     if isinstance(value, dict):
                         if loss_label not in epoch_info['metrics']:
                             epoch_info['metrics'][loss_label] = {}

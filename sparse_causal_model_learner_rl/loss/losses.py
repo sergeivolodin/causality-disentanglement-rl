@@ -224,7 +224,8 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
              fill_switch_grad=False,
              opt_label=None,
              add_fcons=True,
-             divide_by_std=True,
+             divide_by_std=False,
+             loss_local_cache=None,
              std_eps=1e-6,
              **kwargs):
     """Ensure that the model fits the features data."""
@@ -238,8 +239,11 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
         add_features_y = gather_additional_features(additional_feature_keys=additional_feature_keys,
                                                     **kwargs)
 
-        
-    f_t1_pred = model(decoder(obs_x), action_x, all=have_additional, **model_forward_kwargs)
+    
+    if 'dec_obs_x' not in loss_local_cache:
+        loss_local_cache['dec_obs_x'] = decoder(obs_x)
+
+    f_t1_pred = model(loss_local_cache['dec_obs_x'], action_x, all=have_additional, **model_forward_kwargs)
     f_t1_f = f_t1_pred[:, :model.n_features]
     obs_y_pred = reconstructor(f_t1_f)
     delta_first = obs_y.flatten(start_dim=1)
@@ -267,7 +271,9 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
     if add_fcons:  # ensure that model(f) ~ f_t1
         f_next_pred = f_t1_f #model(decoder(obs_x).detach(), action_x, all=True, **model_forward_kwargs)
         #f_next_pred = f_next_pred[:, :model.n_features]
-        f_next_true = decoder(obs_y)#.detach()
+        if 'dec_obs_y' not in loss_local_cache:
+            loss_local_cache['dec_obs_y'] = decoder(obs_y
+        f_next_true = loss_local_cache['dec_obs_y']#.detach()
         loss_fcons = (f_next_pred - f_next_true).pow(2)
         if divide_by_std:
             delta_fcons_std = f_next_true.std(0).unsqueeze(0)
