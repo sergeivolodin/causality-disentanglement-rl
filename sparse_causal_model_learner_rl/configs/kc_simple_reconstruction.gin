@@ -122,7 +122,7 @@ Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
                   '|last_mult_sparsity_gap': @mult_sparsity_gap
 }
 
-MIN_HYPER_ANNEAL = 1e-9
+MIN_HYPER_ANNEAL = 1e-11
 
 all_on/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': False}
 
@@ -184,9 +184,10 @@ ThresholdAnnealer.factor_heat = 0.001
 ThresholdAnnealer.min_hyper = %MIN_HYPER_ANNEAL
 ThresholdAnnealer.max_hyper = 10
 ThresholdAnnealer.emergency_heating = False
-AnnealerThresholdSelector.multiplier = 5
+AnnealerThresholdSelector.multiplier = 2
 AnnealerThresholdSelector.adjust_every = 20
 AnnealerThresholdSelector.source_fit_loss_key = 'non_sparse_fit_loss_smooth'
+AnnealerThresholdSelector.non_sparse_threshold_disable = 0.3  # ~1h 30m w/o sparsity on Colab
 
 turn_on_features.loss_fcn = @fit_loss_obs_space
 

@@ -10,6 +10,7 @@ def AnnealerThresholdSelector(config, config_object, epoch_info, temp,
                               adjust_every=100,
                               multiplier=10, # allow the loss to be 10 times bigger than the best
                               source_quality_key=None,
+                              non_sparse_threshold_disable=None,
                               source_fit_loss_key='no_sparse_fit',
                               gin_variable='ThresholdAnnealer.fit_threshold',
                               **kwargs):
@@ -25,6 +26,10 @@ def AnnealerThresholdSelector(config, config_object, epoch_info, temp,
     i = epoch_info['epochs']
 
     temp['suggested_hyper'] = non_sparse_fit_loss * multiplier
+
+    # disable annealing in case if target performance in terms of non-sparse loss is not reached
+    if non_sparse_threshold_disable is not None and non_sparse_fit_loss >= non_sparse_threshold_disable:
+        temp['suggested_hyper'] = 0.0
 
     if temp.get('suggested_hyper', None) is not None and (i - temp['last_hyper_adjustment'] >= adjust_every):
         with gin.unlock_config():
