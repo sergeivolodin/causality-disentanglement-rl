@@ -54,6 +54,9 @@ if __name__ == '__main__':
         if args.resume:
             gin.bind_parameter('tune_run.resume', True)
 
+        # TODO: remove heavy metrics s.a. weights in experiment_state.json
+        # gin.bind_parameter('tune_run.loggers', )
+
         learner_gin_sacred(config, nofail=args.nofail)
 
         if args.ray_debug_timeline:
