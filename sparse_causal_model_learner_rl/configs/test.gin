@@ -8,6 +8,7 @@ import sparse_causal_model_learner_rl.loss.optimizer
 import sparse_causal_model_learner_rl.metrics.nnz
 import sparse_causal_model_learner_rl.metrics.episode_reward
 import sparse_causal_model_learner_rl.metrics.loss_thresholded
+import sparse_causal_model_learner_rl.learners.input_normalizer
 include 'common.gin'
 
 import gin_tune
@@ -52,3 +53,15 @@ Config.execution = {'opt1': ['reconstruction', 'fit', 'sparsity']}
 LinearModel.use_bias = False
 
 fit_loss.report_rec_y = False
+
+Config.context_transforms = [@normalize_context_transform]
+
+Normalizer.once = True
+Normalizer.dim = 0
+normalize_context_transform.normalize_context_dct = {
+    'obs': ['obs_x', 'obs_y', 'obs'],
+    'rew_y': ['rew_y'],
+    'done_y': ['done_y'],
+    'reward_to_go': ['reward_to_go'],
+    }
+Normalizer.type_ = 'meanstd'
