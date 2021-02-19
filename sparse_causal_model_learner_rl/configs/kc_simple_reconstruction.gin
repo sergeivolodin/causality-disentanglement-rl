@@ -24,7 +24,7 @@ tune_run.num_samples = 1
 
 Config.loss_every = 1000000000000000
 
-model_gnn/FCCombinedModel.hidden_sizes = [100, 50, 20]  # tuning...
+model_gnn/FCCombinedModel.hidden_sizes = [128, 128, 64]  # tuning...
 model_gnn/FCCombinedModel.activation_cls = @LeakyReLU
 
 WithInputSwitch.give_mask = True
@@ -52,13 +52,13 @@ Config.model = @sparse_model/ManyNetworkCombinedModel
 Config.reconstructor = @ModelReconstructor
 
 ModelReconstructor.model_cls = @reconstructor/FCCombinedModel
-reconstructor/FCCombinedModel.hidden_sizes = [64, 5] # need a list of coordinates act(x-xi). 5 to prevent slow fit
+reconstructor/FCCombinedModel.hidden_sizes = [64, 8] # need a list of coordinates act(x-xi). 5 to prevent slow fit
 reconstructor/FCCombinedModel.activation_cls = [@Tanh, @LeakyReLU, None]
 reconstructor/FCCombinedModel.add_input_batchnorm = True
 reconstructor/FCCombinedModel.input_reshape = True
 
 
-decoder/FCCombinedModel.hidden_sizes = [50]  # should be enough -- just need to sum the coordinate actually
+decoder/FCCombinedModel.hidden_sizes = [256, 128]  # should be enough -- just need to sum the coordinate actually
 decoder/FCCombinedModel.activation_cls = @LeakyReLU
 decoder/FCCombinedModel.add_input_batchnorm = True
 decoder/FCCombinedModel.input_reshape = True
@@ -159,7 +159,7 @@ Config.checkpoint_every = 1000
 LearnableSwitch.switch_neg = 0
 LearnableSwitch.switch_pos = 0
 
-LearnableSwitchSimple.initial_proba = 1.0
+LearnableSwitchSimple.initial_proba = 0.5
 LearnableSwitchSimple.min_proba = 0.5
 LearnableSwitchSimple.sample_many = True
 LearnableSwitchSimple.return_grad = False
@@ -178,7 +178,7 @@ ThresholdAnnealer.factor_heat = 0.5
 ThresholdAnnealer.min_hyper = %MIN_HYPER_ANNEAL
 ThresholdAnnealer.max_hyper = 10
 ThresholdAnnealer.emergency_heating = False
-AnnealerThresholdSelector.multiplier = 2
+AnnealerThresholdSelector.multiplier = 1.1
 AnnealerThresholdSelector.adjust_every = 20
 AnnealerThresholdSelector.source_fit_loss_key = 'non_sparse_fit_loss_smooth'
 AnnealerThresholdSelector.non_sparse_threshold_disable = 0.3  # ~1h 30m w/o sparsity on Colab

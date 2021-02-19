@@ -41,11 +41,11 @@ class Switch(nn.Module):
     def project(self):
         pass
 
-    def forward(self, x, return_mask=False, return_x_and_mask=False):
+    def forward(self, x, return_mask=False, return_x_and_mask=False, force_proba=None):
         self.project()
         if self.sample_many:
             mask = self.logits_batch(x.shape[0])
-            mask = self.gumbel0(mask)
+            mask = self.gumbel0(mask, force_proba=force_proba)
         else:
             mask = self.sample_mask(method='gumbel')
 
@@ -85,7 +85,9 @@ class LearnableSwitchSimple(Switch):
     def project(self):
         self.probas.data = torch.clamp(self.probas.data, min=self.min_proba, max=1.0)
 
-    def gumbel0(self, data):
+    def gumbel0(self, data, force_proba=None):
+        if force_proba is not None:
+            data = torch.full(size=data.shape, fill_value=force_proba, device=data.device)
         sampled = torch.bernoulli(data)
         if self.return_grad:
             sampled = sampled + data - data.detach()
@@ -169,7 +171,7 @@ class LearnableSwitch(Switch):
     def sparsify_me(self):
         return [('proba_on', self.softmaxed())]
 
-    def gumbel0(self, logits):
+    def gumbel0(self, logits, force_proba=None):
         return self.sample_fcn(logits)[1]
 
     def sample_mask(self, method='activate'):
@@ -213,18 +215,20 @@ class WithInputSwitch(nn.Module):
     def sparsify_me(self):
         return self.switch.sparsify_me()
 
-    def forward(self, x, enable_switch=None, detach_mask=False):
+    def forward(self, x, enable_switch=None, detach_mask=False, force_proba=None):
 
         if self.n_models is not None:
             x = x.view(*x.shape, 1).expand(*[-1] * len(x.shape), self.n_models)
 
         if enable_switch is None:
             enable_switch = self.enable_switch
+            assert force_proba is None
         if enable_switch:
 
             # print("XSHAPE", x.shape)
 
-            on_off, mask = self.switch(x, return_x_and_mask=True)
+            on_off, mask = self.switch(x, return_x_and_mask=True,
+                    force_proba=force_proba)
             self.last_mask = mask
 
             if self.give_mask:
