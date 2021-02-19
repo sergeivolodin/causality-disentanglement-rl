@@ -2,6 +2,7 @@ import gym
 import gin
 from encoder.observation_encoder import linear_encoder_unbiased_normal, KerasEncoderWrapper
 import numpy as np
+from .digit_encoder import digit_to_np, digits, small_int_vector_asimage
 
 
 def test_keras_encoder():
@@ -28,3 +29,13 @@ def test_keras_encoder():
     assert np.allclose(obs_raw * 2, obs_transformed)
 
     gin.clear_config()
+
+def test_digits_encoder():
+    D = [digit_to_np(digits[i]) for i in range(10)]
+    for i in range(10):
+        for j in range(10):
+            if i != j:
+                assert np.sum(np.abs(1.0 * D[i] - 1.0 * D[j])) >= 1
+
+    encoded = small_int_vector_asimage([1, 2, 3, 4, 5], max_digits=2)
+    assert encoded.shape == (5, 39)
