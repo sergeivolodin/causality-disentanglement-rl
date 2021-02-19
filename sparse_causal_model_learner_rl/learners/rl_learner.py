@@ -67,9 +67,12 @@ class CausalModelLearnerRL(AbstractLearner):
         return ctx
 
     def run_normalizers_at_start(self):
-        self.collect_and_get_context(full_buffer_now=True)
         if self.collect_remotely:
-            self.remote_rl_context.collect_initial()
+            self.collect_and_get_context(full_buffer_now=True)
+            if self.collect_remotely:
+                self.remote_rl_context.collect_initial()
+        else:
+            logging.warning("Dataset size is small for normalizers in non-parallel mode")
 
 
     def collect_and_get_context(self, full_buffer_now=False):
