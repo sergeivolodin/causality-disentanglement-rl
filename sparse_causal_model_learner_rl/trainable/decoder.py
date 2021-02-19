@@ -1,4 +1,5 @@
 import gin
+import numpy as np
 from torch import nn
 
 
@@ -45,16 +46,24 @@ class IdentityDecoder(Decoder):
 
 @gin.configurable
 class ModelDecoder(Decoder):
-    def __init__(self, model_cls, use_batchnorm=False, **kwargs):
+    def __init__(self, model_cls, use_batchnorm=False, flatten=False,  **kwargs):
         super(ModelDecoder, self).__init__(**kwargs)
-        assert len(self.observation_shape) == 1
+        self.flatten = flatten
         assert len(self.feature_shape) == 1
-        self.model = model_cls(input_shape=self.observation_shape, output_shape=self.feature_shape)
+
+        if self.flatten:
+            self.model_obs_shape = (np.prod(self.observation_shape),)
+        else:
+            self.model_obs_shape = self.observation_shape
+
+        self.model = model_cls(input_shape=self.model_obs_shape, output_shape=self.feature_shape)
         self.use_batchnorm = use_batchnorm
         if use_batchnorm:
             self.bn = nn.BatchNorm1d(self.feature_shape[0], affine=True)
 
     def forward(self, x):
+        if self.flatten:
+            x = x.flatten(start_dim=1)
         x = self.model(x)
         if self.use_batchnorm:
             x = self.bn(x)

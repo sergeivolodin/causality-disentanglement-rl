@@ -7,7 +7,10 @@ from .helpers import gather_additional_features
 @gin.configurable
 def MSERelative(pred, target, eps=1e-6):
     """Relative MSE loss."""
+    pred = pred.flatten(start_dim=1)
+    target = target.flatten(start_dim=1)
     delta = pred - target
+    delta = delta
     delta_magnitude = target.std(0).unsqueeze(0)
         
     delta_magnitude = torch.where(delta_magnitude < eps,
@@ -26,6 +29,8 @@ def thr_half(tensor):
     
 def delta_01_obs(obs, rec_dec_obs):
     """Compute accuracy between observations and reconstructed observations."""
+    obs = torch.flatten(obs, start_dim=1)
+    rec_dec_obs = torch.flatten(rec_dec_obs, start_dim=1)
     m1, d1 = thr_half(obs)
     thr1 = m1 + d1
     
