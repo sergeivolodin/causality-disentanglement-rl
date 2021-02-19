@@ -24,8 +24,8 @@ tune_run.num_samples = 1
 
 Config.loss_every = 1000000000000000
 
-model_gnn/FCCombinedModel.hidden_sizes = [50, 10]  # tuning...
-model_gnn/FCCombinedModel.activation_cls = @Tanh
+model_gnn/FCCombinedModel.hidden_sizes = [100, 50, 10]  # tuning...
+model_gnn/FCCombinedModel.activation_cls = @LeakyReLU
 
 WithInputSwitch.give_mask = True
 WithInputSwitch.model_cls = @model_gnn/FCCombinedModel
@@ -49,15 +49,14 @@ ManyNetworkCombinedModel.sparse_do_max = False
 ManyNetworkCombinedModel.sparse_do_max_mfma = False
 
 Config.model = @sparse_model/ManyNetworkCombinedModel
-Config.reconstructor = @ModelReconstructor
+Config.value_predictor = @ModelValuePredictor
 
-ModelReconstructor.model_cls = @reconstructor/FCCombinedModel
-reconstructor/FCCombinedModel.hidden_sizes = [200, 100, 50] # need a list of coordinates act(x-xi). 5 to prevent slow fit
-reconstructor/FCCombinedModel.activation_cls = @Tanh
-reconstructor/FCCombinedModel.add_input_batchnorm = True
-reconstructor/FCCombinedModel.input_reshape = True
+ModelValuePredictor.model_cls = @vf/FCNet
+vf/FCNet.hidden_sizes = [200, 100, 50]
+vf/FCNet.activation_cls = @LeakyReLU
+vf/FCNet.add_input_batchnorm = True
 
-decoder/FCCombinedModel.hidden_sizes = [200, 100, 50, 10] # need a list of coordinates act(x-xi). 5 to prevent slow fit
+decoder/FCCombinedModel.hidden_sizes = [300, 200, 50] # need a list of coordinates act(x-xi). 5 to prevent slow fit
 decoder/FCCombinedModel.activation_cls = @Tanh
 decoder/FCCombinedModel.add_input_batchnorm = True
 decoder/FCCombinedModel.input_reshape = True
@@ -83,7 +82,7 @@ Config.optimizers = {'opt1': @opt1/Optimizer}#, 'opt2': @opt2/Optimizer, 'opt3':
 LOSSES_OTHER = ['fit', 'fit_all_on', 'reconstruction']
 LOSSES_SPARSE = ['sparsity', 'fit']
 # LOSSES_ALL = ['fit', 'fit_all_on', 'non_sparse_fit', 'reconstruction', 'sparsity']
-LOSSES_ALL = ['reconstruction'] # 'fit_all_on',
+LOSSES_ALL = ['fit', 'sparsity', 'fit_all_on', 'reconstruction', 'fit_all_half'] # 'fit_all_on',
 
 Config.execution = {'opt1': %LOSSES_ALL,
                     #'opt2': %LOSSES_ALL,
@@ -92,7 +91,7 @@ Config.execution = {'opt1': %LOSSES_ALL,
                     #'opt5': ['fit', 'fit_all_on'],
                     }
 Config.optim_params = {#'opt1': ['model', 'non_sparse_model', 'decoder', 'reconstructor'], # switch learning
-    'opt1': ['decoder', 'reconstructor'], # 'model',
+    'opt1': ['decoder', 'value_predictor', 'model'], # 'model',
                        #'opt2': ['decoder', 'reconstructor'], # representation learning
                        #'opt3': ['non_sparse_model'], # reference model learning
                        #'opt4': ['decoder'], # representation learning
@@ -109,32 +108,33 @@ mult_sparsity_gap.sparse_key = 'fit_loss_smooth'
 mult_sparsity_gap.non_sparse_key = 'non_sparse_fit_loss_smooth'
 
 # using vanilla fit loss
-Config.metrics = {#'nnz': @nnz, 'threshold_action': @threshold_action,
-                  #'threshold_features': @threshold_features, 'max_element_ma': @max_element_ma,
-                  #'max_element_mf': @max_element_mf,
+Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
+                  'threshold_features': @threshold_features, 'max_element_ma': @max_element_ma,
+                  'max_element_mf': @max_element_mf,
                   'episode_reward': @episode_reward,
-                  #'graph_entropy_ma': @entropy_action,
-                  #'graph_entropy_mf': @entropy_features,
-                  #'threshold_annealer_threshold': @threshold_annealer_threshold,
-                  #'fit_loss_smooth': @fit_loss_smooth/smooth,
-                 # 'non_sparse_fit_loss_smooth': @non_sparse_fit_loss_smooth/smooth,
-                  #'|last_mult_sparsity_gap': @mult_sparsity_gap
+                  'graph_entropy_ma': @entropy_action,
+                  'graph_entropy_mf': @entropy_features,
+                  'threshold_annealer_threshold': @threshold_annealer_threshold,
+                  'fit_loss_smooth': @fit_loss_smooth/smooth,
+                  'non_sparse_fit_loss_smooth': @non_sparse_fit_loss_smooth/smooth,
+                  '|last_mult_sparsity_gap': @mult_sparsity_gap
 }
 
 MIN_HYPER_ANNEAL = 1e-9
 
-all_on/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': False}
+all_on/fit_loss.model_forward_kwargs = {'enable_switch': False}
+all_half/fit_loss.model_forward_kwargs = {'enable_switch': False, 'force_proba': 0.5}
 
-Config.losses = {'fit': {'fcn': @fit/fit_loss_obs_space, 'coeff': 0.5},
+Config.losses = {'fit': {'fcn': @fit/fit_loss, 'coeff': 0.33},
                  'sparsity': {'fcn': @sparsity_loss, 'coeff': %MIN_HYPER_ANNEAL},
-                 'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 2.0},
-                 'fit_all_on': {'fcn': @all_on/fit_loss_obs_space, 'coeff': 0.5},
+                 'reconstruction': {'fcn': @reconstruction_loss_value_function_reward_to_go, 'coeff': 2.0},
+                 'fit_all_on': {'fcn': @all_on/fit_loss, 'coeff': 0.33},
+                 'fit_all_half': {'fcn': @all_half/fit_loss, 'coeff': 0.33},
                 }
 
-reconstruction_loss.relative = True
-fit_loss_obs_space.divide_by_std = True
+fit_loss.divide_by_std = True
 
-fit/fit_loss_obs_space.fill_switch_grad = True
+fit/fit_loss.fill_switch_grad = True
 
 nonzero_proba_loss.eps = 0.5
 nonzero_proba_loss.do_abs = False
@@ -160,7 +160,7 @@ Config.checkpoint_every = 1000
 LearnableSwitch.switch_neg = 0
 LearnableSwitch.switch_pos = 0
 
-LearnableSwitchSimple.initial_proba = 1.0
+LearnableSwitchSimple.initial_proba = 0.5
 LearnableSwitchSimple.min_proba = 0.5
 LearnableSwitchSimple.sample_many = True
 LearnableSwitchSimple.return_grad = False
@@ -171,20 +171,20 @@ ModelResetter.reset_weights = False
 ModelResetter.reset_logits = False
 ModelResetter.reset_turn_on = False
 
-Config._update_function = []#@AnnealerThresholdSelector, @ThresholdAnnealer, @ModelResetter]
+Config._update_function = [@AnnealerThresholdSelector, @ThresholdAnnealer, @ModelResetter]
 
 ThresholdAnnealer.adjust_every = 100
 ThresholdAnnealer.factor_cool = 0.5
-ThresholdAnnealer.factor_heat = 0.001
+ThresholdAnnealer.factor_heat = 0.5
 ThresholdAnnealer.min_hyper = %MIN_HYPER_ANNEAL
 ThresholdAnnealer.max_hyper = 10
 ThresholdAnnealer.emergency_heating = False
-AnnealerThresholdSelector.multiplier = 2
+AnnealerThresholdSelector.multiplier = 1.1
 AnnealerThresholdSelector.adjust_every = 20
 AnnealerThresholdSelector.source_fit_loss_key = 'non_sparse_fit_loss_smooth'
 AnnealerThresholdSelector.non_sparse_threshold_disable = 0.3  # ~1h 30m w/o sparsity on Colab
 
-turn_on_features.loss_fcn = @fit_loss_obs_space
+turn_on_features.loss_fcn = @fit_loss
 
 # normalize input data
 Normalizer.once = True
@@ -202,7 +202,7 @@ Config.metrics_every = 5
 
 tune_run.resources_per_trial = {'gpu': 0.1, 'cpu': 1}
 
-Config.graph_every = 2000
+Config.graph_every = 200
 
 plot_model.vmin = -1.0
 plot_model.vmax = 1.0
@@ -219,3 +219,4 @@ Normalizer.type_ = 'meanstd'
 ManyNetworkCombinedModel.input_batchnorm = True
 
 
+reconstruction_loss_value_function_reward_to_go.value_scaler = 1.0
