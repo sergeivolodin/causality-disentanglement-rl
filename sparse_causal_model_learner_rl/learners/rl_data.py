@@ -284,14 +284,18 @@ class ExperienceReplayBuffer():
                                                    f" {group} {group_len} {self.buffer_steps}"
         assert not left_keys, f"Some keys were not used: {left_keys} {self.shuffle_together}"
 
-    def sample_batch(self):
+    def sample_batch(self, max_size=None):
+        if max_size is None:
+            max_size = self.minibatch_size
+        elif max_size == -1:  # the whole buffer
+            max_size = self.buffer_steps
         self.check_keys()
         pre_context_return = {}
         for group in self.shuffle_together:
             group_len = self.buffer_n[group[0]]
-            if group_len > self.minibatch_size:
+            if group_len > max_size:
                 idxes_return = np.random.choice(a=group_len,
-                                                size=self.minibatch_size, replace=False)
+                                                size=max_size, replace=False)
             else:
                 idxes_return = slice(-1)
 
@@ -403,6 +407,12 @@ class ParallelContextCollector():
                         pbar.set_postfix(**stats)
                         collected += delta
                     sleep(0.1)
+
+    def get_whole_buffer(self):
+        if self.n_collectors == 0:
+            return self.replay_buffer.sample_batch(-1)
+        else:
+            return ray.get(self.replay_buffer.sample_batch.remote(-1))
 
     def collect_get_context(self):
 #         logging.warning(f"Collecting data collect_get_context()...")

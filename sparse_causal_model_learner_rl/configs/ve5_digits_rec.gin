@@ -222,4 +222,4 @@ Normalizer.type_ = 'meanstd'
 ManyNetworkCombinedModel.input_batchnorm = True
 
 
-reconstruction_loss.relative = True
+reconstruction_loss.relative = False

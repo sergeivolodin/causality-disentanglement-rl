@@ -1,11 +1,13 @@
 import gin
 import numpy as np
+import logging
 
 
 @gin.configurable
 class Normalizer(object):
     """"Normalize numpy data."""
-    def __init__(self, once=True, dim=0, type_='minmax'):
+    def __init__(self, name=None, once=True, dim=0, type_='minmax'):
+        self.name = name
         self.mean = None
         self.std = None
 
@@ -45,7 +47,14 @@ class Normalizer(object):
             self.std = np.std(inp, axis=self.dim)
             self.min = np.min(inp, axis=self.dim)
             self.max = np.max(inp, axis=self.dim)
+
+            # if no change was detected, forcing a small value
+            if isinstance(self.std, np.ndarray):
+                self.std[self.std < self.std_eps] = 1.0
+            elif self.std < self.std_eps:
+                self.std = 1.0
             self.computed = True
+            logging.warning(f"Computed std for {self.name}: {self.mean} {self.std}")
 
         if self.type_ == 'meanstd':
             return (inp - self.mean) / (self.std_eps + self.std)
@@ -77,7 +86,7 @@ def normalize_context_transform(self, context, normalize_context_dct=None):
         assert isinstance(norm_whiches, list), f"norm_whiches must be a list {norm_whiches} for key {norm_with}"
 
         if norm_with not in self.normalizers:
-            self.normalizers[norm_with] = Normalizer()
+            self.normalizers[norm_with] = Normalizer(name=norm_with)
 
             # computing the first statistics
             self.normalizers[norm_with].maybe_normalize(context[norm_with])

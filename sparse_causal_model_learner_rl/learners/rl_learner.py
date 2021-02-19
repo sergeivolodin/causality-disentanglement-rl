@@ -52,6 +52,7 @@ class CausalModelLearnerRL(AbstractLearner):
         if self.collect_remotely:
             self.remote_rl_context = ParallelContextCollector(config=self.config)
         self.shuffle_together = get_shuffle_together(self.config)
+        self.run_normalizers_at_start()
 
     def collect_steps(self):
         raise NotImplementedError("Use collect_and_get_context")
@@ -65,14 +66,26 @@ class CausalModelLearnerRL(AbstractLearner):
         ctx['additional_feature_keys'] = self.additional_feature_keys
         return ctx
 
-    def collect_and_get_context(self):
+    def run_normalizers_at_start(self):
+        self.collect_and_get_context(full_buffer_now=True)
+        if self.collect_remotely:
+            self.remote_rl_context.collect_initial()
+
+
+    def collect_and_get_context(self, full_buffer_now=False):
         """Collect new data and return the training context."""
 
         if self.collect_remotely:
-            pre_context = self.remote_rl_context.collect_get_context()
+            if full_buffer_now:
+                pre_context = self.remote_rl_context.get_whole_buffer()
+            else:
+                pre_context = self.remote_rl_context.collect_get_context()
         else:
-            self.rl_context.collect_steps()
-            pre_context = self.rl_context.get_context()
+            if full_buffer_now:
+                raise NotImplementedError("Full buffer only supported with remote context...")
+            else:
+                self.rl_context.collect_steps()
+                pre_context = self.rl_context.get_context()
 
         pre_context_sample = pre_context
         pre_context_sample = self.context_add_scalars(pre_context_sample)

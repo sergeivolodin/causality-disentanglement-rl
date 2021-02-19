@@ -51,7 +51,7 @@ def reconstruction_loss(obs, decoder, reconstructor, relative=False,
     if relative:
         mse = MSERelative
     else:
-        mse = torch.nn.MSELoss()
+        mse = lambda x, y: (x - y).flatten(start_dim=1).pow(2).sum(1).mean(0)
         
     rec_dec_obs = reconstructor(decoder(obs))
     metrics = {}
@@ -261,15 +261,15 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
     
     delta = delta_first - delta_second
 
-    if divide_by_std:
-        delta_first_std = delta_first.std(0).unsqueeze(0)
-        delta_first_std = torch.where(delta_first_std < std_eps, torch.ones_like(delta_first_std), delta_first_std)
-    else:
-        delta_first_std = None
+#    if divide_by_std:
+#        delta_first_std = delta_first.std(0).unsqueeze(0)
+#        delta_first_std = torch.where(delta_first_std < std_eps, torch.ones_like(delta_first_std), delta_first_std)
+#    else:
+#        delta_first_std = None
 
     loss = delta.pow(2)
-    if delta_first_std is not None:
-        loss = loss / delta_first_std.pow(2)
+ #   if delta_first_std is not None:
+ #       loss = loss / delta_first_std.pow(2)
 
     loss = loss.sum(1)
 
@@ -299,8 +299,9 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
                'min_feature': f_t1_pred.min().item(),
                'max_feature': f_t1_pred.max().item(),
                'loss_fcons': loss_fcons.sum(1).mean(0).item() if loss_fcons is not None else 0.0,
-               'std_obs_avg': delta_first_std.detach().cpu().numpy() if delta_first_std is not None else 0.0,
-               'inv_std_obs_avg': delta_first_std.detach().cpu().numpy() if delta_first_std is not None else 0.0}
+               #'std_obs_avg': delta_first_std.detach().cpu().numpy() if delta_first_std is not None else 0.0,
+               #'inv_std_obs_avg': delta_first_std.detach().cpu().numpy() if delta_first_std is not None else 0.0
+               }
     metrics['rec_fit_acc_01_agg'] = delta_01_obs(obs_y, obs_y_pred).item()
     
     return {'loss': loss,
