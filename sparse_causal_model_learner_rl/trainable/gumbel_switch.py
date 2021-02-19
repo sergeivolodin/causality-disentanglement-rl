@@ -222,7 +222,6 @@ class WithInputSwitch(nn.Module):
 
         if enable_switch is None:
             enable_switch = self.enable_switch
-            assert force_proba is None
         if enable_switch:
 
             # print("XSHAPE", x.shape)
@@ -239,6 +238,7 @@ class WithInputSwitch(nn.Module):
                 y = self.model(on_off)
             return y
         else:
+            assert force_proba is None
             if self.give_mask:
                 ones = torch.ones_like(x)
                 x_with_mask = torch.cat([x, ones], dim=1)

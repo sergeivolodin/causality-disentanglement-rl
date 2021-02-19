@@ -123,7 +123,7 @@ Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
 MIN_HYPER_ANNEAL = 1e-9
 
 all_on/fit_loss.model_forward_kwargs = {'enable_switch': False}
-all_half/fit_loss.model_forward_kwargs = {'enable_switch': False, 'force_proba': 0.5}
+all_half/fit_loss.model_forward_kwargs = {'enable_switch': True, 'force_proba': 0.5}
 
 Config.losses = {'fit': {'fcn': @fit/fit_loss, 'coeff': 0.33},
                  'sparsity': {'fcn': @sparsity_loss, 'coeff': %MIN_HYPER_ANNEAL},
