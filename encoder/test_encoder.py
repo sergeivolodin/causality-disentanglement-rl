@@ -1,6 +1,7 @@
 import gym
 import gin
-from encoder.observation_encoder import linear_encoder_unbiased_normal, KerasEncoderWrapper
+from encoder.observation_encoder import linear_encoder_unbiased_normal, KerasEncoderWrapper,\
+    ShuffleObservationWrapper
 import numpy as np
 from .digit_encoder import digit_to_np, digits, small_int_vector_asimage
 
@@ -39,3 +40,13 @@ def test_digits_encoder():
 
     encoded = small_int_vector_asimage([1, 2, 3, 4, 5], max_digits=2)
     assert encoded.shape == (5, 39)
+
+def test_shuffle():
+    env = gym.make('CartPole-v0')
+    env_shuffle = ShuffleObservationWrapper(env)
+    obs_shuffled = env_shuffle.reset()
+    obs = env.reset()
+    assert obs_shuffled.shape == obs.shape
+
+    # seed is fixed
+    assert not np.allclose(obs, obs_shuffled)

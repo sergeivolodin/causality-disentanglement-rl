@@ -5,6 +5,7 @@ import tensorflow as tf
 from gym.wrappers import TransformObservation
 import encoder
 import os
+from causal_util.helpers import np_random_seed
 
 
 @gin.configurable
@@ -88,6 +89,24 @@ class KerasEncoderWrapper(TransformObservation):
                                                 high=np.float32(np.inf),
                                                 shape=fcn.out_shape)
 
+@gin.configurable
+def permute_observation(obs, perm=None):
+    """Given a permutation, shuffle pixels of the observation."""
+
+    if perm is None:
+        with np_random_seed():
+            perm = np.random.permutation(np.prod(obs.shape))
+
+    return obs.flatten()[perm].reshape(obs.shape)
+
+@gin.configurable
+class ShuffleObservationWrapper(TransformObservation):
+    """Shuffle pixels in an observation."""
+    def __init__(self, env, **kwargs):
+        if isinstance(env, str):
+            env = gym.make(env)
+        fcn = permute_observation
+        super(ShuffleObservationWrapper, self).__init__(env, fcn)
 
 @gin.configurable
 class ObservationScaleWrapper(TransformObservation):

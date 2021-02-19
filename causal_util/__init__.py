@@ -3,7 +3,6 @@ import gin
 import gym
 # noinspection PyUnresolvedReferences
 import vectorincrement  # noqa # pylint: disable=unused-import
-from encoder.observation_encoder import ObservationScaleWrapper
 # noinspection PyUnresolvedReferences
 import keychest  # noqa # pylint: disable=unused-import
 from causal_util.weight_restorer import WeightRestorer
@@ -25,6 +24,7 @@ def load_env(env_name, time_limit=None, obs_scaler=None, wrappers=None,
         env = wrapper(env)
 
     if obs_scaler:
+        from encoder.observation_encoder import ObservationScaleWrapper
         env = ObservationScaleWrapper(env, obs_scaler)
 
     if wrappers is None:
