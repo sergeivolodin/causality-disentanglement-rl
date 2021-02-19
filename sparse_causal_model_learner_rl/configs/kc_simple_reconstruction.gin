@@ -24,7 +24,7 @@ tune_run.num_samples = 1
 
 Config.loss_every = 1000000000000000
 
-model_gnn/FCCombinedModel.hidden_sizes = [300, 300, 300]  # tuning...
+model_gnn/FCCombinedModel.hidden_sizes = [100, 50, 20]  # tuning...
 model_gnn/FCCombinedModel.activation_cls = @LeakyReLU
 
 WithInputSwitch.give_mask = True
@@ -43,15 +43,12 @@ Config.reconstructor = None
 WithInputSwitch.switch_cls = @LearnableSwitchSimple
 
 sparse_model/WithInputSwitch.enable_switch = True
-non_sparse_model/WithInputSwitch.enable_switch = False
 
 sparse_model/ManyNetworkCombinedModel.model_cls = @sparse_model/WithInputSwitch
-non_sparse_model/ManyNetworkCombinedModel.model_cls = @non_sparse_model/WithInputSwitch
 ManyNetworkCombinedModel.sparse_do_max = False
 ManyNetworkCombinedModel.sparse_do_max_mfma = False
 
 Config.model = @sparse_model/ManyNetworkCombinedModel
-Config.non_sparse_model = @non_sparse_model/ManyNetworkCombinedModel
 Config.reconstructor = @ModelReconstructor
 
 ModelReconstructor.model_cls = @reconstructor/FCCombinedModel
@@ -61,15 +58,16 @@ reconstructor/FCCombinedModel.add_input_batchnorm = True
 reconstructor/FCCombinedModel.input_reshape = True
 
 
-decoder/FCNet.hidden_sizes = [128]  # should be enough -- just need to sum the coordinate actually
-decoder/FCNet.activation_cls = @LeakyReLU
-decoder/FCNet.add_input_batchnorm = True
-ModelDecoder.model_cls = @decoder/FCNet
+decoder/FCCombinedModel.hidden_sizes = [50]  # should be enough -- just need to sum the coordinate actually
+decoder/FCCombinedModel.activation_cls = @LeakyReLU
+decoder/FCCombinedModel.add_input_batchnorm = True
+decoder/FCCombinedModel.input_reshape = True
+ModelDecoder.model_cls = @decoder/FCCombinedModel
 ModelDecoder.use_batchnorm = False
 
 Config.decoder = @ModelDecoder
 
-Config.feature_shape = (20, )
+Config.feature_shape = (10, )
 
 opt1/Optimizer.lr = 1e-3
 opt2/Optimizer.lr = 1e-3
@@ -83,9 +81,9 @@ opt5/Optimizer.lr = 1e-3
 
 Config.optimizers = {'opt1': @opt1/Optimizer}#, 'opt2': @opt2/Optimizer, 'opt3': @opt3/Optimizer}#, 'opt4': @opt4/Optimizer, 'opt5': @opt5/Optimizer}
 
-LOSSES_OTHER = ['fit', 'fit_all_on', 'non_sparse_fit', 'reconstruction']
+LOSSES_OTHER = ['fit', 'fit_all_on', 'reconstruction']
 LOSSES_SPARSE = ['sparsity', 'fit']
-LOSSES_ALL = ['fit', 'fit_all_on', 'non_sparse_fit', 'reconstruction', 'sparsity']
+LOSSES_ALL = ['fit', 'fit_all_on', 'reconstruction', 'sparsity']
 
 Config.execution = {'opt1': %LOSSES_ALL,
                     #'opt2': %LOSSES_ALL,
@@ -93,7 +91,7 @@ Config.execution = {'opt1': %LOSSES_ALL,
                     #'opt4': ['discriminate_siamese', 'non_sparse_fit'], # w/o sparsity, only model (for fit)
                     #'opt5': ['fit', 'fit_all_on'],
                     }
-Config.optim_params = {'opt1': ['model', 'non_sparse_model', 'decoder', 'reconstructor'], # switch learning
+Config.optim_params = {'opt1': ['model', 'decoder', 'reconstructor'], # switch learning
                        #'opt2': ['decoder', 'reconstructor'], # representation learning
                        #'opt3': ['non_sparse_model'], # reference model learning
                        #'opt4': ['decoder'], # representation learning
@@ -104,7 +102,7 @@ Config.opt_iterations = {'opt1': 1}#, 'opt2': 2, 'opt3': 5}#, 'opt4': 6, 'opt5':
 smooth.smooth_steps = 20
 smooth.do_log = True
 fit_loss_smooth/smooth.orig_key = '/fit/value'
-non_sparse_fit_loss_smooth/smooth.orig_key = '/non_sparse_fit/value'
+non_sparse_fit_loss_smooth/smooth.orig_key = '/fit_all_on/value'
 
 mult_sparsity_gap.sparse_key = 'fit_loss_smooth'
 mult_sparsity_gap.non_sparse_key = 'non_sparse_fit_loss_smooth'
@@ -128,7 +126,6 @@ all_on/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': False}
 
 Config.losses = {'fit': {'fcn': @fit/fit_loss_obs_space, 'coeff': 1.0},
                  'sparsity': {'fcn': @sparsity_loss, 'coeff': %MIN_HYPER_ANNEAL},
-                 'non_sparse_fit': {'fcn': @non_sparse_fit_loss/context_rewriter, 'coeff': 1},
                  'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 10.0},
                  'fit_all_on': {'fcn': @all_on/fit_loss_obs_space, 'coeff': 1.0},
                 }
@@ -140,9 +137,6 @@ fit/fit_loss_obs_space.fill_switch_grad = True
 
 nonzero_proba_loss.eps = 0.5
 nonzero_proba_loss.do_abs = False
-
-non_sparse_fit_loss/context_rewriter.function = @fit_loss_obs_space
-non_sparse_fit_loss/context_rewriter.rewrite = {'model': 'non_sparse_model'}
 
 ThresholdAnnealer.source_metric_key = 'fit_loss_smooth'
 
@@ -180,7 +174,7 @@ Config._update_function = [@AnnealerThresholdSelector, @ThresholdAnnealer, @Mode
 
 ThresholdAnnealer.adjust_every = 100
 ThresholdAnnealer.factor_cool = 0.5
-ThresholdAnnealer.factor_heat = 0.001
+ThresholdAnnealer.factor_heat = 0.5
 ThresholdAnnealer.min_hyper = %MIN_HYPER_ANNEAL
 ThresholdAnnealer.max_hyper = 10
 ThresholdAnnealer.emergency_heating = False

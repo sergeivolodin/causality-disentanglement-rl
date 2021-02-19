@@ -153,7 +153,7 @@ fit_loss_median_std = MedianStd()
 
 @gin.configurable
 def fit_loss(obs_x, obs_y, action_x, decoder, model, additional_feature_keys,
-             reconstructor,
+             reconstructor=None,
              report_rec_y=True,
              model_forward_kwargs=None,
              fill_switch_grad=False,
