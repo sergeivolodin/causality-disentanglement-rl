@@ -20,8 +20,11 @@ parser.add_argument('--print_config', action='store_true')
 parser.add_argument('--n_gpus', type=int, required=False, default=None)
 parser.add_argument('--nowrap', action='store_true')
 parser.add_argument('--resume', action='store_true')
+parser.add_argument('--load_checkpoint', type=str, required=False, default=None)
+parser.add_argument('--load_new_config', action='store_true')
 parser.add_argument('--ray_debug_timeline', type=str, required=False, default=None)
 parser.add_argument('--nofail', help="Disable killing ray actors at the end of the trial", action='store_true')
+parser.add_argument('--epochs_override', type=int, required=False, default=None)
 
 if __name__ == '__main__':
     args = parser.parse_args()
@@ -53,6 +56,14 @@ if __name__ == '__main__':
 
         if args.resume:
             gin.bind_parameter('tune_run.resume', True)
+        if args.load_checkpoint:
+            gin.bind_parameter('Config.load_checkpoint', args.load_checkpoint)
+        gin.bind_parameter('Config.load_new_config', args.load_new_config)
+
+        if args.epochs_override is not None:
+            def set_train_steps():
+                gin.bind_parameter('Config.train_steps', args.epochs_override)
+            config.append(set_train_steps)
 
         # TODO: remove heavy metrics s.a. weights in experiment_state.json
         # gin.bind_parameter('tune_run.loggers', )

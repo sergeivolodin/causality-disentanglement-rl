@@ -113,6 +113,9 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
     learner_cls_mod = import_module(p)
     learner_cls = getattr(learner_cls_mod, m)
 
+    if config.get('load_checkpoint', None) is not None:
+        checkpoint_dir = config.get('load_checkpoint')
+
     if do_sacred:
         base_dir = ex.base_dir
     else:

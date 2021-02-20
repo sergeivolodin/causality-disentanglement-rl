@@ -180,21 +180,37 @@ class AbstractLearner(ABC):
         """
         pass
 
-    def __setstate__(self, dct, restore_gin=True):
+    def __setstate__(self, dct, restore_gin=None):
+        if restore_gin is None:
+            restore_gin = True
+
+        if Config().get('load_new_config', False):
+            logging.warning("Not loading old gin config because using the new config")
+            restore_gin = False
+
         # only support gin-defined Configs
         if restore_gin:
             gin.parse_config(dct['gin_config'])
-        self.__init__(config=dct['config'])
+            config = dct['config']
+        else:
+            config = Config()
+
+        self.__init__(config=config)
 
         # setting attributes
         for key in set(self.PICKLE_DIRECTLY).intersection(dct.keys()):
+            if not restore_gin and key == 'config':
+                logging.warning("Skipping setting old config...")
+                continue
+
+            logging.info(f"Loading old {key} from a checkpoint")
             setattr(self, key, dct[key])
 
         new_config = Config()
 
         for entry in new_config._config.keys():
             if entry not in self.config._config:
-                self.config[entry] = new_config._config[entry]
+                self.config.set(entry, new_config._config[entry])
                 logging.info("Config entry found in new config but not in old config: " + entry)
 
         try:
@@ -208,6 +224,7 @@ class AbstractLearner(ABC):
 
         # restoring trainables
         for key in set(self.trainables.keys()).intersection(dct['trainables_weights'].keys()):
+            logging.info(f"Loading {key} weights from a checkpoint...")
             self.trainables[key].load_state_dict(dct['trainables_weights'][key])
 
     def __getstate__(self):
