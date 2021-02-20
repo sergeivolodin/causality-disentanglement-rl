@@ -83,7 +83,7 @@ Config.optimizers = {'opt1': @opt1/Optimizer}#, 'opt2': @opt2/Optimizer, 'opt3':
 
 LOSSES_OTHER = ['fit', 'fit_all_on', 'reconstruction']
 LOSSES_SPARSE = ['sparsity', 'fit']
-LOSSES_ALL = ['fit', 'fit_all_on', 'reconstruction', 'sparsity']
+LOSSES_ALL = ['fit', 'fit_all_on', 'reconstruction', 'sparsity', 'fit_all_half']
 
 Config.execution = {'opt1': %LOSSES_ALL,
                     #'opt2': %LOSSES_ALL,
@@ -123,11 +123,13 @@ Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
 MIN_HYPER_ANNEAL = 1e-9
 
 all_on/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': False}
+all_half/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': True, 'force_proba': 0.5}
 
-Config.losses = {'fit': {'fcn': @fit/fit_loss_obs_space, 'coeff': 1.0},
+Config.losses = {'fit': {'fcn': @fit/fit_loss_obs_space, 'coeff': 0.33},
                  'sparsity': {'fcn': @sparsity_loss, 'coeff': %MIN_HYPER_ANNEAL},
-                 'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 10.0},
-                 'fit_all_on': {'fcn': @all_on/fit_loss_obs_space, 'coeff': 1.0},
+                 'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 2.0},
+                 'fit_all_on': {'fcn': @all_on/fit_loss_obs_space, 'coeff': 0.33},
+                 'fit_all_half': {'fcn': @all_half/fit_loss_obs_space, 'coeff': 0.33},
                 }
 
 reconstruction_loss.relative = True
