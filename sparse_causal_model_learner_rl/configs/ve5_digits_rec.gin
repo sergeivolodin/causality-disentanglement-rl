@@ -53,12 +53,12 @@ Config.reconstructor = @ModelReconstructor
 
 ModelReconstructor.model_cls = @rec/FCCombinedModel
 ModelReconstructor.unflatten = True
-rec/FCCombinedModel.hidden_sizes = [100, 50, 50]
-rec/FCCombinedModel.activation_cls = @LeakyReLU
+rec/FCCombinedModel.hidden_sizes = [128, 64, 32]
+rec/FCCombinedModel.activation_cls = [@LeakyReLU, @Tanh, @Tanh, None]
 rec/FCCombinedModel.add_input_batchnorm = True
 rec/FCCombinedModel.input_reshape = True
 
-decoder/FCCombinedModel.hidden_sizes = [100, 50, 10] # need a list of coordinates act(x-xi). 5 to prevent slow fit
+decoder/FCCombinedModel.hidden_sizes = [128, 64, 64, 64] # need a list of coordinates act(x-xi). 5 to prevent slow fit
 decoder/FCCombinedModel.activation_cls = @LeakyReLU
 decoder/FCCombinedModel.add_input_batchnorm = True
 decoder/FCCombinedModel.input_reshape = True
