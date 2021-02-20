@@ -4,3 +4,6 @@
 [submodule "ray"]
 	path = ray
 	url = https://github.com/sergeivolodin/ray.git
+[submodule "mamo"]
+	path = mamo
+	url = git@github.com:swisscom/ai-research-mamo-framework.git
