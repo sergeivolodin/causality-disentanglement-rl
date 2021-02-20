@@ -5,6 +5,7 @@ from matplotlib import pyplot as plt
 import gym
 import gin
 from gym.wrappers import TransformObservation
+from functools import lru_cache
 
 
 ### 5x3 binary digits
@@ -84,9 +85,10 @@ digits = {
 }
 
 
-def digit_to_np(digit):
+@lru_cache(128)
+def digit_to_np(digit, digits=digits):
     """Convert a digit (string of 0, 1) into an np array."""
-    val = [x.strip() for x in digit.strip().splitlines()]
+    val = [x.strip() for x in digits[digit].strip().splitlines()]
     val = np.array([[y == '1' for y in x] for x in val])
     return val
 
@@ -100,27 +102,28 @@ def show_digits(digits):
     plt.figure(figsize=(10, 10))
 
     for i, key in enumerate(sorted(digits.keys())):
-        value = digits[key]
         #         print(key)
-        val = digit_to_np(value) * 1.0
+        val = digit_to_np(key) * 1.0
         plt.subplot(nrow, ncol, i + 1)
         plt.title(key)
         plt.imshow(val)
     plt.show()
 
-def small_int_vector_asimage(v, max_digits=1):
+@gin.configurable
+def small_int_vector_asimage(v, max_digits=1, eps=1e-8):
     """Convert a vector of integers in 0-9 into a binary image of size 5 x max_digits x (3 * n + n - 1)."""
     n_digits = len(v) * max_digits
     result = np.zeros((5, 3 * n_digits + n_digits - 1), dtype=np.float32)
     offset = 0
     for i, val in enumerate(v):
-        assert np.allclose(np.round(val), val)
-        val = round(val)
-        ds = f"%0{round(max_digits)}d" % val
+        rval = round(val)
+        assert abs(rval - val) < eps
+
+        ds = f"%0{round(max_digits)}d" % rval
         assert len(ds) == max_digits
         for d in ds:
             #             print(d)
-            result[:, offset:offset + 3] = digit_to_np(digits[int(d)])
+            result[:, offset:offset + 3] = digit_to_np(int(d))
             offset += 4
     return result
 
@@ -132,7 +135,7 @@ class DigitsVectorWrapper(TransformObservation):
     def __init__(self, env, max_digits=2, **kwargs):
         if isinstance(env, str):
             env = gym.make(env)
-        fcn = partial(small_int_vector_asimage, max_digits=max_digits)
+        fcn = small_int_vector_asimage
         super(DigitsVectorWrapper, self).__init__(env, fcn)
         shape = fcn(env.reset()).shape
         self.observation_space = gym.spaces.Box(low=np.float32(0),

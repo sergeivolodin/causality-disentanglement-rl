@@ -32,7 +32,7 @@ def test_keras_encoder():
     gin.clear_config()
 
 def test_digits_encoder():
-    D = [digit_to_np(digits[i]) for i in range(10)]
+    D = [digit_to_np(i) for i in range(10)]
     for i in range(10):
         for j in range(10):
             if i != j:

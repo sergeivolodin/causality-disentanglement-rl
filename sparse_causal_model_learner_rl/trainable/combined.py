@@ -65,6 +65,7 @@ class CombinedLinearLayer(nn.Module):
 class FCCombinedModel(AbstractCombinedModel):
     def __init__(self, hidden_sizes, activation_cls=nn.ReLU,
                  input_reshape=False,
+                 skipconns=None,
                  add_input_batchnorm=False,
                  **kwargs):
         self.hidden_sizes = hidden_sizes
@@ -86,6 +87,11 @@ class FCCombinedModel(AbstractCombinedModel):
             self.activation = [None] * (len(self.hidden_sizes) + 1)
         else:
             raise NotImplementedError
+
+        if skipconns is None:
+            skipconns = [False] * len(self.activation)
+        self.skipconns = skipconns
+        print(self.skipconns)
 
         assert len(self.activation) == len(self.hidden_sizes) + 1, (self.activation,
                                                                     self.hidden_sizes)
@@ -110,9 +116,12 @@ class FCCombinedModel(AbstractCombinedModel):
             x = x.view(*x.shape, 1).expand(*[-1] * len(x.shape), self.n_models)
 
         for i, fc in enumerate(self.fc):
+            x_inp = x
             x = fc(x)
             if self.activation[i] is not None:
                 x = self.activation[i](x)
+            if self.skipconns[i]:
+                x = x + x_inp
         assert x.shape[1] == self.output_dim
         assert x.shape[2] == self.n_models
         if self.output_dim == 1:
