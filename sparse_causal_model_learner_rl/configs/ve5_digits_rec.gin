@@ -86,6 +86,7 @@ LOSSES_OTHER = ['fit', 'fit_all_on', 'reconstruction']
 LOSSES_SPARSE = ['sparsity', 'fit']
 # LOSSES_ALL = ['fit', 'fit_all_on', 'non_sparse_fit', 'reconstruction', 'sparsity']
 LOSSES_ALL = ['fit', 'sparsity', 'fit_all_on', 'reconstruction', 'fit_all_half'] # 'fit_all_on',
+#LOSSES_ALL = ['reconstruction']
 
 Config.execution = {'opt1': %LOSSES_ALL,
                     #'opt2': %LOSSES_ALL,
@@ -93,8 +94,9 @@ Config.execution = {'opt1': %LOSSES_ALL,
                     #'opt4': ['discriminate_siamese', 'non_sparse_fit'], # w/o sparsity, only model (for fit)
                     #'opt5': ['fit', 'fit_all_on'],
                     }
-Config.optim_params = {#'opt1': ['model', 'non_sparse_model', 'decoder', 'reconstructor'], # switch learning
-    'opt1': ['decoder', 'reconstructor', 'model'], # 'model',
+Config.optim_params = {
+'opt1': ['model', 'decoder', 'reconstructor'], # switch learning
+    #'opt1': ['decoder', 'reconstructor'], # 'model',
                        #'opt2': ['decoder', 'reconstructor'], # representation learning
                        #'opt3': ['non_sparse_model'], # reference model learning
                        #'opt4': ['decoder'], # representation learning
@@ -128,11 +130,11 @@ MIN_HYPER_ANNEAL = 1e-9
 all_on/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': False}
 all_half/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': True, 'force_proba': 0.5}
 
-Config.losses = {'fit': {'fcn': @fit/fit_loss_obs_space, 'coeff': 0.33},
+Config.losses = {'fit': {'fcn': @fit/fit_loss_obs_space, 'coeff': 0.33}, # 0.33
                  'sparsity': {'fcn': @sparsity_loss, 'coeff': %MIN_HYPER_ANNEAL},
-                 'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 2.0},
-                 'fit_all_on': {'fcn': @all_on/fit_loss_obs_space, 'coeff': 0.33},
-                 'fit_all_half': {'fcn': @all_half/fit_loss_obs_space, 'coeff': 0.33},
+                 'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 10.0},
+                 'fit_all_on': {'fcn': @all_on/fit_loss_obs_space, 'coeff': 0.33}, # 0.33
+                 'fit_all_half': {'fcn': @all_half/fit_loss_obs_space, 'coeff': 0.001},# 0.001
                 }
 
 fit_loss_obs_space.divide_by_std = True
