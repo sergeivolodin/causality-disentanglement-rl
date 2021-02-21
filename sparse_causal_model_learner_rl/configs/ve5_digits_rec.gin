@@ -178,16 +178,16 @@ ModelResetter.reset_turn_on = False
 
 Config._update_function = [@AnnealerThresholdSelector, @ThresholdAnnealer, @ModelResetter]
 
-ThresholdAnnealer.adjust_every = 100
-ThresholdAnnealer.factor_cool = 0.5
+ThresholdAnnealer.adjust_every = 50
+ThresholdAnnealer.factor_cool = 0.1
 ThresholdAnnealer.factor_heat = 0.5
 ThresholdAnnealer.min_hyper = %MIN_HYPER_ANNEAL
 ThresholdAnnealer.max_hyper = 10
 ThresholdAnnealer.emergency_heating = False
-AnnealerThresholdSelector.multiplier = 1.1
+AnnealerThresholdSelector.multiplier = 1.2
 AnnealerThresholdSelector.adjust_every = 20
 AnnealerThresholdSelector.source_fit_loss_key = 'non_sparse_fit_loss_smooth'
-AnnealerThresholdSelector.non_sparse_threshold_disable = 0.3  # ~1h 30m w/o sparsity on Colab
+AnnealerThresholdSelector.non_sparse_threshold_disable = 0.5
 
 turn_on_features.loss_fcn = @fit_loss_obs_space
 

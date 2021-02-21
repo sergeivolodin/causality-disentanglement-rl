@@ -41,5 +41,5 @@ def mult_sparsity_gap(sparse_key, non_sparse_key, now_epoch_info, **kwargs):
         # logging.warning(f"No loss found {e}")
         return None
     if sparse_loss and non_sparse_loss:
-        return sparse_loss / non_sparse_loss
+        return (sparse_loss - non_sparse_loss) / non_sparse_loss
     return None

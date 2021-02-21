@@ -58,7 +58,7 @@ reconstructor/FCCombinedModel.add_input_batchnorm = True
 reconstructor/FCCombinedModel.input_reshape = True
 
 
-decoder/FCCombinedModel.hidden_sizes = [256, 128]  # should be enough -- just need to sum the coordinate actually
+decoder/FCCombinedModel.hidden_sizes = [256, 64]  # should be enough -- just need to sum the coordinate actually
 decoder/FCCombinedModel.activation_cls = @LeakyReLU
 decoder/FCCombinedModel.add_input_batchnorm = True
 decoder/FCCombinedModel.input_reshape = True
@@ -69,7 +69,7 @@ Config.decoder = @ModelDecoder
 
 Config.feature_shape = (10, )
 
-opt1/Optimizer.lr = 1e-4
+opt1/Optimizer.lr = 1e-3
 opt2/Optimizer.lr = 1e-3
 opt3/Optimizer.lr = 1e-3
 
