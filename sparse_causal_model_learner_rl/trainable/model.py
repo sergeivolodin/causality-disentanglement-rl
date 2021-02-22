@@ -225,15 +225,32 @@ class ManyNetworkCombinedModel(Model):
         if self.add_linear_transform:
             self.fc_pre = nn.Linear(in_features=self.n_features,
                                     out_features=self.n_features,
-                                    bias=False)
+                                    bias=True)
+            self.fc_pre.weight.data[:] += torch.eye(self.n_features)
+            self.fc_pre.bias.data[:] = 0.0
             # self.fc_post = nn.Linear(in_features=self.n_features,
             #                          out_features=self.n_features)
 
-    def features_rotate(self, f):
-        return f @ self.fc_pre.weight
+    def features_rotate(self, f, detach=False):
+        W = self.fc_pre.weight
+        b = self.fc_pre.bias
 
-    def features_unrotate(self, f):
-        return f @ torch.pinverse(self.fc_pre.weight)
+        if detach:
+            W = W.detach()
+            b = b.detach()
+
+        return (f @ W) + b
+
+    def features_unrotate(self, f, detach=False):
+        W = self.fc_pre.weight
+        b = self.fc_pre.bias
+
+        if detach:
+            W = W.detach()
+            b = b.detach()
+
+        W = torch.pinverse(W)
+        return (f - b) @ W
 
     @property
     def model__params(self):
@@ -318,7 +335,7 @@ class ManyNetworkCombinedModel(Model):
             # print(self.model)
             raise NotImplementedError
 
-    def forward(self, f_t, a_t, additional=False, all=False, **kwargs):
+    def forward(self, f_t, a_t, detach_rotation=False, additional=False, all=False, **kwargs):
         assert all is True
         n_f_out = self.n_total_features
 
@@ -336,7 +353,7 @@ class ManyNetworkCombinedModel(Model):
             fa_t_f = fa_t[:, :self.n_features]
             fa_t_a = fa_t[:, self.n_features:]
 
-            fa_t_f = self.features_rotate(fa_t_f)
+            fa_t_f = self.features_rotate(fa_t_f, detach=detach_rotation)
 
             fa_t = torch.cat([fa_t_f, fa_t_a], dim=1)
 
@@ -346,7 +363,7 @@ class ManyNetworkCombinedModel(Model):
             f_t1_f = f_t1[:, :self.n_features]
             f_t1_e = f_t1[:, self.n_features:]  # extra (additional) features
 
-            f_t1_f = self.features_unrotate(f_t1_f)
+            f_t1_f = self.features_unrotate(f_t1_f, detach=detach_rotation)
 
             f_t1 = torch.cat([f_t1_f, f_t1_e], dim=1)
 

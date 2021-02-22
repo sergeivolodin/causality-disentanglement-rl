@@ -72,7 +72,7 @@ Config.decoder = @ModelDecoder
 Config.feature_shape = (8, )
 
 opt1/Optimizer.lr = 1e-3
-opt1/Optimizer.betas = (0.5, 0.8)
+#opt1/Optimizer.betas = (0.5, 0.8)
 opt2/Optimizer.lr = 1e-3
 opt3/Optimizer.lr = 1e-3
 
@@ -129,20 +129,20 @@ Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
 
 MIN_HYPER_ANNEAL = 1e-9
 
-all_on/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': False}
+all_on/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': False, 'detach_rotation': True}
 all_on/fit_loss_obs_space.detach_features = True
 
-all_half/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': True, 'force_proba': 0.5}
+all_half/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': True, 'force_proba': 0.5, 'detach_rotation': True}
 all_half/fit_loss_obs_space.detach_features = True
 
 fit/fit_loss_obs_space.detach_features = False
 fit/fit_loss_obs_space.fill_switch_grad = True
 
-Config.losses = {'fit': {'fcn': @fit/fit_loss_obs_space, 'coeff': 0.33}, # 0.33
+Config.losses = {'fit': {'fcn': @fit/fit_loss_obs_space, 'coeff': 0}, # 0.33
                  'sparsity': {'fcn': @sparsity_loss, 'coeff': %MIN_HYPER_ANNEAL},
                  'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 10.0},
                  'fit_all_on': {'fcn': @all_on/fit_loss_obs_space, 'coeff': 0.33}, # 0.33
-                 'fit_all_half': {'fcn': @all_half/fit_loss_obs_space, 'coeff': 0.001},# 0.001
+                 'fit_all_half': {'fcn': @all_half/fit_loss_obs_space, 'coeff': 0},# 0.001
                 }
 
 fit_loss_obs_space.divide_by_std = True
