@@ -365,7 +365,8 @@ class AbstractLearner(ABC):
                 for loss_label in self.config['execution'].get(opt_label, []):
                     loss = self.config['losses'][loss_label]
                     value = loss['fcn'](**context, opt_label=opt_label,
-                                        loss_local_cache=loss_local_cache)
+                                        loss_local_cache=loss_local_cache,
+                                        loss_coeff=loss['coeff'])
                     if isinstance(value, dict):
                         if loss_label not in epoch_info['metrics']:
                             epoch_info['metrics'][loss_label] = {}

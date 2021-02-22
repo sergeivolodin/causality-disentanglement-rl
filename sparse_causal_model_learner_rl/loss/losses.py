@@ -101,7 +101,7 @@ def reconstruction_loss_value_function_reward_to_go(obs_x, decoder, value_predic
     return mse(value_predictor(decoder(obs_x)), reward_to_go * value_scaler)
 
 @gin.configurable
-def manual_switch_gradient(loss_delta_noreduce, model, eps=1e-5):
+def manual_switch_gradient(loss_delta_noreduce, model, eps=1e-5, loss_coeff=1.0):
     """Fill in the gradient of switch probas manually
 
     Assuming that the batch size is enough to estimate mean loss with
@@ -131,6 +131,8 @@ def manual_switch_gradient(loss_delta_noreduce, model, eps=1e-5):
     mask_atleast = ((n_pos >= 1) * (n_neg >= 1))
     mask_coeff = mask_atleast * (mask_pos - mask_neg)
     p_grad = (delta_expanded * mask_coeff).sum(dim=0)
+    
+    p_grad *= loss_coeff
 
     if model.model.switch.probas.grad is None:
         model.model.switch.probas.grad = p_grad.clone()
@@ -231,6 +233,7 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
              add_fcons=True,
              divide_by_std=False,
              detach_features=False,
+             loss_coeff=1.0,
              loss_local_cache=None,
              std_eps=1e-6,
              **kwargs):
@@ -298,7 +301,7 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
         loss_fcons = None
 
     if fill_switch_grad:
-        manual_switch_gradient(loss, model)
+        manual_switch_gradient(loss, model, loss_coeff=loss_coeff)
         
     loss = loss.mean(0)        
 
