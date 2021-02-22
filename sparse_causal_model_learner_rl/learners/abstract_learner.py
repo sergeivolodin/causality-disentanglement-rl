@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from tqdm import tqdm
 from tqdm.auto import tqdm
-
+from copy import deepcopy
 from causal_util.helpers import postprocess_info
 from sparse_causal_model_learner_rl.config import Config
 from abc import ABC, abstractmethod, abstractproperty
@@ -225,10 +225,12 @@ class AbstractLearner(ABC):
         # restoring trainables
         for key in set(self.trainables.keys()).intersection(dct['trainables_weights'].keys()):
             logging.info(f"Loading {key} weights from a checkpoint...")
+            orig_dict = deepcopy(self.trainables[key].state_dict())
             try:
                 self.trainables[key].load_state_dict(dct['trainables_weights'][key])
             except RuntimeError as e:
-                logging.error(f"Can't load weights for {key}: {e}")
+                logging.error(f"Can't load weights for {key}: {e}, undoing loading")
+                self.trainables[key].load_state_dict(orig_dict)
 
     def __getstate__(self):
         result = {k: getattr(self, k) for k in self.PICKLE_DIRECTLY

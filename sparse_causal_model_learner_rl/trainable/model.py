@@ -230,10 +230,10 @@ class ManyNetworkCombinedModel(Model):
             #                          out_features=self.n_features)
 
     def features_rotate(self, f):
-        return f @ self.fc_pre.weight
+        return f @ nn.Softmax(1)(self.fc_pre.weight)
 
     def features_unrotate(self, f):
-        return f @ torch.pinverse(self.fc_pre.weight)
+        return f @ torch.pinverse(nn.Softmax(1)(self.fc_pre.weight))
 
     @property
     def model__params(self):
