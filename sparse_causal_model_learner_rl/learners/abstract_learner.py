@@ -230,7 +230,7 @@ class AbstractLearner(ABC):
                 self.trainables[key].load_state_dict(dct['trainables_weights'][key])
             except RuntimeError as e:
                 logging.error(f"Can't load weights for {key}: {e}, undoing loading")
-                self.trainables[key].load_state_dict(orig_dict)
+            #    self.trainables[key].load_state_dict(orig_dict)
 
     def __getstate__(self):
         result = {k: getattr(self, k) for k in self.PICKLE_DIRECTLY
