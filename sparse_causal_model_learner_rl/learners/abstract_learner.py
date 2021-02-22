@@ -225,7 +225,10 @@ class AbstractLearner(ABC):
         # restoring trainables
         for key in set(self.trainables.keys()).intersection(dct['trainables_weights'].keys()):
             logging.info(f"Loading {key} weights from a checkpoint...")
-            self.trainables[key].load_state_dict(dct['trainables_weights'][key])
+            try:
+                self.trainables[key].load_state_dict(dct['trainables_weights'][key])
+            except RuntimeError as e:
+                logging.error(f"Can't load weights for {key}: {e}")
 
     def __getstate__(self):
         result = {k: getattr(self, k) for k in self.PICKLE_DIRECTLY

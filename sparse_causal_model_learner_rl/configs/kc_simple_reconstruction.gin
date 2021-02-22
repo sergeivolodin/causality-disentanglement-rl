@@ -52,13 +52,13 @@ Config.model = @sparse_model/ManyNetworkCombinedModel
 Config.reconstructor = @ModelReconstructor
 
 ModelReconstructor.model_cls = @reconstructor/FCCombinedModel
-reconstructor/FCCombinedModel.hidden_sizes = [64, 8] # need a list of coordinates act(x-xi). 5 to prevent slow fit
+reconstructor/FCCombinedModel.hidden_sizes = [128, 64] # need a list of coordinates act(x-xi). 5 to prevent slow fit
 reconstructor/FCCombinedModel.activation_cls = [@Tanh, @LeakyReLU, None]
 reconstructor/FCCombinedModel.add_input_batchnorm = True
 reconstructor/FCCombinedModel.input_reshape = True
 
 
-decoder/FCCombinedModel.hidden_sizes = [256, 128]  # should be enough -- just need to sum the coordinate actually
+decoder/FCCombinedModel.hidden_sizes = [256, 64]  # should be enough -- just need to sum the coordinate actually
 decoder/FCCombinedModel.activation_cls = @LeakyReLU
 decoder/FCCombinedModel.add_input_batchnorm = True
 decoder/FCCombinedModel.input_reshape = True
@@ -83,7 +83,8 @@ Config.optimizers = {'opt1': @opt1/Optimizer}#, 'opt2': @opt2/Optimizer, 'opt3':
 
 LOSSES_OTHER = ['fit', 'fit_all_on', 'reconstruction']
 LOSSES_SPARSE = ['sparsity', 'fit']
-LOSSES_ALL = ['fit', 'fit_all_on', 'reconstruction', 'sparsity', 'fit_all_half']
+#LOSSES_ALL = ['fit', 'fit_all_on', 'reconstruction', 'sparsity', 'fit_all_half']
+LOSSES_ALL = ['reconstruction']
 
 Config.execution = {'opt1': %LOSSES_ALL,
                     #'opt2': %LOSSES_ALL,
@@ -91,7 +92,9 @@ Config.execution = {'opt1': %LOSSES_ALL,
                     #'opt4': ['discriminate_siamese', 'non_sparse_fit'], # w/o sparsity, only model (for fit)
                     #'opt5': ['fit', 'fit_all_on'],
                     }
-Config.optim_params = {'opt1': ['model', 'decoder', 'reconstructor'], # switch learning
+Config.optim_params = {
+                       #'opt1': ['model', 'decoder', 'reconstructor'], # switch learning
+                       'opt1': ['decoder', 'reconstructor'], # switch learning
                        #'opt2': ['decoder', 'reconstructor'], # representation learning
                        #'opt3': ['non_sparse_model'], # reference model learning
                        #'opt4': ['decoder'], # representation learning
@@ -108,16 +111,16 @@ mult_sparsity_gap.sparse_key = 'fit_loss_smooth'
 mult_sparsity_gap.non_sparse_key = 'non_sparse_fit_loss_smooth'
 
 # using vanilla fit loss
-Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
-                  'threshold_features': @threshold_features, 'max_element_ma': @max_element_ma,
-                  'max_element_mf': @max_element_mf,
+Config.metrics = {#'nnz': @nnz, 'threshold_action': @threshold_action,
+                  #'threshold_features': @threshold_features, 'max_element_ma': @max_element_ma,
+                  #'max_element_mf': @max_element_mf,
                   'episode_reward': @episode_reward,
-                  'graph_entropy_ma': @entropy_action,
-                  'graph_entropy_mf': @entropy_features,
-                  'threshold_annealer_threshold': @threshold_annealer_threshold,
-                  'fit_loss_smooth': @fit_loss_smooth/smooth,
-                  'non_sparse_fit_loss_smooth': @non_sparse_fit_loss_smooth/smooth,
-                  '|last_mult_sparsity_gap': @mult_sparsity_gap
+                  #'graph_entropy_ma': @entropy_action,
+                  #'graph_entropy_mf': @entropy_features,
+                  #'threshold_annealer_threshold': @threshold_annealer_threshold,
+                  #'fit_loss_smooth': @fit_loss_smooth/smooth,
+                  #'non_sparse_fit_loss_smooth': @non_sparse_fit_loss_smooth/smooth,
+                  #'|last_mult_sparsity_gap': @mult_sparsity_gap
 }
 
 MIN_HYPER_ANNEAL = 1e-9
@@ -127,9 +130,9 @@ all_half/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': True, 'forc
 
 Config.losses = {'fit': {'fcn': @fit/fit_loss_obs_space, 'coeff': 0.33},
                  'sparsity': {'fcn': @sparsity_loss, 'coeff': %MIN_HYPER_ANNEAL},
-                 'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 2.0},
+                 'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 10.0},
                  'fit_all_on': {'fcn': @all_on/fit_loss_obs_space, 'coeff': 0.33},
-                 'fit_all_half': {'fcn': @all_half/fit_loss_obs_space, 'coeff': 0.33},
+                 'fit_all_half': {'fcn': @all_half/fit_loss_obs_space, 'coeff': 0.0001},
                 }
 
 reconstruction_loss.relative = True
@@ -172,7 +175,7 @@ ModelResetter.reset_weights = False
 ModelResetter.reset_logits = False
 ModelResetter.reset_turn_on = False
 
-Config._update_function = [@AnnealerThresholdSelector, @ThresholdAnnealer, @ModelResetter]
+Config._update_function = []#@AnnealerThresholdSelector, @ThresholdAnnealer, @ModelResetter]
 
 ThresholdAnnealer.adjust_every = 100
 ThresholdAnnealer.factor_cool = 0.5
