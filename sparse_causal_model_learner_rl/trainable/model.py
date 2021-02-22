@@ -191,18 +191,19 @@ class ManyNetworkModel(Model):
 
         return f_t1
 
-
 @gin.configurable
 class ManyNetworkCombinedModel(Model):
     """Instantiate many networks, each modelling one feature."""
     def __init__(self, model_cls=None, sparse_do_max=True,
                  input_batchnorm=True,
+                 add_linear_transform=False,
                  sparse_do_max_mfma=True, **kwargs):
         super(ManyNetworkCombinedModel, self).__init__(**kwargs)
         assert len(self.feature_shape) == 1, f"Features must be scalar: {self.feature_shape}"
         assert len(self.action_shape) == 1, f"Actions must be scalar: {self.action_shape}"
         assert len(self.additional_feature_shape) == 1, f"Additional features must be scalar: {self.additional_feature_shape}"
 
+        self.add_linear_transform = add_linear_transform
         self.input_batchnorm = input_batchnorm
 
         self.n_features = self.feature_shape[0]
@@ -220,6 +221,20 @@ class ManyNetworkCombinedModel(Model):
         self.model = model_cls(input_shape=(self.n_features + self.n_actions,),
                                output_shape=(1,),
                                n_models=self.n_total_features)
+
+        if self.add_linear_transform:
+            self.fc_pre = nn.Linear(in_features=self.n_features,
+                                    out_features=self.n_features,
+                                    bias=False)
+            # self.fc_post = nn.Linear(in_features=self.n_features,
+            #                          out_features=self.n_features)
+
+    def features_rotate(self, f):
+        return f @ self.fc_pre.weight
+
+    def features_unrotate(self, f):
+        return f @ torch.pinverse(self.fc_pre.weight)
+
     @property
     def model__params(self):
         """List of model (not switch) parameters."""
@@ -233,6 +248,11 @@ class ManyNetworkCombinedModel(Model):
         if self.input_batchnorm:
             for p in self.bb.parameters():
                 yield p
+        if self.add_linear_transform:
+            for p in self.fc_pre.parameters():
+                yield p
+            # for p in self.fc_post.parameters():
+            #     yield p
 
     @property
     def switch__params(self):
@@ -312,7 +332,23 @@ class ManyNetworkCombinedModel(Model):
         if self.input_batchnorm:
             fa_t = self.bn(fa_t)
 
+        if self.add_linear_transform:
+            fa_t_f = fa_t[:, :self.n_features]
+            fa_t_a = fa_t[:, self.n_features:]
+
+            fa_t_f = self.features_rotate(fa_t_f)
+
+            fa_t = torch.cat([fa_t_f, fa_t_a], dim=1)
+
         f_t1 = self.model(fa_t, **kwargs)
+
+        if self.add_linear_transform:
+            f_t1_f = f_t1[:, :self.n_features]
+            f_t1_e = f_t1[:, self.n_features:]  # extra (additional) features
+
+            f_t1_f = self.features_unrotate(f_t1_f)
+
+            f_t1 = torch.cat([f_t1_f, f_t1_e], dim=1)
 
         # sanity check for output
         assert f_t1.shape[1] == n_f_out, f"Must return {n_f_out} features add={additional}: {f_t1.shape}"
