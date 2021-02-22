@@ -128,7 +128,13 @@ Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
 MIN_HYPER_ANNEAL = 1e-9
 
 all_on/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': False}
+all_on/fit_loss_obs_space.detach_features = True
+
 all_half/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': True, 'force_proba': 0.5}
+all_half/fit_loss_obs_space.fill_switch_grad = True
+all_half/fit_loss_obs_space.detach_features = True
+
+fit/fit_loss_obs_space.detach_features = False
 
 Config.losses = {'fit': {'fcn': @fit/fit_loss_obs_space, 'coeff': 0.33}, # 0.33
                  'sparsity': {'fcn': @sparsity_loss, 'coeff': %MIN_HYPER_ANNEAL},
@@ -139,7 +145,6 @@ Config.losses = {'fit': {'fcn': @fit/fit_loss_obs_space, 'coeff': 0.33}, # 0.33
 
 fit_loss_obs_space.divide_by_std = True
 
-fit/fit_loss_obs_space.fill_switch_grad = True
 
 nonzero_proba_loss.eps = 0.5
 nonzero_proba_loss.do_abs = False
@@ -166,7 +171,7 @@ LearnableSwitch.switch_neg = 0
 LearnableSwitch.switch_pos = 0
 
 LearnableSwitchSimple.initial_proba = 0.5
-LearnableSwitchSimple.min_proba = 0.5
+LearnableSwitchSimple.min_proba = 0
 LearnableSwitchSimple.sample_many = True
 LearnableSwitchSimple.return_grad = False
 

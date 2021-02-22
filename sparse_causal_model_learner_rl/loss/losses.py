@@ -230,6 +230,7 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
              opt_label=None,
              add_fcons=True,
              divide_by_std=False,
+             detach_features=False,
              loss_local_cache=None,
              std_eps=1e-6,
              **kwargs):
@@ -248,7 +249,12 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
     if 'dec_obs_x' not in loss_local_cache:
         loss_local_cache['dec_obs_x'] = decoder(obs_x)
 
-    f_t1_pred = model(loss_local_cache['dec_obs_x'], action_x, all=have_additional, **model_forward_kwargs)
+    f_x = loss_local_cache['dec_obs_x']
+
+    if detach_features:
+        f_x = f_x.detach()
+
+    f_t1_pred = model(f_x, action_x, all=have_additional, **model_forward_kwargs)
     f_t1_f = f_t1_pred[:, :model.n_features]
     obs_y_pred = reconstructor(f_t1_f)
     delta_first = obs_y.flatten(start_dim=1)
@@ -279,6 +285,8 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
         if 'dec_obs_y' not in loss_local_cache:
             loss_local_cache['dec_obs_y'] = decoder(obs_y)
         f_next_true = loss_local_cache['dec_obs_y']#.detach()
+        if detach_features:
+            f_next_true = f_next_true.detach()
         loss_fcons = (f_next_pred - f_next_true).pow(2)
         if divide_by_std:
             delta_fcons_std = f_next_true.std(0).unsqueeze(0)
