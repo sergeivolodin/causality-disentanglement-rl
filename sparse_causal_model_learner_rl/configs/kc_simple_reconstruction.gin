@@ -71,6 +71,7 @@ Config.decoder = @ModelDecoder
 Config.feature_shape = (10, )
 
 opt1/Optimizer.lr = 1e-3
+opt1/Optimizer.betas = (0.5, 0.8)
 opt2/Optimizer.lr = 1e-3
 opt3/Optimizer.lr = 1e-3
 
