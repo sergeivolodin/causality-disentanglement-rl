@@ -473,9 +473,11 @@ class ModelModel(Model):
                     f_t1 += f_t
         return f_t1
 
+@gin.configurable
 class Rotation(nn.Module):
     """One fully-connected layer."""
-    def __init__(self, feature_shape, **kwargs)
+    def __init__(self, feature_shape, **kwargs):
+        super(Rotation, self).__init__()
         assert len(feature_shape) == 1, feature_shape
         self.n_features = feature_shape[0]
         self.rot = nn.Linear(in_features=self.n_features,
