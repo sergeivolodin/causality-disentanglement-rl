@@ -4,6 +4,18 @@ import gin
 import numpy as np
 from .helpers import gather_additional_features
 
+def tensor_std(t, eps=1e-8):
+    """Compute standard deviation, output 1 if std < eps for stability (disabled features)."""
+    s = t.std(0, keepdim=True)
+    s = torch.where(s < eps, torch.ones_like(s), s)
+    return s
+
+def cache_get(cache, key, fcn):
+    """Get key from cache, or compute one."""
+    if key not in cache:
+        cache[key] = fcn()
+    return cache[key]
+
 @gin.configurable
 def MSERelative(pred, target, eps=1e-6):
     """Relative MSE loss."""
@@ -11,12 +23,9 @@ def MSERelative(pred, target, eps=1e-6):
     target = target.flatten(start_dim=1)
     delta = pred - target
     delta = delta
-    delta_magnitude = target.std(0).unsqueeze(0)
-        
-    delta_magnitude = torch.where(delta_magnitude < eps,
-                                  torch.ones_like(delta_magnitude),
-                                  delta_magnitude)
-    
+
+    delta_magnitude = tensor_std(target)
+
     delta = delta / delta_magnitude    
     delta = delta.pow(2).sum(1).mean()
     return delta
@@ -185,8 +194,8 @@ def fit_loss(obs_x, obs_y, action_x, decoder, model, additional_feature_keys,
     if divide_by_std:
 #         f_t1_std = (fit_loss_median_std.forward(f_t1, save=opt_label is not None).view(1, -1))
 #         f_t1_std = torch.max(torch.ones_like(f_t1_std) * std_eps, f_t1_std).detach()
-        f_t1_std = f_t1.std(0).unsqueeze(0)
-        f_t1_std = torch.where(f_t1_std < std_eps, torch.ones_like(f_t1_std), f_t1_std)
+        f_t1_std = tensor_std(f_t1)
+
     else:
         f_t1_std = None
         
@@ -224,6 +233,15 @@ def fit_loss(obs_x, obs_y, action_x, decoder, model, additional_feature_keys,
     return {'loss': loss,
             'metrics': metrics}
 
+def delta_pow2_sum1(true, pred, divide_by_std=False):
+    """Compute (relative) MSE error."""
+    delta = (true - pred).pow(2)
+    if divide_by_std:
+        std = tensor_std(true)
+        delta = delta / std.pow(2)
+    return delta.sum(1)
+
+
 @gin.configurable
 def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_feature_keys,
              reconstructor,
@@ -231,91 +249,85 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
              fill_switch_grad=False,
              opt_label=None,
              add_fcons=True,
+             rot_pre=None, rot_post=None,
              divide_by_std=False,
              detach_features=False,
+             detach_rotation=False,
              loss_coeff=1.0,
              loss_local_cache=None,
-             std_eps=1e-6,
              **kwargs):
     """Ensure that the model fits the features data."""
 
+    #      dec     rot_pre     model           rot_post   rec
+    # obs_x -> f_x -> f_x_model -> f_yp_f_model -> f_yp_f -> obs_yp
+    # obs_y -> f_y -> f_y_model
+    # LOSSES
+    # obs_yp ~ obs_y + additional features (f_yp_fadd_model ~ f_y_fadd) [loss]
+    # f_yp_f_model ~ f_y_model [loss_fcons_model]
+    # f_yp_f ~ f_y
+
     if model_forward_kwargs is None:
         model_forward_kwargs = {}
-    
-    have_additional = False
-    if additional_feature_keys:
-        have_additional = True
-        add_features_y = gather_additional_features(additional_feature_keys=additional_feature_keys,
-                                                    **kwargs)
 
-    
-    if 'dec_obs_x' not in loss_local_cache:
-        loss_local_cache['dec_obs_x'] = decoder(obs_x)
-
-    f_x = loss_local_cache['dec_obs_x']
+    f_x = cache_get(loss_local_cache, 'dec_obs_x',  lambda: decoder(obs_x))
 
     if detach_features:
         f_x = f_x.detach()
 
-    f_t1_pred = model(f_x, action_x, all=have_additional, **model_forward_kwargs)
-    f_t1_f = f_t1_pred[:, :model.n_features]
-    obs_y_pred = reconstructor(f_t1_f)
-    delta_first = obs_y.flatten(start_dim=1)
-    delta_second = obs_y_pred.flatten(start_dim=1)
+    with torch.set_grad_enabled(not detach_rotation):
+        f_x_model = rot_pre(f_x)
+
+    f_yp_model = model(f_x_model, action_x, all=True, **model_forward_kwargs)
+    f_yp_f_model = f_yp_model[:, :model.n_features]
+    f_yp_f = rot_post(f_yp_f_model)
+    obs_yp = reconstructor(f_yp_f)
+
+    loss = delta_pow2_sum1(obs_y.flatten(start_dim=1),
+                           obs_yp.flatten(start_dim=1),
+                           divide_by_std=False)
 
     if additional_feature_keys:
-        f_t1_fadd = f_t1_pred[:, model.n_features:]
-        delta_first = torch.cat([delta_first, add_features_y], dim=1)
-        delta_second = torch.cat([delta_second, f_t1_fadd], dim=1)
-    
-    delta = delta_first - delta_second
+        f_y_fadd = gather_additional_features(
+            additional_feature_keys=additional_feature_keys, **kwargs)
+        f_yp_fadd_model = f_yp_model[:, model.n_features:]
+        loss_additional = delta_pow2_sum1(f_y_fadd, f_yp_fadd_model)
+        loss += loss_additional
+    else:
+        loss_additional = None
 
-#    if divide_by_std:
-#        delta_first_std = delta_first.std(0).unsqueeze(0)
-#        delta_first_std = torch.where(delta_first_std < std_eps, torch.ones_like(delta_first_std), delta_first_std)
-#    else:
-#        delta_first_std = None
 
-    loss = delta.pow(2)
- #   if delta_first_std is not None:
- #       loss = loss / delta_first_std.pow(2)
+    if add_fcons:
+        f_y = cache_get(loss_local_cache, 'dec_obs_y', lambda: decoder(obs_y))
 
-    loss = loss.sum(1)
-
-    if add_fcons:  # ensure that model(f) ~ f_t1
-        f_next_pred = f_t1_f #model(decoder(obs_x).detach(), action_x, all=True, **model_forward_kwargs)
-        #f_next_pred = f_next_pred[:, :model.n_features]
-        if 'dec_obs_y' not in loss_local_cache:
-            loss_local_cache['dec_obs_y'] = decoder(obs_y)
-        f_next_true = loss_local_cache['dec_obs_y']#.detach()
         if detach_features:
-            f_next_true = f_next_true.detach()
-        loss_fcons = (f_next_pred - f_next_true).pow(2)
-        if divide_by_std:
-            delta_fcons_std = f_next_true.std(0).unsqueeze(0)
-            delta_fcons_std = torch.where(delta_fcons_std < std_eps, torch.ones_like(delta_fcons_std), delta_fcons_std)
-            loss_fcons = loss_fcons / delta_fcons_std.pow(2)
-        loss += loss_fcons.sum(1)
+            f_y = f_y.detach()
 
+        with torch.set_grad_enabled(not detach_rotation):
+            f_y_model = rot_pre(f_y)
+
+        loss_fcons = delta_pow2_sum1(f_y, f_yp_f, divide_by_std=divide_by_std)
+        loss += loss_fcons
+
+        loss_fcons_model = delta_pow2_sum1(f_y_model, f_yp_f_model, divide_by_std=divide_by_std)
+        loss += loss_fcons_model
     else:
         loss_fcons = None
+        loss_fcons_model = None
 
     if fill_switch_grad:
         manual_switch_gradient(loss, model, loss_coeff=loss_coeff)
-        
-    loss = loss.mean(0)        
 
-    metrics = {'mean_feature': f_t1_pred.mean(0).detach().cpu().numpy(),
-               'std_feature': f_t1_pred.std(0).detach().cpu().numpy(),
-               'min_feature': f_t1_pred.min().item(),
-               'max_feature': f_t1_pred.max().item(),
-               'loss_fcons': loss_fcons.sum(1).mean(0).item() if loss_fcons is not None else 0.0,
-               #'std_obs_avg': delta_first_std.detach().cpu().numpy() if delta_first_std is not None else 0.0,
-               #'inv_std_obs_avg': delta_first_std.detach().cpu().numpy() if delta_first_std is not None else 0.0
+    metrics = {'mean_feature': f_x.mean(0).detach().cpu().numpy(),
+               'std_feature': f_x.std(0).detach().cpu().numpy(),
+               'min_feature': f_x.min().item(),
+               'max_feature': f_x.max().item(),
+               'loss_fcons': loss_fcons.mean(0).item() if loss_fcons is not None else 0.0,
+               'loss_add': loss_additional.mean(0).item() if loss_additional is not None else 0.0,
+               'loss_fcons_pre': loss_fcons_model.mean(0).item() if loss_fcons is not None else 0.0,
+               'rec_fit_acc_loss_01_agg': 2 - delta_01_obs(obs_y, obs_yp).item(),
                }
-    metrics['rec_fit_acc_loss_01_agg'] = 2 - delta_01_obs(obs_y, obs_y_pred).item()
     
-    return {'loss': loss,
+    return {'loss': loss.mean(0),
             'metrics': metrics}
 
 def linreg(X, Y):

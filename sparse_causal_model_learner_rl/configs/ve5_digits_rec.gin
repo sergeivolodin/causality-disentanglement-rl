@@ -51,6 +51,8 @@ ManyNetworkCombinedModel.add_linear_transform = True
 
 Config.model = @sparse_model/ManyNetworkCombinedModel
 Config.reconstructor = @ModelReconstructor
+Config.rot_pre = @Rotation
+Config.rot_post = @Rotation
 
 ModelReconstructor.model_cls = @rec/FCCombinedModel
 ModelReconstructor.unflatten = True
@@ -132,8 +134,10 @@ MIN_HYPER_ANNEAL = 1e-9
 all_on/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': False, 'detach_rotation': True}
 all_on/fit_loss_obs_space.detach_features = True
 
-all_half/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': True, 'force_proba': 0.5, 'detach_rotation': True}
+all_half/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': True, 'force_proba': 0.5,
+                                                    'detach_rotation': True}
 all_half/fit_loss_obs_space.detach_features = True
+all_half/fit_loss_obs_space.fill_switch_grad = True
 
 fit/fit_loss_obs_space.detach_features = False
 fit/fit_loss_obs_space.fill_switch_grad = True
