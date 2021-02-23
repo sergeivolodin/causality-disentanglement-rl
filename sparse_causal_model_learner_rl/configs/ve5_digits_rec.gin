@@ -99,7 +99,7 @@ Config.execution = {'opt1': %LOSSES_ALL,
                     #'opt5': ['fit', 'fit_all_on'],
                     }
 Config.optim_params = {
-'opt1': ['model', 'decoder', 'reconstructor'], # switch learning
+'opt1': ['rot_pre', 'rot_post', 'model', 'decoder', 'reconstructor'], # switch learning
     #'opt1': ['decoder', 'reconstructor'], # 'model',
                        #'opt2': ['decoder', 'reconstructor'], # representation learning
                        #'opt3': ['non_sparse_model'], # reference model learning
