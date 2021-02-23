@@ -1,4 +1,5 @@
 runs
+*torchviz*
 checkpoint
 mnist
 experiment_state*.json
