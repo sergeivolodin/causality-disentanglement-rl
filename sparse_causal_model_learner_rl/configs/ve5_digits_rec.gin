@@ -138,11 +138,11 @@ all_half/fit_loss_obs_space.detach_features = True
 fit/fit_loss_obs_space.detach_features = False
 fit/fit_loss_obs_space.fill_switch_grad = True
 
-Config.losses = {'fit': {'fcn': @fit/fit_loss_obs_space, 'coeff': 0}, # 0.33
+Config.losses = {'fit': {'fcn': @fit/fit_loss_obs_space, 'coeff': 20.0}, # 0.33
                  'sparsity': {'fcn': @sparsity_loss, 'coeff': %MIN_HYPER_ANNEAL},
                  'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 10.0},
-                 'fit_all_on': {'fcn': @all_on/fit_loss_obs_space, 'coeff': 0.33}, # 0.33
-                 'fit_all_half': {'fcn': @all_half/fit_loss_obs_space, 'coeff': 0},# 0.001
+                 'fit_all_on': {'fcn': @all_on/fit_loss_obs_space, 'coeff': 1.0}, # 0.33
+                 'fit_all_half': {'fcn': @all_half/fit_loss_obs_space, 'coeff': 0.001},# 0.001
                 }
 
 fit_loss_obs_space.divide_by_std = True

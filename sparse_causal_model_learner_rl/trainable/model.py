@@ -228,6 +228,7 @@ class ManyNetworkCombinedModel(Model):
                                     bias=True)
             self.fc_pre.weight.data[:] += torch.eye(self.n_features)
             self.fc_pre.bias.data[:] = 0.0
+            self.bn_post = nn.BatchNorm1d(self.n_features)
             # self.fc_post = nn.Linear(in_features=self.n_features,
             #                          out_features=self.n_features)
 
@@ -363,7 +364,8 @@ class ManyNetworkCombinedModel(Model):
             f_t1_f = f_t1[:, :self.n_features]
             f_t1_e = f_t1[:, self.n_features:]  # extra (additional) features
 
-            f_t1_f = self.features_unrotate(f_t1_f, detach=detach_rotation)
+            #f_t1_f = self.features_unrotate(f_t1_f, detach=detach_rotation)
+            #f_t1_f = self.bn_post(f_t1_f)
 
             f_t1 = torch.cat([f_t1_f, f_t1_e], dim=1)
 
