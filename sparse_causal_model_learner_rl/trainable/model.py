@@ -470,3 +470,15 @@ class ModelModel(Model):
                 if self.skip_connection:
                     f_t1 += f_t
         return f_t1
+
+class Rotation(nn.Module):
+    """One fully-connected layer."""
+    def __init__(self, feature_shape, **kwargs)
+        assert len(feature_shape) == 1, feature_shape
+        self.n_features = feature_shape[0]
+        self.rot = nn.Linear(in_features=self.n_features,
+                             out_features=self.n_features,
+                             bias=True)
+    def forward(self, x):
+        return self.rot(x)
+

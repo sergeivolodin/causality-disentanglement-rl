@@ -70,7 +70,9 @@ Config.potential_trainables_list = [
     {'name': 'causal_feature_model_discriminator', 'description': "Discriminate between correct and incorrect of pairs (f1, f2)"},
     {'name': 'decoder_discriminator', 'description': "Discriminate between correct and incorrect pairs of (observation, feature)"},
     {'name': 'non_sparse_model', 'description': "A model w/o sparsity constraints used for reference"},
-    {'name': 'causal_feature_action_model_discriminator', 'description': "Discriminate between correct triplets (f1, a1, f2) and incorrect ones. Takes additional features as well for the second argument."}
+    {'name': 'causal_feature_action_model_discriminator', 'description': "Discriminate between correct triplets (f1, a1, f2) and incorrect ones. Takes additional features as well for the second argument."},
+    {'name': 'rot_pre', 'description': "Transform decoder features to model features"},
+    {'name': 'rot_post', 'description': "Transform model features to decoder features"},
 ]
 
 loss_thresholded.eps = 1e-3
