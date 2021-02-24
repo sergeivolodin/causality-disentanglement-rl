@@ -4,15 +4,16 @@
 include '../../vectorincrement/config/ve2_toy_digits.gin'
 include 'with_secondary_stage_features.gin'
 include 'remote_collect.gin'
-include 'with_additional_features.gin'
+#include 'with_additional_features.gin'
 
 N_FEATURES = 3
 
 # DATA COLLECTION PREFS
 Config.min_collected_sample_ratio = 0.5
 Config.buffer_steps = 100000
-Config.minibatch_size = 5000
-Config.env_steps = 5000
+Config.minibatch_size = 1000
+Config.n_collectors = 5
+Config.env_steps = 1000
 Config.collect_initial_steps = 100000
 tune_run.resources_per_trial = {'gpu': 0.4, 'cpu': 6}
 Config.collect_every = 1
@@ -60,5 +61,5 @@ rec/FCCombinedModel.input_reshape = True
 FIT_COEFF = 0.33
 SPARSITY_COEFF = 0.04
 REC_COEFF = 0.03
-FIT_ON_COEFF = 0.33
-FIT_HALF_COEFF = 0.033
+FIT_ON_COEFF = 0.1
+FIT_HALF_COEFF = 0.0033

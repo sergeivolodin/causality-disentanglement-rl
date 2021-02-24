@@ -1,11 +1,13 @@
 import vectorincrement
 import encoder.digit_encoder
+import encoder.observation_encoder
 import causal_util.helpers
 
 load_env.env_name = "VectorIncrement-v0"
-load_env.time_limit = 9
+load_env.time_limit = 15
 load_env.obs_scaler = 1.0
-dgs/small_int_vector_asimage.max_digits = 1
-load_env.wrappers_prescale = [@dgs/digit_encoder.DigitsVectorWrapper]
+digit_encoder.DigitsVectorWrapper.max_digits = -1
+load_env.wrappers_prescale = [@observation_encoder.ShuffleObservationWrapper,
+                              @digit_encoder.DigitsVectorWrapper]
 
 vectorincrementenv.VectorIncrementEnvironment.n = 5

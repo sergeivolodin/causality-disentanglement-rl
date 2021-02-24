@@ -6,13 +6,12 @@ import sparse_causal_model_learner_rl.loss.losses
 reconstruction_loss.relative = False
 
 # all probas are 1
-all_on/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': False, 'detach_rotation': True}
+all_on/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': False}
 all_on/fit_loss_obs_space.detach_features = True
 all_on/fit_loss_obs_space.detach_rotation = True
 
 # all probas are 0.5
-all_half/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': True, 'force_proba': 0.5,
-                                                    'detach_rotation': True}
+all_half/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': True, 'force_proba': 0.5}
 all_half/fit_loss_obs_space.detach_features = True
 all_half/fit_loss_obs_space.detach_rotation = True
 all_half/fit_loss_obs_space.fill_switch_grad = True
