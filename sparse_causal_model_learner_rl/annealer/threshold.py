@@ -219,7 +219,6 @@ def ThresholdAnnealer(config, epoch_info, temp,
             temp['last_freeze_start'] = i
             logging.warning(f"Starting model freeze at {i}")
 
-        # if 'last_direction' not in temp:
         temp['last_direction'] = direction
 
         config['losses']['sparsity']['coeff'] = temp['suggested_hyper']
