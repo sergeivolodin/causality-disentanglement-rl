@@ -266,6 +266,11 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
     # f_yp_f_model ~ f_y_model [loss_fcons_model]
     # f_yp_f ~ f_y
 
+    if rot_pre is None:
+        rot_pre = lambda x: x
+    if rot_post is None:
+        rot_post = lambda x: x
+
     if model_forward_kwargs is None:
         model_forward_kwargs = {}
 
