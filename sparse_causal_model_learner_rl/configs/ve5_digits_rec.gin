@@ -73,7 +73,7 @@ Config.decoder = @ModelDecoder
 
 Config.feature_shape = (8, )
 
-opt1/Optimizer.lr = 1e-3
+opt1/Optimizer.lr = 1e-4
 #opt1/Optimizer.betas = (0.5, 0.8)
 opt2/Optimizer.lr = 1e-3
 opt3/Optimizer.lr = 1e-3
@@ -176,7 +176,7 @@ Config.checkpoint_every = 1000
 LearnableSwitch.switch_neg = 0
 LearnableSwitch.switch_pos = 0
 
-LearnableSwitchSimple.initial_proba = 0.01
+LearnableSwitchSimple.initial_proba = 1.0
 LearnableSwitchSimple.min_proba = 0.01
 LearnableSwitchSimple.sample_many = True
 LearnableSwitchSimple.return_grad = False
@@ -193,7 +193,7 @@ ThresholdAnnealer.adjust_every = 50
 ThresholdAnnealer.factor_cool = 0.1
 ThresholdAnnealer.factor_heat = 0.5
 ThresholdAnnealer.min_hyper = %MIN_HYPER_ANNEAL
-ThresholdAnnealer.max_hyper = 10
+ThresholdAnnealer.max_hyper = 100
 ThresholdAnnealer.emergency_heating = False
 AnnealerThresholdSelector.multiplier = 1.5
 AnnealerThresholdSelector.adjust_every = 20
