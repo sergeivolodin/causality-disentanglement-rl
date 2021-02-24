@@ -237,7 +237,7 @@ def small_int_vector_asimage(v, max_digits=1, eps=1e-8, max_digit_value=10):
         rval = round(val)
         assert abs(rval - val) < eps
 
-        print('md', max_digits)
+        # print('md', max_digits)
         if max_digits <= 0:
             ds = [rval]
         else:
