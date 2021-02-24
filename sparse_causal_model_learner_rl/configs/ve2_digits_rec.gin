@@ -24,8 +24,9 @@ tune_run.num_samples = 1
 
 Config.loss_every = 1000000000000000
 
-model_gnn/FCCombinedModel.hidden_sizes = [256, 65]  # tuning...
+model_gnn/FCCombinedModel.hidden_sizes = [256, 256, 65]  # tuning...
 model_gnn/FCCombinedModel.activation_cls = @LeakyReLU
+model_gnn/FCCombinedModel.add_input_batchnorm = True
 
 WithInputSwitch.give_mask = True
 WithInputSwitch.model_cls = @model_gnn/FCCombinedModel
@@ -76,7 +77,7 @@ Config.decoder = @ModelDecoder
 Config.feature_shape = (3, )
 LearnableSwitchSimple.init_identity_up_to = 3
 
-opt1/Optimizer.lr = 1e-4
+opt1/Optimizer.lr = 1e-3
 #opt1/Optimizer.betas = (0.5, 0.8)
 opt2/Optimizer.lr = 1e-3
 opt3/Optimizer.lr = 1e-3
@@ -140,10 +141,12 @@ MIN_HYPER_ANNEAL = 1e-9
 
 all_on/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': False, 'detach_rotation': True}
 all_on/fit_loss_obs_space.detach_features = True
+all_on/fit_loss_obs_space.detach_rotation = True
 
 all_half/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': True, 'force_proba': 0.5,
                                                     'detach_rotation': True}
 all_half/fit_loss_obs_space.detach_features = True
+all_half/fit_loss_obs_space.detach_rotation = True
 all_half/fit_loss_obs_space.fill_switch_grad = True
 
 fit/fit_loss_obs_space.detach_features = False
@@ -243,7 +246,7 @@ Config.keep_history = False
 Config.max_history_size = 100
 
 Normalizer.type_ = 'meanstd'
-ManyNetworkCombinedModel.input_batchnorm = True
+#ManyNetworkCombinedModel.input_batchnorm = True
 
 
 reconstruction_loss.relative = False
