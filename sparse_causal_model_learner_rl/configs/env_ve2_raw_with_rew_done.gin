@@ -1,4 +1,4 @@
-# VectorIncrement 2 DIGITS CONFIG
+# VectorIncrement 2 RAW CONFIG
 
 # the environment
 include '../../vectorincrement/config/ve2.gin'
