@@ -88,6 +88,10 @@ Gumbel model on ve5 (features raw):
    After ~45 minutes gives:
    
    ![](images/ve2_nodec.png)
+4. ve5 with no encoder:
+   `python -m sparse_causal_model_learner_rl.learner --nofail --n_gpus 1 --config sparse_causal_model_learner_rl/configs/rl_const_sparsity_obs_space.gin --config sparse_causal_model_learner_rl/configs/env_ve5_raw_with_rew_done.gin`
+   15 minutes (~8k steps)
+   ![](images/ve5_raw.png)
 
 #### KeyChest
 1. PPO on KeyChest: `python sb.py --evaluate --train_steps 5000000 --config ../keychest/config/5x5.gin --trainer DQN`
