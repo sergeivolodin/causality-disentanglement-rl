@@ -1,0 +1,25 @@
+# Compute relative MSE losses in observation/feature space
+
+import sparse_causal_model_learner_rl.loss.losses
+
+# observations are assumed to be normalized already
+reconstruction_loss.relative = False
+
+# all probas are 1
+all_on/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': False, 'detach_rotation': True}
+all_on/fit_loss_obs_space.detach_features = True
+all_on/fit_loss_obs_space.detach_rotation = True
+
+# all probas are 0.5
+all_half/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': True, 'force_proba': 0.5,
+                                                    'detach_rotation': True}
+all_half/fit_loss_obs_space.detach_features = True
+all_half/fit_loss_obs_space.detach_rotation = True
+all_half/fit_loss_obs_space.fill_switch_grad = True
+
+# enabling gradient for the true fit loss (p=p)
+fit/fit_loss_obs_space.detach_features = False
+fit/fit_loss_obs_space.fill_switch_grad = True
+
+# dividing feature deltas by their std
+fit_loss_obs_space.divide_by_std = True

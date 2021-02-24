@@ -1,0 +1,11 @@
+## ADD reward and termination features
+
+import sparse_causal_model_learner_rl.config
+import sparse_causal_model_learner_rl.visual.learner_visual
+
+# list of features
+ADDITIONAL_FEATURES = ['rew_y', 'done_y']
+
+# propagating the list
+graph_for_matrices.additional_features = %ADDITIONAL_FEATURES
+Config.additional_feature_keys = %ADDITIONAL_FEATURES

@@ -1,0 +1,17 @@
+# Configure smoothed sparsity gap (multiplicative and additive)
+
+import sparse_causal_model_learner_rl.metrics.metric_smooth
+
+
+## SMOOTH
+smooth.smooth_steps = 20
+smooth.do_log = True
+fit_loss_smooth/smooth.orig_key = '/fit/value'
+non_sparse_fit_loss_smooth/smooth.orig_key = '/fit_all_on/value'
+
+## SPARSITY GAP
+mult_sparsity_gap.sparse_key = 'fit_loss_smooth'
+mult_sparsity_gap.non_sparse_key = 'non_sparse_fit_loss_smooth'
+
+add_sparsity_gap.sparse_key = 'fit_loss_smooth'
+add_sparsity_gap.non_sparse_key = 'non_sparse_fit_loss_smooth'

@@ -1,0 +1,18 @@
+# Configuration for sparsity
+
+import sparse_causal_model_learner_rl.trainable.gumbel_switch
+import sparse_causal_model_learner_rl.loss.losses
+
+# give the sampled mask to the model
+WithInputSwitch.give_mask = True
+
+# initialization probability
+LearnableSwitchSimple.initial_proba = 1.0
+LearnableSwitchSimple.min_proba = 0.01
+LearnableSwitchSimple.sample_many = True
+LearnableSwitchSimple.return_grad = False
+sparsity_loss.ord = 1
+sparsity_loss.add_inv = False
+
+# using the REINFORCE gradient
+WithInputSwitch.switch_cls = @LearnableSwitchSimple
