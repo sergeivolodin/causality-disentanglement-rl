@@ -5,10 +5,11 @@ include 'env_ve2_raw_with_rew_done.gin'
 include '../../vectorincrement/config/ve5.gin'
 
 N_FEATURES = 5
+LearnableSwitchSimple.init_identity_up_to = 5
 
 # LOSSES COEFFICIENTS
 FIT_COEFF = 0.2
 SPARSITY_COEFF = 0.01
 REC_COEFF = 1.0  # using identity dec/rec
 FIT_ON_COEFF = 0.08
-FIT_HALF_COEFF = 0.002
+FIT_HALF_COEFF = 0.02
