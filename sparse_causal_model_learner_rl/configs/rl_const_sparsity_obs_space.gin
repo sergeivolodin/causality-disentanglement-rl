@@ -1,0 +1,73 @@
+import sparse_causal_model_learner_rl.trainable.decoder
+import sparse_causal_model_learner_rl.trainable.reconstructor
+import sparse_causal_model_learner_rl.trainable.model
+import sparse_causal_model_learner_rl.trainable.gumbel_switch
+import sparse_causal_model_learner_rl.config
+import sparse_causal_model_learner_rl.loss.losses
+import sparse_causal_model_learner_rl.loss.optimizer
+import sparse_causal_model_learner_rl.metrics.nnz
+import sparse_causal_model_learner_rl.metrics.model_entropy
+import gin_tune
+import sparse_causal_model_learner_rl.trainable.fcnet
+import sparse_causal_model_learner_rl.metrics.context_rewrite
+import sparse_causal_model_learner_rl.visual.learner_visual
+import sparse_causal_model_learner_rl.trainable.combined
+include 'common.gin'
+include 'with_communicator.gin'
+include 'with_rl_normalizer.gin'
+include 'relative_obs_mse_losses.gin'
+include 'global_sparsity_config.gin'
+include 'with_full_metrics.gin'
+
+# TRIALS
+Config.train_steps = 2000000
+tune_run.num_samples = 1
+
+# OPTIMIZERS
+Config.optimizers = {'opt1': @opt1/Optimizer}#, 'opt2': @opt2/Optimizer, 'opt3': @opt3/Optimizer}#, 'opt4': @opt4/Optimizer, 'opt5': @opt5/Optimizer}
+
+opt1/Optimizer.lr = 1e-3
+opt1/Optimizer.name = 'Adam'
+
+Config.execution = {
+    'opt1': %LOSSES_ALL,
+}
+
+Config.optim_params = {
+    'opt1': ['rot_pre', 'rot_post', 'model', 'decoder', 'reconstructor'],
+}
+Config.opt_iterations = {'opt1': 1}
+
+Config.schedulers = {}
+
+# LOSSES
+LOSSES_ALL = ['fit', 'sparsity', 'fit_all_on', 'reconstruction', 'fit_all_half']
+
+# coefficients
+FIT_COEFF = 1.
+SPARSITY_COEFF = 1.
+REC_COEFF = 1.
+FIT_ON_COEFF = 1.
+FIT_HALF_COEFF = 1.
+
+Config.losses = {'fit': {'fcn': @fit/fit_loss_obs_space, 'coeff': %FIT_COEFF},
+                 'sparsity': {'fcn': @sparsity_loss, 'coeff': %SPARSITY_COEFF},
+                 'reconstruction': {'fcn': @reconstruction_loss, 'coeff': %REC_COEFF},
+                 'fit_all_on': {'fcn': @all_on/fit_loss_obs_space, 'coeff': %FIT_ON_COEFF},
+                 'fit_all_half': {'fcn': @all_half/fit_loss_obs_space, 'coeff': %FIT_HALF_COEFF},
+                }
+
+# OTHER
+Config._update_function = []
+
+## Frequency
+Config.checkpoint_every = 1000
+Config.graph_every = 200
+Config.report_weights = False
+Config.report_weights_every = 1000
+Config.report_every = 5
+Config.metrics_every = 5
+Config.keep_history = False
+Config.max_history_size = 100
+Config.loss_every = 1000000000000000
+

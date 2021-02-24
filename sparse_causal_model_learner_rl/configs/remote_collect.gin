@@ -1,0 +1,24 @@
+import sparse_causal_model_learner_rl.learners.rl_data
+import sparse_causal_model_learner_rl.config
+
+# replay buffer size -- configured in environment configs
+# Config.buffer_steps = 100000
+# Config.minibatch_size = 5000
+
+Config.collect_remotely = True
+
+# number of episodes in the queue
+Config.future_episode_size = 20
+
+# number of batches to queue
+Config.future_batch_size = 20
+
+# configured in env files
+# Config.n_collectors = 5
+# Config.collect_initial_steps = 100000
+
+# configured in env configs
+# Config.min_collected_sample_ratio = 0.5
+
+# configured in env files
+# tune_run.resources_per_trial = {'gpu': 0.4, 'cpu': 6}

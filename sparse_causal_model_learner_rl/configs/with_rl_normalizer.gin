@@ -1,0 +1,17 @@
+# NORMALIZE all input tensors with mean/std (observations, actions, rewards, ...) once
+
+import sparse_causal_model_learner_rl.learners.input_normalizer
+import sparse_causal_model_learner_rl.config
+
+
+Normalizer.once = True
+Normalizer.dim = 0
+Normalizer.type_ = 'meanstd'
+
+normalize_context_transform.normalize_context_dct = {
+    'obs': ['obs_x', 'obs_y', 'obs'],
+    'rew_y': ['rew_y'],
+    'done_y': ['done_y'],
+    'reward_to_go': ['reward_to_go'],
+    }
+Config.context_transforms = [@normalize_context_transform]

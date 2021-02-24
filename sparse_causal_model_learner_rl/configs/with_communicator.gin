@@ -1,0 +1,4 @@
+# Enable live parameter updates via /live_parameters/cli.py
+import sparse_causal_model_learner_rl.config
+
+Config.run_communicator = True

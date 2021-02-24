@@ -1,0 +1,25 @@
+import sparse_causal_model_learner_rl.metrics.context_rewrite
+import sparse_causal_model_learner_rl.metrics.nnz
+import sparse_causal_model_learner_rl.metrics.model_entropy
+import sparse_causal_model_learner_rl.visual.learner_visual
+include 'smooth_sparsity_gap_metrics.gin'
+
+# METRICS
+Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
+                  'threshold_features': @threshold_features, 'max_element_ma': @max_element_ma,
+                  'max_element_mf': @max_element_mf,
+                  'episode_reward': @episode_reward,
+                  'graph_entropy_ma': @entropy_action,
+                  'graph_entropy_mf': @entropy_features,
+                  'threshold_annealer_threshold': @threshold_annealer_threshold,
+                  'fit_loss_smooth': @fit_loss_smooth/smooth,
+                  'non_sparse_fit_loss_smooth': @non_sparse_fit_loss_smooth/smooth,
+                  '|last_mult_sparsity_gap': @mult_sparsity_gap,
+                  '|last_add_sparsity_gap': @add_sparsity_gap
+}
+
+entropy_np.return_distribution = True
+plot_model.vmin = -1.0
+plot_model.vmax = 1.0
+
+graph_for_matrices.engine = 'dot'

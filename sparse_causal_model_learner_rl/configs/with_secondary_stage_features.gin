@@ -1,0 +1,9 @@
+# Add model features ('rotation')
+
+import sparse_causal_model_learner_rl.trainable.model
+import sparse_causal_model_learner_rl.config
+
+
+Config.rot_pre = @Rotation
+Config.rot_post = @Rotation
+Rotation.init_identity = True
