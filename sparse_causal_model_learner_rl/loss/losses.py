@@ -233,11 +233,11 @@ def fit_loss(obs_x, obs_y, action_x, decoder, model, additional_feature_keys,
     return {'loss': loss,
             'metrics': metrics}
 
-def delta_pow2_sum1(true, pred, divide_by_std=False):
+def delta_pow2_sum1(true, pred, std_from=None, divide_by_std=False):
     """Compute (relative) MSE error."""
     delta = (true - pred).pow(2)
     if divide_by_std:
-        std = tensor_std(true)
+        std = tensor_std(true if std_from is None else std_from)
         delta = delta / std.pow(2)
     return delta.sum(1)
 
@@ -249,11 +249,13 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
              fill_switch_grad=False,
              opt_label=None,
              add_fcons=True,
+             obs_relative=False,
              rot_pre=None, rot_post=None,
              divide_by_std=False,
              detach_features=False,
              detach_rotation=False,
              loss_coeff=1.0,
+             cross_std=True, # compute std for delta_y from x values
              loss_local_cache=None,
              **kwargs):
     """Ensure that the model fits the features data."""
@@ -282,9 +284,10 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
     f_yp_f = rot_post(f_yp_f_model)
     obs_yp = reconstructor(f_yp_f)
 
-    loss = delta_pow2_sum1(obs_y.flatten(start_dim=1),
-                           obs_yp.flatten(start_dim=1),
-                           divide_by_std=False)
+    loss_rec = delta_pow2_sum1(obs_y.flatten(start_dim=1),
+                               obs_yp.flatten(start_dim=1),
+                               divide_by_std=obs_relative)
+    loss = loss_rec
 
     if additional_feature_keys:
         f_y_fadd = gather_additional_features(
@@ -305,10 +308,12 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
         with torch.set_grad_enabled(not detach_rotation):
             f_y_model = rot_pre(f_y)
 
-        loss_fcons = delta_pow2_sum1(f_y, f_yp_f, divide_by_std=divide_by_std)
+        loss_fcons = delta_pow2_sum1(f_y, f_yp_f, divide_by_std=divide_by_std,
+                                     std_from=f_x if cross_std else f_y)
         loss += loss_fcons
 
-        loss_fcons_model = delta_pow2_sum1(f_y_model, f_yp_f_model, divide_by_std=divide_by_std)
+        loss_fcons_model = delta_pow2_sum1(f_y_model, f_yp_f_model, divide_by_std=divide_by_std,
+                                           std_from=f_x_model if cross_std else f_y_model)
         loss += loss_fcons_model
     else:
         loss_fcons = None
@@ -323,6 +328,7 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
                'max_feature': f_x.max().item(),
                'loss_fcons': loss_fcons.mean(0).item() if loss_fcons is not None else 0.0,
                'loss_add': loss_additional.mean(0).item() if loss_additional is not None else 0.0,
+               'loss_rec': loss_rec.mean(0).item(),
                'loss_fcons_pre': loss_fcons_model.mean(0).item() if loss_fcons is not None else 0.0,
                'rec_fit_acc_loss_01_agg': 2 - delta_01_obs(obs_y, obs_yp).item(),
                }
