@@ -1,0 +1,13 @@
+# VectorIncrement 2 DIGITS CONFIG with REW/DONE
+
+include 'env_ve2.gin'
+include 'with_additional_features.gin'
+
+N_FEATURES = 3
+
+# LOSSES COEFFICIENTS
+FIT_COEFF = 0.33
+SPARSITY_COEFF = 0.04
+REC_COEFF = 0.029
+FIT_ON_COEFF = 0.1
+FIT_HALF_COEFF = 0.0033

@@ -37,7 +37,7 @@ ModelDecoder.use_batchnorm = False
 
 # MODEL
 Config.model = @sparse_model/ManyNetworkCombinedModel
-model_gnn/FCCombinedModel.hidden_sizes = [256, 256, 64]  # tuning...
+model_gnn/FCCombinedModel.hidden_sizes = [256, 64]  # tuning...
 model_gnn/FCCombinedModel.activation_cls = @LeakyReLU
 model_gnn/FCCombinedModel.add_input_batchnorm = True
 WithInputSwitch.model_cls = @model_gnn/FCCombinedModel
@@ -59,7 +59,7 @@ rec/FCCombinedModel.input_reshape = True
 
 # LOSSES COEFFICIENTS
 FIT_COEFF = 0.33
-SPARSITY_COEFF = 0.04
-REC_COEFF = 0.03
+SPARSITY_COEFF = 0.06
+REC_COEFF = 0.029
 FIT_ON_COEFF = 0.1
 FIT_HALF_COEFF = 0.0033

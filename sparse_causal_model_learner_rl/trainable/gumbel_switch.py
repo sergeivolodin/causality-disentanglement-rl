@@ -93,7 +93,13 @@ class LearnableSwitchSimple(Switch):
 
     def gumbel0(self, data, force_proba=None):
         if force_proba is not None:
-            data = torch.full(size=data.shape, fill_value=force_proba, device=data.device)
+            if isinstance(force_proba, tuple):
+                assert len(force_proba) == 2, force_proba
+                data = torch.clamp(data, min=force_proba[0], max=force_proba[1])
+            elif isinstance(force_proba, (int, float)):
+                data = torch.full(size=data.shape, fill_value=force_proba, device=data.device)
+            else:
+                raise ValueError(f"force_proba must be either a float or a tuple for clamp {force_proba}")
         sampled = torch.bernoulli(data)
         if self.return_grad:
             sampled = sampled + data - data.detach()
