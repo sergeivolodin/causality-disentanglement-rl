@@ -68,10 +68,28 @@ KeyChest environment:<br />
 Gumbel model on ve5 (features raw):
 `python -m sparse_causal_model_learner_rl.learner --config vectorincrement/config/ve5_nonlinear.gin --config sparse_causal_model_learner_rl/configs/rec_nonlin_gnn_gumbel
  --nofail --n_gpus 0 --n_cpus 1`
+ 
+#### New modular config with ve2
+1. Only features on vectorincrement (new config)
+    `python -m sparse_causal_model_learner_rl.learner --config sparse_causal_model_learner_rl/configs/rl_const_sparsity_obs_space.gin --config sparse_causal_model_learner_rl/configs/env_ve2.gin --nofail --n_gpus 1`
+   After ~25 minutes (~9000 steps) gives the following graph:
+   
+   ![](images/ve2_onlyf.png)
+2. Features + reward + done
+    `python -m sparse_causal_model_learner_rl.learner --nofail --n_gpus 1 --config sparse_causal_model_learner_rl/configs/rl_const_sparsity_obs_space.gin --config sparse_causal_model_learner_rl/configs/env_ve2_with_rew_done.gin`
+   After ~2 hours (45k steps) gives the following graph:
+   
+   ![](images/ve2.png)
+3. No decoder/encoder:
+    `python -m sparse_causal_model_learner_rl.learner --config sparse_causal_model_learner_rl/configs/rl_const_sparsity_obs_space.gin --config sparse_causal_model_learner_rl/configs/env_ve2_raw_with_rew_done.gin --nofail --n_gpus 1`
+   After ~45 minutes gives:
+   
+   ![](images/ve2_nodec.png)
 
 #### KeyChest
 1. PPO on KeyChest: `python sb.py --evaluate --train_steps 5000000 --config ../keychest/config/5x5.gin --trainer DQN`
 2. DQN on KeyChest: `python sb.py --config ../keychest/config/5x5.gin --evaluate --train_steps 5000000 --train`
 
 Success of DQN shows that the environment is Markov:
+
 <img src="https://github.com/sergeivolodin/causality-disentanglement-rl/blob/master/images/dqn_ppo_keychest.png" width="300" />
