@@ -11,6 +11,7 @@ def AnnealerThresholdSelector(config, config_object, epoch_info, temp,
                               multiplier=10, # allow the loss to be 10 times bigger than the best
                               source_quality_key=None,
                               non_sparse_threshold_disable=None,
+                              additive=True,
                               source_fit_loss_key='no_sparse_fit',
                               gin_variable='ThresholdAnnealer.fit_threshold',
                               **kwargs):
@@ -25,7 +26,10 @@ def AnnealerThresholdSelector(config, config_object, epoch_info, temp,
         temp['last_hyper_adjustment'] = 0
     i = epoch_info['epochs']
 
-    temp['suggested_hyper'] = non_sparse_fit_loss * multiplier
+    if additive:
+        temp['suggested_hyper'] = non_sparse_fit_loss + multiplier
+    else:
+        temp['suggested_hyper'] = non_sparse_fit_loss * multiplier
 
     # disable annealing in case if target performance in terms of non-sparse loss is not reached
     if non_sparse_threshold_disable is not None and non_sparse_fit_loss >= non_sparse_threshold_disable:
@@ -139,7 +143,10 @@ def ModelResetter(config, epoch_info, temp,
 def ThresholdAnnealer(config, epoch_info, temp,
                       fit_threshold=1e-2,
                       min_hyper=1e-5,
+                      learner,
                       max_hyper=100,
+                      freeze_time=100,
+                      freeze_threshold_probas=0.8,
                       adjust_every=100,
                       reset_on_fail=False,
                       source_metric_key='with_sparse_fit',
@@ -170,6 +177,16 @@ def ThresholdAnnealer(config, epoch_info, temp,
         temp['last_hyper_adjustment'] = 0
     i = epoch_info['epochs']
 
+    if temp.get('last_freeze_start', -1) >= 0:
+        if i - temp.get('last_freeze_start') >= freeze_time:
+            logging.warning(f"Freezing finished at {i}!")
+            del temp['last_freeze_start']
+        else:
+            if freeze_threshold_probas is not None:
+                p = learner.model.model.switch.probas
+                p.data[p.data > freeze_threshold_probas] = freeze_threshold_probas
+            return config
+
     if fit_loss > fit_threshold: # FREE ENERGY (loss) IS HIGH -> NEED WARMING (decrease regul coeff)
         if reset_on_fail:
             temp['suggested_hyper'] = min_hyper
@@ -189,6 +206,22 @@ def ThresholdAnnealer(config, epoch_info, temp,
         epochs_enough = True
 
     if temp.get('suggested_hyper', None) is not None and epochs_enough:
+        if temp['suggested_hyper'] < config['losses']['sparsity']['coeff']:
+            direction = 'heat'
+        elif temp['suggested_hyper'] > config['losses']['sparsity']['coeff']:
+            direction = 'cool'
+        else:
+            direction = 'same'
+
+        # if were cooling down but now have to warm...
+        # freezing the model for some time
+        if 'last_direction' in temp and temp['last_direction'] in ['cool', 'same'] and direction == 'heat':
+            temp['last_freeze_start'] = i
+            logging.warning(f"Starting model freeze at {i}")
+
+        if 'last_direction' not in temp:
+            temp['last_direction'] = direction
+
         config['losses']['sparsity']['coeff'] = temp['suggested_hyper']
         temp['suggested_hyper'] = None
         temp['last_hyper_adjustment'] = i

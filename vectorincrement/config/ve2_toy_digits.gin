@@ -1,0 +1,11 @@
+import vectorincrement
+import encoder.digit_encoder
+import causal_util.helpers
+
+load_env.env_name = "VectorIncrement-v0"
+load_env.time_limit = 15
+load_env.obs_scaler = 1.0
+digit_encoder.DigitsVectorWrapper.max_digits = -1
+load_env.wrappers_prescale = [@digit_encoder.DigitsVectorWrapper]
+
+vectorincrementenv.VectorIncrementEnvironment.n = 2

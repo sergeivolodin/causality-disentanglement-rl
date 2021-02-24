@@ -81,7 +81,124 @@ digits = {
     111
     001
     001
-    """
+    """,
+
+    # A
+    10: """
+    111
+    101
+    111
+    101
+    101
+    """,
+
+    # B
+    11: """
+    111
+    111
+    111
+    101
+    111
+    """,
+
+    # C
+    12: """
+    111
+    100
+    100
+    100
+    111
+    """,
+
+    # D
+    13: """
+    110
+    101
+    101
+    101
+    110
+    """,
+
+    # E
+    14: """
+    111
+    100
+    111
+    100
+    111
+    """,
+
+    # F
+    15: """
+    111
+    100
+    111
+    100
+    100
+    """,
+
+    # G
+    16: """
+    111
+    100
+    111
+    111
+    111
+    """,
+
+    # H
+    17: """
+    101
+    101
+    111
+    101
+    101
+    """,
+
+    # I
+    18: """
+    111
+    010
+    010
+    010
+    111
+    """,
+
+    # J
+    19: """
+    111
+    001
+    001
+    011
+    111
+    """,
+
+    # K
+    20: """
+    101
+    110
+    110
+    110
+    101
+    """,
+
+    # L
+    21: """
+    100
+    100
+    100
+    100
+    111
+    """,
+
+    # M
+    22: """
+    101
+    111
+    111
+    101
+    101
+    """,
 }
 
 
@@ -110,17 +227,22 @@ def show_digits(digits):
     plt.show()
 
 @gin.configurable
-def small_int_vector_asimage(v, max_digits=1, eps=1e-8):
+def small_int_vector_asimage(v, max_digits=1, eps=1e-8, max_digit_value=10):
     """Convert a vector of integers in 0-9 into a binary image of size 5 x max_digits x (3 * n + n - 1)."""
-    n_digits = len(v) * max_digits
+    use_digits = max_digits if max_digits > 0 else 1
+    n_digits = len(v) * use_digits
     result = np.zeros((5, 3 * n_digits + n_digits - 1), dtype=np.float32)
     offset = 0
     for i, val in enumerate(v):
         rval = round(val)
         assert abs(rval - val) < eps
 
-        ds = f"%0{round(max_digits)}d" % rval
-        assert len(ds) == max_digits
+        print('md', max_digits)
+        if max_digits <= 0:
+            ds = [rval]
+        else:
+            ds = f"%0{round(max_digits)}d" % rval
+            assert len(ds) == max_digits
         for d in ds:
             #             print(d)
             result[:, offset:offset + 3] = digit_to_np(int(d))
@@ -132,10 +254,10 @@ def small_int_vector_asimage(v, max_digits=1, eps=1e-8):
 class DigitsVectorWrapper(TransformObservation):
     """Convert a vector of integers into small images."""
 
-    def __init__(self, env, max_digits=2, **kwargs):
+    def __init__(self, env, **kwargs):
         if isinstance(env, str):
             env = gym.make(env)
-        fcn = small_int_vector_asimage
+        fcn = partial(small_int_vector_asimage, **kwargs)
         super(DigitsVectorWrapper, self).__init__(env, fcn)
         shape = fcn(env.reset()).shape
         self.observation_space = gym.spaces.Box(low=np.float32(0),

@@ -41,5 +41,18 @@ def mult_sparsity_gap(sparse_key, non_sparse_key, now_epoch_info, **kwargs):
         # logging.warning(f"No loss found {e}")
         return None
     if sparse_loss and non_sparse_loss:
-        return (sparse_loss - non_sparse_loss) / non_sparse_loss
+        return (sparse_loss - non_sparse_loss) / sparse_loss
+    return None
+
+@gin.configurable
+def add_sparsity_gap(sparse_key, non_sparse_key, now_epoch_info, **kwargs):
+    """Get sparse loss / non_sparse_loss."""
+    try:
+        sparse_loss = find_value(now_epoch_info, sparse_key)
+        non_sparse_loss = find_value(now_epoch_info, non_sparse_key)
+    except AssertionError as e:
+        # logging.warning(f"No loss found {e}")
+        return None
+    if sparse_loss and non_sparse_loss:
+        return (sparse_loss - non_sparse_loss)
     return None

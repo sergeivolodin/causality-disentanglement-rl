@@ -476,13 +476,19 @@ class ModelModel(Model):
 @gin.configurable
 class Rotation(nn.Module):
     """One fully-connected layer."""
-    def __init__(self, feature_shape, **kwargs):
+    def __init__(self, feature_shape, init_identity=True,
+                 **kwargs):
         super(Rotation, self).__init__()
         assert len(feature_shape) == 1, feature_shape
         self.n_features = feature_shape[0]
         self.rot = nn.Linear(in_features=self.n_features,
                              out_features=self.n_features,
                              bias=True)
+
+        if init_identity:
+            self.rot.weight.data[:] += torch.eye(self.n_features)
+            self.rot.bias.data[:] = 0.0
+
     def forward(self, x):
         return self.rot(x)
 

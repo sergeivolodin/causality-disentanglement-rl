@@ -1,0 +1,249 @@
+import sparse_causal_model_learner_rl.trainable.decoder
+import sparse_causal_model_learner_rl.trainable.reconstructor
+import sparse_causal_model_learner_rl.trainable.model
+import sparse_causal_model_learner_rl.trainable.gumbel_switch
+import sparse_causal_model_learner_rl.config
+import sparse_causal_model_learner_rl.annealer.threshold
+import sparse_causal_model_learner_rl.loss.losses
+import sparse_causal_model_learner_rl.loss.optimizer
+import sparse_causal_model_learner_rl.metrics.nnz
+import sparse_causal_model_learner_rl.metrics.loss_thresholded
+import sparse_causal_model_learner_rl.metrics.model_entropy
+import sparse_causal_model_learner_rl.metrics.metric_smooth
+import gin_tune
+import sparse_causal_model_learner_rl.trainable.value_predictor
+import sparse_causal_model_learner_rl.trainable.fcnet
+import sparse_causal_model_learner_rl.learners.input_normalizer
+import sparse_causal_model_learner_rl.metrics.context_rewrite
+import sparse_causal_model_learner_rl.loss.causal_discriminator
+import sparse_causal_model_learner_rl.visual.learner_visual
+import sparse_causal_model_learner_rl.trainable.combined
+include 'rec_nonlin_gnn.gin'
+
+tune_run.num_samples = 1
+
+Config.loss_every = 1000000000000000
+
+model_gnn/FCCombinedModel.hidden_sizes = [256, 65]  # tuning...
+model_gnn/FCCombinedModel.activation_cls = @LeakyReLU
+
+WithInputSwitch.give_mask = True
+WithInputSwitch.model_cls = @model_gnn/FCCombinedModel
+
+LearnableSwitch.sample_many = True
+LearnableSwitch.sample_threshold = 0.9 # after this value, always sample 1 to prevent vanishing grads
+
+Config.env_steps = 5000
+Config.collect_every = 1
+Config.batch_training = False
+Config.shuffle = False
+
+Config.reconstructor = None
+
+WithInputSwitch.switch_cls = @LearnableSwitchSimple
+
+sparse_model/WithInputSwitch.enable_switch = True
+
+sparse_model/ManyNetworkCombinedModel.model_cls = @sparse_model/WithInputSwitch
+ManyNetworkCombinedModel.sparse_do_max = False
+ManyNetworkCombinedModel.sparse_do_max_mfma = False
+ManyNetworkCombinedModel.add_linear_transform = False
+
+Config.model = @sparse_model/ManyNetworkCombinedModel
+Config.reconstructor = @ModelReconstructor
+Config.rot_pre = @Rotation
+Config.rot_post = @Rotation
+
+Rotation.init_identity = True
+
+ModelReconstructor.model_cls = @rec/FCCombinedModel
+ModelReconstructor.unflatten = True
+rec/FCCombinedModel.hidden_sizes = [256, 65]
+rec/FCCombinedModel.activation_cls = @LeakyReLU
+rec/FCCombinedModel.add_input_batchnorm = True
+rec/FCCombinedModel.input_reshape = True
+
+decoder/FCCombinedModel.hidden_sizes = [256, 65] # need a list of coordinates act(x-xi). 5 to prevent slow fit
+decoder/FCCombinedModel.activation_cls = @LeakyReLU
+decoder/FCCombinedModel.add_input_batchnorm = True
+decoder/FCCombinedModel.input_reshape = True
+ModelDecoder.model_cls = @decoder/FCCombinedModel
+ModelDecoder.flatten = True
+ModelDecoder.use_batchnorm = False
+
+Config.decoder = @ModelDecoder
+
+Config.feature_shape = (3, )
+LearnableSwitchSimple.init_identity_up_to = 3
+
+opt1/Optimizer.lr = 1e-4
+#opt1/Optimizer.betas = (0.5, 0.8)
+opt2/Optimizer.lr = 1e-3
+opt3/Optimizer.lr = 1e-3
+
+opt4/Optimizer.name = 'Adam'
+opt4/Optimizer.lr = 1e-3
+
+opt5/Optimizer.name = 'Adam'
+opt5/Optimizer.lr = 1e-3
+
+Config.optimizers = {'opt1': @opt1/Optimizer}#, 'opt2': @opt2/Optimizer, 'opt3': @opt3/Optimizer}#, 'opt4': @opt4/Optimizer, 'opt5': @opt5/Optimizer}
+
+LOSSES_OTHER = ['fit', 'fit_all_on', 'reconstruction']
+LOSSES_SPARSE = ['sparsity', 'fit']
+# LOSSES_ALL = ['fit', 'fit_all_on', 'non_sparse_fit', 'reconstruction', 'sparsity']
+LOSSES_ALL = ['fit', 'sparsity', 'fit_all_on', 'reconstruction', 'fit_all_half'] # 'fit_all_on',
+#LOSSES_ALL = ['reconstruction']
+
+Config.execution = {'opt1': %LOSSES_ALL,
+                    #'opt2': %LOSSES_ALL,
+                    #'opt3': %LOSSES_ALL,
+                    #'opt4': ['discriminate_siamese', 'non_sparse_fit'], # w/o sparsity, only model (for fit)
+                    #'opt5': ['fit', 'fit_all_on'],
+                    }
+Config.optim_params = {
+'opt1': ['rot_pre', 'rot_post', 'model', 'decoder', 'reconstructor'], # switch learning
+    #'opt1': ['decoder', 'reconstructor'], # 'model',
+                       #'opt2': ['decoder', 'reconstructor'], # representation learning
+                       #'opt3': ['non_sparse_model'], # reference model learning
+                       #'opt4': ['decoder'], # representation learning
+                       #'opt5': ['model.model__params'],
+                       }
+Config.opt_iterations = {'opt1': 1}#, 'opt2': 2, 'opt3': 5}#, 'opt4': 6, 'opt5': 4,}
+
+smooth.smooth_steps = 20
+smooth.do_log = True
+fit_loss_smooth/smooth.orig_key = '/fit/value'
+non_sparse_fit_loss_smooth/smooth.orig_key = '/fit_all_on/value'
+
+mult_sparsity_gap.sparse_key = 'fit_loss_smooth'
+mult_sparsity_gap.non_sparse_key = 'non_sparse_fit_loss_smooth'
+
+add_sparsity_gap.sparse_key = 'fit_loss_smooth'
+add_sparsity_gap.non_sparse_key = 'non_sparse_fit_loss_smooth'
+
+# using vanilla fit loss
+Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
+                  'threshold_features': @threshold_features, 'max_element_ma': @max_element_ma,
+                  'max_element_mf': @max_element_mf,
+                  'episode_reward': @episode_reward,
+                  'graph_entropy_ma': @entropy_action,
+                  'graph_entropy_mf': @entropy_features,
+                  'threshold_annealer_threshold': @threshold_annealer_threshold,
+                  'fit_loss_smooth': @fit_loss_smooth/smooth,
+                  'non_sparse_fit_loss_smooth': @non_sparse_fit_loss_smooth/smooth,
+                  '|last_mult_sparsity_gap': @mult_sparsity_gap,
+                  '|last_add_sparsity_gap': @add_sparsity_gap
+}
+
+MIN_HYPER_ANNEAL = 1e-9
+
+all_on/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': False, 'detach_rotation': True}
+all_on/fit_loss_obs_space.detach_features = True
+
+all_half/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': True, 'force_proba': 0.5,
+                                                    'detach_rotation': True}
+all_half/fit_loss_obs_space.detach_features = True
+all_half/fit_loss_obs_space.fill_switch_grad = True
+
+fit/fit_loss_obs_space.detach_features = False
+fit/fit_loss_obs_space.fill_switch_grad = True
+
+Config.losses = {'fit': {'fcn': @fit/fit_loss_obs_space, 'coeff': 20.0}, # 0.33
+                 'sparsity': {'fcn': @sparsity_loss, 'coeff': %MIN_HYPER_ANNEAL},
+                 'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 10.0},
+                 'fit_all_on': {'fcn': @all_on/fit_loss_obs_space, 'coeff': 20.0}, # 0.33
+                 'fit_all_half': {'fcn': @all_half/fit_loss_obs_space, 'coeff': 0.1},# 0.001
+                }
+
+fit_loss_obs_space.divide_by_std = True
+
+
+nonzero_proba_loss.eps = 0.5
+nonzero_proba_loss.do_abs = False
+
+ThresholdAnnealer.source_metric_key = 'fit_loss_smooth'
+
+entropy_np.return_distribution = True
+
+sch/Scheduler.name = 'ReduceLROnPlateau'
+sch/Scheduler.patience = 150
+sch/Scheduler.verbose = True
+sch/Scheduler.factor = 0.5
+
+Config.schedulers = {
+#'opt1': @sch/Scheduler,
+                     #'opt2': @sch/Scheduler,
+                     #'opt3': @sch/Scheduler,
+                     }
+
+
+Config.checkpoint_every = 1000
+
+LearnableSwitch.switch_neg = 0
+LearnableSwitch.switch_pos = 0
+
+LearnableSwitchSimple.initial_proba = 1.0
+LearnableSwitchSimple.min_proba = 0.01
+LearnableSwitchSimple.sample_many = True
+LearnableSwitchSimple.return_grad = False
+
+ModelResetter.grace_epochs = 250
+ModelResetter.reset_optimizers = False
+ModelResetter.reset_weights = False
+ModelResetter.reset_logits = False
+ModelResetter.reset_turn_on = False
+
+Config._update_function = [@AnnealerThresholdSelector, @ThresholdAnnealer, @ModelResetter]
+
+ThresholdAnnealer.adjust_every = 5
+ThresholdAnnealer.factor_cool = 0.5
+ThresholdAnnealer.factor_heat = 0.5
+ThresholdAnnealer.min_hyper = %MIN_HYPER_ANNEAL
+ThresholdAnnealer.max_hyper = 100
+ThresholdAnnealer.emergency_heating = False
+ThresholdAnnealer.freeze_time = 300
+ThresholdAnnealer.freeze_threshold_probas = 0.8
+
+AnnealerThresholdSelector.multiplier = 0.5
+AnnealerThresholdSelector.additive = True
+AnnealerThresholdSelector.adjust_every = 5
+AnnealerThresholdSelector.source_fit_loss_key = 'non_sparse_fit_loss_smooth'
+AnnealerThresholdSelector.non_sparse_threshold_disable = 1.0
+
+turn_on_features.loss_fcn = @fit_loss_obs_space
+
+# normalize input data
+Normalizer.once = True
+Normalizer.dim = 0
+normalize_context_transform.normalize_context_dct = {
+    'obs': ['obs_x', 'obs_y', 'obs'],
+    'rew_y': ['rew_y'],
+    'done_y': ['done_y'],
+    'reward_to_go': ['reward_to_go'],
+    }
+Config.context_transforms = [@normalize_context_transform]
+
+Config.report_every = 5
+Config.metrics_every = 5
+
+tune_run.resources_per_trial = {'gpu': 0.1, 'cpu': 1}
+
+Config.graph_every = 200
+
+plot_model.vmin = -1.0
+plot_model.vmax = 1.0
+Config.report_weights = False
+Config.report_weights_every = 1000
+
+graph_for_matrices.additional_features = %ADDITIONAL_FEATURES
+graph_for_matrices.engine = 'dot'
+
+Config.keep_history = False
+Config.max_history_size = 100
+
+Normalizer.type_ = 'meanstd'
+ManyNetworkCombinedModel.input_batchnorm = True
+
+
+reconstruction_loss.relative = False
