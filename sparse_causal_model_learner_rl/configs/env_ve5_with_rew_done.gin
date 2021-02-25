@@ -6,9 +6,20 @@ include '../../vectorincrement/config/ve5_toy_digits.gin'
 
 N_FEATURES = 6
 
+Config.minibatch_size = 5000
+Config.env_steps = 5000
+
+model_gnn/FCCombinedModel.skipconns = None #[False, True, True, False]
+model_gnn/FCCombinedModel.hidden_sizes = [256, 256, 256]  # tuning...
+model_gnn/FCCombinedModel.activation_cls = @LeakyReLU
+
+decoder/FCCombinedModel.hidden_sizes = [256, 256]
+rec/FCCombinedModel.hidden_sizes = [256, 256]
+
+
 # LOSSES COEFFICIENTS
 FIT_COEFF = 0.14
 SPARSITY_COEFF = 0.01
 REC_COEFF = 0.01
 FIT_ON_COEFF = 0.05
-FIT_HALF_COEFF = 0.01
+FIT_HALF_COEFF = 0.05
