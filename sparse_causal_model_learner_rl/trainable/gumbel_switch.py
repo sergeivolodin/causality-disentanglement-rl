@@ -74,7 +74,7 @@ class LearnableSwitchSimple(Switch):
         super(LearnableSwitchSimple, self).__init__(**kwargs)
 
         init = np.full(shape=self.shape, fill_value=initial_proba, dtype=np.float32)
-        if init_identity_up_to >= 0:
+        if init_identity_up_to > 0:
             if len(self.shape) == 2:
                 m = min(init_identity_up_to, min(self.shape))
                 init[:m, :m] = np.eye(m)

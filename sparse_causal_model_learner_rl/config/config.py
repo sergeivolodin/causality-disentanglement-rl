@@ -124,6 +124,14 @@ class Config(object):
         # temporary variables for the update function
         self._temporary_variables = {}
 
+        if self._config.get('init_functions', None):
+            lst = self._config['init_functions']
+            if not isinstance(lst, list):
+                raise ValueError(f"init_functions must be either None or a list, got {lst}")
+
+            for fcn in lst:
+                fcn(self=self)
+
         self.communicator = None
 
     def update(self, **kwargs):

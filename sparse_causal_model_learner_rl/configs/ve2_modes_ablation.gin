@@ -1,0 +1,14 @@
+import sparse_causal_model_learner_rl.configs.search_helpers.ablation_study
+import sparse_causal_model_learner_rl.config
+import gin_tune
+
+Config.init_functions = [@process_config]
+
+# process_config.mode = 'no_rotation'
+process_config.mode = @mode/choice()
+mode/choice.categories = @get_modes()
+
+Config.n_collectors = 4
+Config.train_steps = 10 #45000
+tune_run.resources_per_trial = {'gpu': 1.0, 'cpu': 4}
+tune_run.num_samples = 100
