@@ -1,0 +1,65 @@
+# VectorIncrement 2 DIGITS CONFIG
+
+# the environment
+include '../../vectorincrement/config/ve2_toy_digits.gin'
+include 'with_secondary_stage_features.gin'
+include 'remote_collect.gin'
+#include 'with_additional_features.gin'
+
+N_FEATURES = 8
+
+# DATA COLLECTION PREFS
+Config.min_collected_sample_ratio = 0.5
+Config.buffer_steps = 100000
+Config.minibatch_size = 2500
+Config.n_collectors = 5
+Config.env_steps = 2500
+Config.collect_initial_steps = 100000
+tune_run.resources_per_trial = {'gpu': 0.4, 'cpu': 6}
+Config.collect_every = 1
+Config.batch_training = False
+Config.shuffle = False
+
+
+# FEATURE SPACE
+Config.feature_shape = (%N_FEATURES, )
+
+# DECODER
+Config.decoder = @ModelDecoder
+decoder/FCCombinedModel.hidden_sizes = [256, 256, 64]
+decoder/FCCombinedModel.activation_cls = @LeakyReLU
+decoder/FCCombinedModel.add_input_batchnorm = True
+decoder/FCCombinedModel.input_reshape = True
+ModelDecoder.model_cls = @decoder/FCCombinedModel
+ModelDecoder.flatten = True
+ModelDecoder.use_batchnorm = False
+
+
+# MODEL
+Config.model = @sparse_model/ManyNetworkCombinedModel
+model_gnn/FCCombinedModel.hidden_sizes = [256, 256, 64]  # tuning...
+model_gnn/FCCombinedModel.activation_cls = @LeakyReLU
+model_gnn/FCCombinedModel.add_input_batchnorm = True
+WithInputSwitch.model_cls = @model_gnn/FCCombinedModel
+sparse_model/ManyNetworkCombinedModel.model_cls = @sparse_model/WithInputSwitch
+ManyNetworkCombinedModel.sparse_do_max = False
+ManyNetworkCombinedModel.sparse_do_max_mfma = False
+ManyNetworkCombinedModel.add_linear_transform = False
+sparse_model/WithInputSwitch.enable_switch = True
+LearnableSwitchSimple.init_identity_up_to = %N_FEATURES
+
+# RECONSTRUCTOR
+Config.reconstructor = @ModelReconstructor
+ModelReconstructor.model_cls = @rec/FCCombinedModel
+ModelReconstructor.unflatten = True
+rec/FCCombinedModel.hidden_sizes = [256, 64, 64, 64]
+rec/FCCombinedModel.activation_cls = @LeakyReLU
+rec/FCCombinedModel.add_input_batchnorm = True
+rec/FCCombinedModel.input_reshape = True
+
+# LOSSES COEFFICIENTS
+FIT_COEFF = 0.12
+SPARSITY_COEFF = 0.008
+REC_COEFF = 0.001
+FIT_ON_COEFF = 0.05
+FIT_HALF_COEFF = 0.01
