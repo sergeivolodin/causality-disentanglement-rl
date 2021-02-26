@@ -1,7 +1,8 @@
 # VectorIncrement 2 DIGITS CONFIG
 
 # the environment
-include '../../vectorincrement/config/ve2_toy_digits.gin'
+# add env config separately!
+#include '../../keychest/config/5x5_onlycoord.gin'
 include 'with_secondary_stage_features.gin'
 include 'remote_collect.gin'
 #include 'with_additional_features.gin'
@@ -52,8 +53,8 @@ LearnableSwitchSimple.init_identity_up_to = %N_FEATURES
 Config.reconstructor = @ModelReconstructor
 ModelReconstructor.model_cls = @rec/FCCombinedModel
 ModelReconstructor.unflatten = True
-rec/FCCombinedModel.hidden_sizes = [256, 64, 64, 64]
-rec/FCCombinedModel.activation_cls = @LeakyReLU
+rec/FCCombinedModel.hidden_sizes = [32, 32, 32]
+rec/FCCombinedModel.activation_cls = @Tanh
 rec/FCCombinedModel.add_input_batchnorm = True
 rec/FCCombinedModel.input_reshape = True
 
