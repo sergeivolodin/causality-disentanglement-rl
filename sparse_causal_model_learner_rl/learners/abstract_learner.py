@@ -184,6 +184,11 @@ class AbstractLearner(ABC):
         if restore_gin is None:
             restore_gin = True
 
+        if Config().get('_unpickle_skip_init', False):
+            logging.warning("Not performing initialization, only setting data. The object will not be valid")
+            self._unpickled_state = dct
+            return
+
         if Config().get('load_new_config', False):
             logging.warning("Not loading old gin config because using the new config")
             restore_gin = False

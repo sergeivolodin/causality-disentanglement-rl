@@ -70,7 +70,7 @@ def progress(value, total, width, symbol='#', empty=' '):
     left_pixels = width - pixels
     return '[' + (symbol * pixels) + (empty * left_pixels) + ']'
 
-def images_to_gif(files_withtext, base_dir, key):
+def images_to_gif(files_withtext, base_dir, key, duration=6):
     """Convert a list of filenames into one .gif."""
     dirname = os.path.abspath(os.path.join(base_dir, '..'))
     basename = key
@@ -82,8 +82,9 @@ def images_to_gif(files_withtext, base_dir, key):
         images.append(img_pil)
         
     out_fn = os.path.join(dirname, basename + '_all.gif')
-        
-    imageio.mimsave(out_fn, images)
+    
+    frame_duration = duration / len(images)
+    imageio.mimsave(out_fn, images, format='GIF', duration=frame_duration)
     return out_fn
 
 def add_text_batch(base_dir, trial_by_epochs, fn='CausalModel.png'):
