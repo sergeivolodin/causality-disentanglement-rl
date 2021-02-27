@@ -5,10 +5,10 @@ import gin_tune
 Config.init_functions = [@process_config]
 
 # process_config.mode = 'no_rotation'
-process_config.mode = @mode/choice()
-mode/choice.categories = @get_modes()
+process_config.mode = @mode/grid_search()
+mode/grid_search.values = @get_modes()
 
 Config.n_collectors = 4
-Config.train_steps = 10 #45000
+Config.train_steps = 45000
 tune_run.resources_per_trial = {'gpu': 1.0, 'cpu': 4}
-tune_run.num_samples = 100
+tune_run.num_samples = 3
