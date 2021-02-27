@@ -59,15 +59,13 @@ KeyChest environment:<br />
 <img src="https://github.com/sergeivolodin/causality-disentanglement-rl/blob/master/images/keychest.gif" />
 
 VectorIncrement environment:<br />
-![](images/env_ve5_noperm.gif) ![](images/env_ve5_perm.gif)
+<img src="https://github.com/sergeivolodin/causality-disentanglement-rl/blob/master/images/env_ve5_noperm.gif" height="200" /> <img src="https://github.com/sergeivolodin/causality-disentanglement-rl/blob/master/images/env_ve5_perm.gif" height="200" />
 
 
 ## VectorIncrement with 5 components
-![](images/ve5_gifs/CausalModel.png_all.gif-opt.gif) ![](images/ve5_gifs/model.png_all.gif-opt.gif)
+<img src="https://github.com/sergeivolodin/causality-disentanglement-rl/blob/master/images/ve5_gifs/CausalModel.png_all.gif-opt.gif" height="200" /> <img src="https://github.com/sergeivolodin/causality-disentanglement-rl/blob/master/images/ve5_gifs/model.png_all.gif-opt.gif" height="200" />
 
-![](images/ve5_gifs/metricsnnz.png_all.gif-opt.gif) ![](images/ve5_gifs/lossesopt1sparsityvalue.png_all.gif-opt.gif) ![](images/ve5_gifs/metricslastmultsparsitygap.png_all.gif-opt.gif)
-
-![](images/ve5_gifs/metricsfitlossfcons.png_all.gif-opt.gif) ![](images/ve5_gifs/metricsfitrecfitaccloss01agg.png_all.gif-opt.gif] ![](images/ve5_gifs/lossesopt1fitvalue.png_all.gif-opt.gif)
+<img src="https://github.com/sergeivolodin/causality-disentanglement-rl/blob/master/images/ve5_gifs/metricsnnz.png_all.gif-opt.gif" height="100" /> <img src="https://github.com/sergeivolodin/causality-disentanglement-rl/blob/master/images/ve5_gifs/lossesopt1sparsityvalue.png_all.gif-opt.gif" height="100" /> <img src="https://github.com/sergeivolodin/causality-disentanglement-rl/blob/master/images/ve5_gifs/metricslastmultsparsitygap.png_all.gif-opt.gif" height="100" /> <img src="https://github.com/sergeivolodin/causality-disentanglement-rl/blob/master/images/ve5_gifs/metricsfitlossfcons.png_all.gif-opt.gif" height="100" /> <img src="https://github.com/sergeivolodin/causality-disentanglement-rl/blob/master/images/ve5_gifs/metricsfitrecfitaccloss01agg.png_all.gif-opt.gif" height="100" /> <img src="https://github.com/sergeivolodin/causality-disentanglement-rl/blob/master/images/ve5_gifs/lossesopt1fitvalue.png_all.gif-opt.gif" height="100" />
 
 ### Sanity checks
 
