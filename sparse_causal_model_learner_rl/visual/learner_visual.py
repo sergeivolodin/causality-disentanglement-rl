@@ -59,19 +59,30 @@ def add_artifact(fn, ex, do_sacred, epochs, epoch_info):
             print(traceback.format_exc())
 
 @gin.configurable
-def plot_model(model, vmin=None, vmax=None):
+def plot_model(model, vmin=None, vmax=None, additional_features=None,
+               singlecolor_palette=False):
     """Plot models (action and features) as a heatmap."""
     cm = sns.diverging_palette(0, 129, l=70, s=100, n=500, center="dark")
+    if singlecolor_palette:
+        cm = sns.dark_palette(np.array((148, 255, 0)) / 255., n_colors=500)
 
     fig = plt.figure(figsize=(10, 5))
     fig.patch.set_facecolor('xkcd:mint green')
     Mf, Ma = model.Mf, model.Ma
     plt.subplot(1, 2, 1)
     plt.title("Model for features")
+    
+    xt_f = ['f%02d' % i for i in range(Mf.shape[1])]
+    xt_a = ['a%02d' % i for i in range(Ma.shape[1])]
+    yt = ['f\'%02d' % i for i in range(Mf.shape[0])]
+    if additional_features:
+        yt[-len(additional_features):] = additional_features
+    
     max_f = np.max(np.abs(Mf))
     vmin_ = vmin if vmin is not None else -max_f
     vmax_ = vmax if vmax is not None else max_f
-    sns.heatmap(Mf, vmin=vmin_, vmax=vmax_, cmap=cm)
+    sns.heatmap(Mf, vmin=vmin_, vmax=vmax_, cmap=cm,
+                xticklabels=xt_f, yticklabels=yt)
     plt.xlabel('Old features')
     plt.ylabel('New features')
 
@@ -80,7 +91,8 @@ def plot_model(model, vmin=None, vmax=None):
     max_a = np.max(np.abs(Ma))
     vmin_ = vmin if vmin is not None else -max_a
     vmax_ = vmax if vmax is not None else max_a
-    sns.heatmap(Ma, vmin=vmin_, vmax=vmax_, cmap=cm)
+    sns.heatmap(Ma, vmin=vmin_, vmax=vmax_, cmap=cm,
+                xticklabels=xt_a, yticklabels=yt)
     plt.xlabel('Actions')
     plt.ylabel('New features')
     return fig

@@ -130,19 +130,23 @@ class CausalModelLearnerRL(AbstractLearner):
 
         return results
 
-    def visualize_model(self):
-        return plot_model(self.model)
+    def visualize_model(self, model=None):
+        if model is None:
+            model = self.model
+        return plot_model(model)
 
-    def visualize_graph(self, threshold='auto', do_write=False):
+    def visualize_graph(self, threshold='auto', do_write=False, model=None):
+        if model is None:
+            model = self.model
         if threshold == 'auto':
-            _ = select_threshold(self.model.Ma, do_plot=do_write, name='learner_action')
-            _ = select_threshold(self.model.Mf, do_plot=do_write, name='learner_feature')
-            threshold_act = select_threshold(self.model.Ma, do_plot=False, do_log=False,
+            _ = select_threshold(model.Ma, do_plot=do_write, name='learner_action')
+            _ = select_threshold(model.Mf, do_plot=do_write, name='learner_feature')
+            threshold_act = select_threshold(model.Ma, do_plot=False, do_log=False,
                                              name='learner_action')
-            threshold_f = select_threshold(self.model.Mf, do_plot=False, do_log=False,
+            threshold_f = select_threshold(model.Mf, do_plot=False, do_log=False,
                                            name='learner_feature')
             threshold = np.mean([threshold_act, threshold_f])
-        ps, f_out = graph_for_matrices(self.model, threshold_act=threshold_act,
+        ps, f_out = graph_for_matrices(model, threshold_act=threshold_act,
                                        threshold_f=threshold_f, do_write=do_write)
         return threshold, ps, f_out
 
