@@ -109,7 +109,11 @@ class AbstractLearner(ABC):
                     if callable(k_params):
                         k_params = k_params()
                 else:
-                    k_params = self.trainables[k].parameters()
+                    if k in self.trainables and self.trainables[k] is not None:
+                        k_params = self.trainables[k].parameters()
+                    else:
+                        logging.warning(f"Trainable given to optimizer, but not found: {k}")
+                        k_params = []
                 result += list(k_params)
             return result
 
