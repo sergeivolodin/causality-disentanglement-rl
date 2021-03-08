@@ -13,6 +13,7 @@ from causal_util.helpers import postprocess_info
 from sparse_causal_model_learner_rl.config import Config
 from abc import ABC, abstractmethod, abstractproperty
 from torch.nn.utils.clip_grad import clip_grad_norm_
+from sparse_causal_model_learner_rl.loss.helpers import get_loss_and_metrics
 
 
 class AbstractLearner(ABC):
@@ -373,14 +374,11 @@ class AbstractLearner(ABC):
                 total_loss = 0
                 for loss_label in self.config['execution'].get(opt_label, []):
                     loss = self.config['losses'][loss_label]
-                    value = loss['fcn'](**context, opt_label=opt_label,
-                                        loss_local_cache=loss_local_cache,
-                                        loss_coeff=loss['coeff'])
-                    if isinstance(value, dict):
-                        if loss_label not in epoch_info['metrics']:
-                            epoch_info['metrics'][loss_label] = {}
-                        epoch_info['metrics'][loss_label] = value.get('metrics', {})
-                        value = value['loss']
+                    kwargs = dict(**context, opt_label=opt_label,
+                                  loss_local_cache=loss_local_cache,
+                                  loss_coeff=loss['coeff'])
+                    value, metrics = get_loss_and_metrics(loss['fcn'], **kwargs)
+                    epoch_info['metrics'][loss_label] = metrics
                     coeff = loss['coeff']
                     epoch_info['losses'][f"{opt_label}/{loss_label}/coeff"] = coeff
                     epoch_info['losses'][f"{opt_label}/{loss_label}/value"] = value

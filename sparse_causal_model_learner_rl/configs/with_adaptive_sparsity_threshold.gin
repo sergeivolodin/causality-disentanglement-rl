@@ -1,0 +1,17 @@
+# Use threshold annealer
+
+Config._update_function = [@ThresholdAnnealer, @AnnealerThresholdSelector]
+
+AnnealerThresholdSelector.multiplier = 0.5
+AnnealerThresholdSelector.adjust_every = 1
+AnnealerThresholdSelector.source_fit_loss_key = 'non_sparse_fit_loss_smooth'
+
+ThresholdAnnealer.source_metric_key = 'fit_loss_smooth'
+ThresholdAnnealer.min_hyper = %MIN_SPARSITY
+ThresholdAnnealer.max_hyper = 100
+ThresholdAnnealer.freeze_time = -1
+ThresholdAnnealer.freeze_threshold_probas = None
+ThresholdAnnealer.adjust_every = 30
+ThresholdAnnealer.reset_on_fail = False
+ThresholdAnnealer.factor = 0.5
+ThresholdAnnealer.emergency_heating = False

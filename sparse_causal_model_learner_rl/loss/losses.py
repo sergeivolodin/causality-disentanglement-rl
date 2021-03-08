@@ -2,7 +2,33 @@ import torch
 from sparse_causal_model_learner_rl.loss import loss
 import gin
 import numpy as np
-from .helpers import gather_additional_features
+from .helpers import gather_additional_features, get_loss_and_metrics
+
+
+@gin.configurable
+def margin_loss(fcn, margin=1.0, **kwargs):
+    l, metrics = get_loss_and_metrics(fcn, **kwargs)
+        
+    metrics['pre_margin'] = l.item()
+    
+    l_margin = torch.nn.ReLU()(l - margin)
+    
+    return {'loss': l_margin, 'metrics': metrics}
+
+@gin.configurable
+def linear_combination(losses_dct, **kwargs):
+    """Compute a combination of losses."""
+    total = 0
+    metrics = {'losses': {}}
+    for loss_key, loss_dct in losses_dct.items():
+        coeff = loss_dct['coeff']
+        fcn = loss_dct['fcn']
+        c_loss, c_metrics = get_loss_and_metrics(fcn, **kwargs)
+        metrics[loss_key] = c_metrics
+        metrics[loss_key]['coeff'] = coeff
+        metrics[loss_key]['value'] = c_loss.item()
+        total += c_loss * coeff
+    return {'loss': total, 'metrics': metrics}
 
 def tensor_std(t, eps=1e-8):
     """Compute standard deviation, output 1 if std < eps for stability (disabled features)."""
