@@ -15,3 +15,6 @@ ThresholdAnnealer.adjust_every = 30
 ThresholdAnnealer.reset_on_fail = False
 ThresholdAnnealer.factor = 0.5
 ThresholdAnnealer.emergency_heating = False
+
+MIN_SPARSITY = 1e-9
+SPARSITY_COEFF = %MIN_SPARSITY

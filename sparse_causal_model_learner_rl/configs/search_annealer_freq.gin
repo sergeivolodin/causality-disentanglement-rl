@@ -1,0 +1,12 @@
+import gin_tune
+import sparse_causal_model_learner_rl.config
+
+tune_run.num_samples = 200
+tune_run.resources_per_trial = {'gpu': 0.08, 'cpu': 2}
+AnnealerThresholdSelector.multiplier = @mult/uniform()
+ThresholdAnnealer.adjust_every = @freq/choice()
+
+
+freq/choice.categories = [10, 30, 50, 70, 100, 200, 300, 400]
+mult/uniform.lower = 0.1
+mult/uniform.upper = 0.9
