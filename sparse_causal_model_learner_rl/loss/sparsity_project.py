@@ -1,6 +1,6 @@
 import gin
 import torch
-import l1_ball_projection_pytorch
+from . import l1_ball_projection_pytorch
 l1_ball_projection_pytorch.torch = torch
 
 
@@ -16,7 +16,8 @@ def switch_project_l1(model, max_l1_norm=1, **kwargs):
 
     parameter = swp[0]
     parameter.data = l1_ball_projection_pytorch.project_onto_l1_ball(
-        x=parameter.data, eps=max_l1_norm).detach()
+        x=parameter.data.unsqueeze(0), eps=max_l1_norm).detach()[0]
 
     # no gradient!
-    return torch.sum(torch.abs(parameter.data)).detach()
+    return {'loss': torch.sum(torch.abs(parameter.data)).detach(),
+            'metrics': {'coeff': max_l1_norm}}
