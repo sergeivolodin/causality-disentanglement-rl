@@ -7,3 +7,6 @@
 [submodule "mamo"]
 	path = mamo
 	url = https://github.com/swisscom/ai-research-mamo-framework.git
+[submodule "gist_l1_proj"]
+	path = gist_l1_proj
+	url = https://gist.github.com/1329998205d88c566588e57e3e2c0c55.git
