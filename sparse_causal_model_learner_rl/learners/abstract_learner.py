@@ -418,6 +418,7 @@ class AbstractLearner(ABC):
             for metric_label in sorted(self.config['metrics'].keys()):
                 metric = self.config['metrics'][metric_label]
                 epoch_info['metrics'][metric_label] = metric(**context, context=context,
+                                                             learner=self,
                                                              prev_epoch_info=self.epoch_info,
                                                              now_epoch_info=postprocess_info(epoch_info))
 

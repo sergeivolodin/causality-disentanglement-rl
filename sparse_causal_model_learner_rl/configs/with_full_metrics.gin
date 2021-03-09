@@ -1,5 +1,6 @@
 import sparse_causal_model_learner_rl.metrics.context_rewrite
 import sparse_causal_model_learner_rl.metrics.nnz
+import sparse_causal_model_learner_rl.metrics.cosine_to_true
 import sparse_causal_model_learner_rl.metrics.model_entropy
 import sparse_causal_model_learner_rl.visual.learner_visual
 include 'smooth_sparsity_gap_metrics.gin'
@@ -15,7 +16,8 @@ Config.metrics = {'nnz': @nnz, 'threshold_action': @threshold_action,
                   'fit_loss_smooth': @fit_loss_smooth/smooth,
                   'non_sparse_fit_loss_smooth': @non_sparse_fit_loss_smooth/smooth,
                   '|last_mult_sparsity_gap': @mult_sparsity_gap,
-                  '|last_add_sparsity_gap': @add_sparsity_gap
+                  '|last_add_sparsity_gap': @add_sparsity_gap,
+                  'cosine_to_true': @cosine_to_true,
 }
 
 entropy_np.return_distribution = True

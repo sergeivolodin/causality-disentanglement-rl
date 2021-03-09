@@ -4,6 +4,14 @@ import numpy as np
 
 from causal_util.helpers import vec_heatmap, np_random_seed
 
+class CausalGraphProbas(object):
+    """Ground truth model of the environment."""
+    def __init__(self, n_actions, n_state, As, Aa):
+        assert As.shape == (n_state, n_state)
+        assert Aa.shape == (n_state, n_actions)
+        self.As = As
+        self.Aa = Aa
+
 
 @gin.configurable
 def random_sparse_matrix(n, n_add_elements_frac=None,
@@ -75,6 +83,9 @@ class SparseMatrixEnvironment(gym.Env):
                                                 high=np.float32(np.inf),
                                                 shape=(self.n,))
         self.action_space = gym.spaces.Discrete(1)
+        self.true_graph = CausalGraphProbas(n_state=n, n_actions=1,
+                                            As=1. * (np.abs(self.A) > 0),
+                                            Aa=np.zeros((n, 1)))
         
     def render(self, mode='rgb_array'):
         return vec_heatmap(self.state)

@@ -7,6 +7,16 @@ import vectorincrement  # noqa # pylint: disable=unused-import
 import keychest  # noqa # pylint: disable=unused-import
 from causal_util.weight_restorer import WeightRestorer
 
+def get_true_graph(env):
+    """Given an environment, unwrap it until there is an attribute .true_graph."""
+    if hasattr(env, 'true_graph'):
+        g = env.true_graph
+        assert hasattr(g, 'As')
+        return g
+    elif hasattr(env, 'env'):
+        return get_true_graph(env.env)
+    else:
+        return None
 
 @gin.configurable
 def load_env(env_name, time_limit=None, obs_scaler=None, wrappers=None,
