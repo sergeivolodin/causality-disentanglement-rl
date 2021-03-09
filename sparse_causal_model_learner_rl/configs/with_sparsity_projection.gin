@@ -1,0 +1,6 @@
+# Use projection onto the l1 simplex instead of an additive loss
+import sparse_causal_model_learner_rl.loss.sparsity_project
+
+SPARSITY_COEFF = 0.0
+SPARSITY_LOSS_FCN = @switch_project_l1
+switch_project_l1.max_l1_norm = 7.0
