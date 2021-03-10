@@ -367,6 +367,7 @@ class AbstractLearner(ABC):
             epoch_info['metrics'][stats_key] = context[stats_key]
 
         # train using losses
+        loss_epoch_cache = {}
         for opt_label in sorted(self.optimizer_objects.keys()):
             opt = self.optimizer_objects[opt_label]
 
@@ -378,6 +379,7 @@ class AbstractLearner(ABC):
                     loss = self.config['losses'][loss_label]
                     kwargs = dict(**context, opt_label=opt_label,
                                   loss_local_cache=loss_local_cache,
+                                  loss_epoch_cache=loss_epoch_cache,
                                   loss_coeff=loss['coeff'])
                     value, metrics = get_loss_and_metrics(loss['fcn'], **kwargs)
                     epoch_info['metrics'][loss_label] = metrics

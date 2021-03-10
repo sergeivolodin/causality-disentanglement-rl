@@ -44,6 +44,7 @@ def linear_combination(losses_dct, **kwargs):
 
 @gin.configurable
 def lagrangian(losses_dict, objective_key, lagrange_multipliers, max_constraint=0.1, mode=None,
+               loss_epoch_cache=None,
                **kwargs):
     assert mode in ['PRIMAL', 'DUAL'], mode
     metrics = {}
@@ -52,19 +53,30 @@ def lagrangian(losses_dict, objective_key, lagrange_multipliers, max_constraint=
     # equation: objective_key + lagrange_multipliers * other_losses_linear_combination
     assert lagrange_multipliers.n == 1, lagrange_multipliers.n  # need only 1 component
     lm = lagrange_multipliers()[0]
-
-    other_losses_dict = {x: y for x, y in losses_dict.items() if x != objective_key}
-    constraint_loss_metrics = linear_combination(other_losses_dict, **modify_coeff(kwargs, lm.item()))
-    metrics['constraint'] = constraint_loss_metrics['metrics']
-
+    
+    def get_constraint():
+        other_losses_dict = {x: y for x, y in losses_dict.items() if x != objective_key}
+        constraint_loss_metrics = linear_combination(other_losses_dict, **modify_coeff(kwargs, lm.item()))
+        return constraint_loss_metrics
+        
     if mode == 'PRIMAL':
+        constraint_loss_metrics = cache_get(loss_epoch_cache, key='constraint_cached',
+                                            fcn=get_constraint, force=True)
+        
+        metrics['constraint'] = constraint_loss_metrics['metrics']
+
+        
         c = losses_dict[objective_key]['coeff']
         obj_loss, obj_metrics = get_loss_and_metrics(losses_dict[objective_key]['fcn'], **modify_coeff(kwargs, c))
         obj_metrics['value'] = obj_loss.item()
         metrics['objective_' + objective_key] = obj_metrics
         obj_loss *= c
+        
         loss = obj_loss + lm * (constraint_loss_metrics['loss'] - max_constraint)
     elif mode == 'DUAL':
+        constraint_loss_metrics = cache_get(loss_epoch_cache, key='constraint_cached',
+                                            fcn=get_constraint, force=False)
+        
         loss = -lm * ((constraint_loss_metrics['loss'] - max_constraint).detach())
 
     metrics['lagrange_multiplier'] = lm.item()
@@ -78,9 +90,11 @@ def tensor_std(t, eps=1e-8):
     s = torch.where(s < eps, torch.ones_like(s), s)
     return s
 
-def cache_get(cache, key, fcn):
+def cache_get(cache, key, fcn, force=False):
     """Get key from cache, or compute one."""
-    if key not in cache:
+    if cache is None:
+        cache = {}
+    if force or (key not in cache):
         cache[key] = fcn()
     return cache[key]
 
