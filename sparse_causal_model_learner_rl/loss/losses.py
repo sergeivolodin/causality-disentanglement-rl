@@ -5,6 +5,15 @@ import numpy as np
 from .helpers import gather_additional_features, get_loss_and_metrics
 
 
+def modify_coeff(kwargs, mult=1.0):
+    """Change coefficient of the loss."""
+    if 'loss_coeff' in kwargs:
+        kwargs_copy = {x: y for x, y in kwargs.items()}
+        kwargs_copy['loss_coeff'] = kwargs['loss_coeff'] * mult
+        return kwargs_copy
+    return kwargs
+
+
 @gin.configurable
 def margin_loss(fcn, margin=1.0, **kwargs):
     l, metrics = get_loss_and_metrics(fcn, **kwargs)
@@ -24,7 +33,7 @@ def linear_combination(losses_dct, **kwargs):
     for loss_key, loss_dct in losses_dct.items():
         coeff = loss_dct['coeff']
         fcn = loss_dct['fcn']
-        c_loss, c_metrics = get_loss_and_metrics(fcn, **kwargs)
+        c_loss, c_metrics = get_loss_and_metrics(fcn, **modify_coeff(kwargs, coeff))
         metrics[loss_key] = c_metrics
         metrics[loss_key]['coeff'] = coeff
         metrics[loss_key]['value'] = c_loss.item()
@@ -45,14 +54,15 @@ def lagrangian(losses_dict, objective_key, lagrange_multipliers, max_constraint=
     lm = lagrange_multipliers()[0]
 
     other_losses_dict = {x: y for x, y in losses_dict.items() if x != objective_key}
-    constraint_loss_metrics = linear_combination(other_losses_dict, **kwargs)
+    constraint_loss_metrics = linear_combination(other_losses_dict, **modify_coeff(kwargs, lm.item()))
     metrics['constraint'] = constraint_loss_metrics['metrics']
 
     if mode == 'PRIMAL':
-        obj_loss, obj_metrics = get_loss_and_metrics(losses_dict[objective_key]['fcn'], **kwargs)
+        c = losses_dict[objective_key]['coeff']
+        obj_loss, obj_metrics = get_loss_and_metrics(losses_dict[objective_key]['fcn'], **modify_coeff(kwargs, c))
         obj_metrics['value'] = obj_loss.item()
         metrics['objective_' + objective_key] = obj_metrics
-
+        obj_loss *= c
         loss = obj_loss + lm * (constraint_loss_metrics['loss'] - max_constraint)
     elif mode == 'DUAL':
         loss = -lm * ((constraint_loss_metrics['loss'] - max_constraint).detach())
