@@ -73,6 +73,7 @@ Config.potential_trainables_list = [
     {'name': 'causal_feature_action_model_discriminator', 'description': "Discriminate between correct triplets (f1, a1, f2) and incorrect ones. Takes additional features as well for the second argument."},
     {'name': 'rot_pre', 'description': "Transform decoder features to model features"},
     {'name': 'rot_post', 'description': "Transform model features to decoder features"},
+    {'name': 'lagrange_multipliers', 'description': "Lagrange multipliers for constrained optimization"},
 ]
 
 loss_thresholded.eps = 1e-3

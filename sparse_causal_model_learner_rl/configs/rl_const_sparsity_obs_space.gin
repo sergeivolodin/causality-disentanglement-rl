@@ -52,12 +52,14 @@ FIT_HALF_COEFF = 1.
 
 SPARSITY_LOSS_FCN = @sparsity_loss
 
-Config.losses = {'fit': {'fcn': @fit/fit_loss_obs_space, 'coeff': %FIT_COEFF},
+LOSSES_DICT = {'fit': {'fcn': @fit/fit_loss_obs_space, 'coeff': %FIT_COEFF},
                  'sparsity': {'fcn': %SPARSITY_LOSS_FCN, 'coeff': %SPARSITY_COEFF},
                  'reconstruction': {'fcn': @reconstruction_loss, 'coeff': %REC_COEFF},
                  'fit_all_on': {'fcn': @all_on/fit_loss_obs_space, 'coeff': %FIT_ON_COEFF},
                  'fit_all_half': {'fcn': @all_half/fit_loss_obs_space, 'coeff': %FIT_HALF_COEFF},
                 }
+
+Config.losses = %LOSSES_DICT
 
 # OTHER
 Config._update_function = []

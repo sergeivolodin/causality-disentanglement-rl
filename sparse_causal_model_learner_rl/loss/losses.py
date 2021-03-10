@@ -15,11 +15,12 @@ def margin_loss(fcn, margin=1.0, **kwargs):
     
     return {'loss': l_margin, 'metrics': metrics}
 
+
 @gin.configurable
 def linear_combination(losses_dct, **kwargs):
     """Compute a combination of losses."""
     total = 0
-    metrics = {'losses': {}}
+    metrics = {}
     for loss_key, loss_dct in losses_dct.items():
         coeff = loss_dct['coeff']
         fcn = loss_dct['fcn']
@@ -29,6 +30,33 @@ def linear_combination(losses_dct, **kwargs):
         metrics[loss_key]['value'] = c_loss.item()
         total += c_loss * coeff
     return {'loss': total, 'metrics': metrics}
+
+
+@gin.configurable
+def lagrangian(losses_dict, objective_key, max_constraint=0.1, lagrange_multipliers, **kwargs,
+               mode=None):
+    assert mode in ['PRIMAL', 'DUAL'], mode
+    metrics = {}
+
+    # loss
+    # equation: objective_key + lagrange_multipliers * other_losses_linear_combination
+    assert lagrange_multipliers.n == 1, lagrange_multipliers.n  # need only 1 component
+
+    other_losses_dict = {x: y for x, y in losses_dict.items() if x != objective_key}
+    constraint_loss, constraint_metrics = linear_combination(other_losses_dict, **kwargs)
+    metrics['constraint'] = constraint_metrics
+
+    if mode == 'PRIMAL':
+        obj_loss, obj_metrics = get_loss_and_metrics(losses_dict[objective_key]['fcn'], **kwargs)
+        obj_metrics['value'] = obj_loss.item()
+        metrics['objective_' + objective_key] = obj_metrics
+
+        loss = obj_loss + lagrange_multipliers()[0] * (constraint_loss - max_constraint)
+    elif mode == 'DUAL':
+        loss = -lagrange_multipliers()[0] * ((constraint_loss - max_constraint).detach())
+
+    return {'loss': loss,
+            'metrics': metrics}
 
 def tensor_std(t, eps=1e-8):
     """Compute standard deviation, output 1 if std < eps for stability (disabled features)."""
