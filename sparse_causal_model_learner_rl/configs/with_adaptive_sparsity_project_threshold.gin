@@ -3,14 +3,15 @@ import sparse_causal_model_learner_rl.annealer.threshold_projection
 
 Config._update_function = [@ProjectionThreshold]
 
+MAX_H = 80
 
 ProjectionThreshold.adjust_every = 2
 ProjectionThreshold.metric_threshold = 0.1
 ProjectionThreshold.delta = 0.2
 ProjectionThreshold.min_hyper = 0.0
-ProjectionThreshold.max_hyper = 25
+ProjectionThreshold.max_hyper = 80
 ProjectionThreshold.source_metric_key = '|last_mult_sparsity_gap'
 ProjectionThreshold.gin_variable = 'switch_project_l1.max_l1_norm'
-switch_project_l1.max_l1_norm = 25
+switch_project_l1.max_l1_norm = 80
 
 Config.train_steps = 50000

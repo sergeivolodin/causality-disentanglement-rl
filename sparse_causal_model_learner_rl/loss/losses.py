@@ -29,6 +29,7 @@ def linear_combination(losses_dct, **kwargs):
         metrics[loss_key]['coeff'] = coeff
         metrics[loss_key]['value'] = c_loss.item()
         total += c_loss * coeff
+    metrics['total'] = total.item()
     return {'loss': total, 'metrics': metrics}
 
 
@@ -41,6 +42,7 @@ def lagrangian(losses_dict, objective_key, lagrange_multipliers, max_constraint=
     # loss
     # equation: objective_key + lagrange_multipliers * other_losses_linear_combination
     assert lagrange_multipliers.n == 1, lagrange_multipliers.n  # need only 1 component
+    lm = lagrange_multipliers()[0]
 
     other_losses_dict = {x: y for x, y in losses_dict.items() if x != objective_key}
     constraint_loss_metrics = linear_combination(other_losses_dict, **kwargs)
@@ -51,9 +53,11 @@ def lagrangian(losses_dict, objective_key, lagrange_multipliers, max_constraint=
         obj_metrics['value'] = obj_loss.item()
         metrics['objective_' + objective_key] = obj_metrics
 
-        loss = obj_loss + lagrange_multipliers()[0] * (constraint_loss_metrics['loss'] - max_constraint)
+        loss = obj_loss + lm * (constraint_loss_metrics['loss'] - max_constraint)
     elif mode == 'DUAL':
-        loss = -lagrange_multipliers()[0] * ((constraint_loss_metrics['loss'] - max_constraint).detach())
+        loss = -lm * ((constraint_loss_metrics['loss'] - max_constraint).detach())
+
+    metrics['lagrange_multiplier'] = lm.item()
 
     return {'loss': loss,
             'metrics': metrics}
