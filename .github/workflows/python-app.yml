@@ -35,7 +35,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         sudo apt-get update
-        sudo apt-get install -y graphviz
+        sudo apt-get install -y graphviz net-tools
         pip install flake8 pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         pip install -e gin_tune
