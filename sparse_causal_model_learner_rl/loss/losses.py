@@ -33,8 +33,8 @@ def linear_combination(losses_dct, **kwargs):
 
 
 @gin.configurable
-def lagrangian(losses_dict, objective_key, max_constraint=0.1, lagrange_multipliers, **kwargs,
-               mode=None):
+def lagrangian(losses_dict, objective_key, lagrange_multipliers, max_constraint=0.1, mode=None,
+               **kwargs):
     assert mode in ['PRIMAL', 'DUAL'], mode
     metrics = {}
 
@@ -43,17 +43,17 @@ def lagrangian(losses_dict, objective_key, max_constraint=0.1, lagrange_multipli
     assert lagrange_multipliers.n == 1, lagrange_multipliers.n  # need only 1 component
 
     other_losses_dict = {x: y for x, y in losses_dict.items() if x != objective_key}
-    constraint_loss, constraint_metrics = linear_combination(other_losses_dict, **kwargs)
-    metrics['constraint'] = constraint_metrics
+    constraint_loss_metrics = linear_combination(other_losses_dict, **kwargs)
+    metrics['constraint'] = constraint_loss_metrics['metrics']
 
     if mode == 'PRIMAL':
         obj_loss, obj_metrics = get_loss_and_metrics(losses_dict[objective_key]['fcn'], **kwargs)
         obj_metrics['value'] = obj_loss.item()
         metrics['objective_' + objective_key] = obj_metrics
 
-        loss = obj_loss + lagrange_multipliers()[0] * (constraint_loss - max_constraint)
+        loss = obj_loss + lagrange_multipliers()[0] * (constraint_loss_metrics['loss'] - max_constraint)
     elif mode == 'DUAL':
-        loss = -lagrange_multipliers()[0] * ((constraint_loss - max_constraint).detach())
+        loss = -lagrange_multipliers()[0] * ((constraint_loss_metrics['loss'] - max_constraint).detach())
 
     return {'loss': loss,
             'metrics': metrics}

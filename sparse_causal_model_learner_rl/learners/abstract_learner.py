@@ -88,6 +88,8 @@ class AbstractLearner(ABC):
 
         # creating trainables
         for trainable in self.potential_trainables_list:
+            logging.info(f"Potential trainable {trainable['name']}:"
+                         f" {trainable.get('description', None)}")
             cls = self.config.get(trainable['name'], None)
             setattr(self, f"{trainable['name']}_cls", cls)
             if cls:
