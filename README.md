@@ -103,6 +103,8 @@ Gumbel model on ve5 (features raw):
    4 hours (25000 epochs):
    
    ![](images/ve5.png)
+5. ve5 without encoder, adaptive Lagrange sparsity:
+   `python -m sparse_causal_model_learner_rl.learner --nofail --n_gpus 1 --config sparse_causal_model_learner_rl/configs/rl_const_sparsity_obs_space.gin --config sparse_causal_model_learner_rl/configs/env_ve5_raw_with_rew_done.gin --config sparse_causal_model_learner_rl/configs/with_lagrange_dual_sparsity.gin`
 
 #### KeyChest
 1. PPO on KeyChest: `python sb.py --evaluate --train_steps 5000000 --config ../keychest/config/5x5.gin --trainer DQN`
