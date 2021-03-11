@@ -12,7 +12,7 @@ class LagrangeMultipliers(nn.Module):
         self.n = n
         self.param_min = param_min
         self.param_max = param_max
-        self.tensor = torch.nn.Parameter(torch.rand(n, dtype=torch.float32))
+        self.tensor = torch.nn.Parameter(torch.ones(n, dtype=torch.float32) * param_max)
 
     def forward(self):
         self.project()
