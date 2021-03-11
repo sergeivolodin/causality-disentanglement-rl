@@ -10,7 +10,7 @@ N_FEATURES = 6
 Config.train_steps = 25000
 
 # disabling momentum to reduce the noise
-opt1/Optimizer.betas = (0.5, 0.8)
+#opt1/Optimizer.betas = (0.5, 0.8)
 
 # batch size = 1k
 Config.minibatch_size = 1000
@@ -20,10 +20,10 @@ model_gnn/FCCombinedModel.skipconns = [False, True, True, False]
 model_gnn/FCCombinedModel.hidden_sizes = [256, 256, 256]  # tuning...
 model_gnn/FCCombinedModel.activation_cls = @LeakyReLU
 
-decoder/FCCombinedModel.hidden_sizes = [256, 128, 128, 128]
-decoder/FCCombinedModel.skipconns = [False, False, True, True, False]
-rec/FCCombinedModel.hidden_sizes = [256, 64, 64, 64]
-rec/FCCombinedModel.skipconns = [False, False, True, True, False]
+decoder/FCCombinedModel.hidden_sizes = [256, 128, 128]
+decoder/FCCombinedModel.skipconns = [False, False, True, False]
+rec/FCCombinedModel.hidden_sizes = [256, 64, 64]
+rec/FCCombinedModel.skipconns = [False, False, True, False]
 
 
 # LOSSES COEFFICIENTS

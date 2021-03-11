@@ -7,7 +7,8 @@ Config.lagrange_multipliers = @LagrangeMultipliers
 
 lagrangian.losses_dict = %LOSSES_DICT
 lagrangian.objective_key = 'sparsity'
-lagrangian.max_constraint = 0.1
+lagrangian.max_constraint = 0.05
+lagrangian.constraint_keys_override = ['fit', 'reconstruction', 'fit_all_on']
 
 primal/lagrangian.mode = 'PRIMAL'
 dual/lagrangian.mode = 'DUAL'
@@ -21,7 +22,7 @@ Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer}
 
 opt1/Optimizer.lr = 1e-3
 opt1/Optimizer.name = 'Adam'
-opt2/Optimizer.lr = 1e-2
+opt2/Optimizer.lr = 1e-3
 opt2/Optimizer.name = 'Adam'
 
 Config.execution = {
@@ -34,3 +35,12 @@ Config.optim_params = {
     'opt2': ['lagrange_multipliers']
 }
 Config.opt_iterations = {'opt1': 1, 'opt2': 1}
+
+FIT_COEFF = 1.0
+SPARSITY_COEFF = 1.0
+REC_COEFF = 1.0
+FIT_ON_COEFF = 0.5
+FIT_HALF_COEFF = 0.1
+
+LagrangeMultipliers.param_min = -10
+LagrangeMultipliers.param_max = 10

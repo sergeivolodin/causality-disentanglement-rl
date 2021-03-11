@@ -44,6 +44,7 @@ def linear_combination(losses_dct, **kwargs):
 
 @gin.configurable
 def lagrangian(losses_dict, objective_key, lagrange_multipliers, max_constraint=0.1, mode=None,
+               constraint_keys_override=None,
                loss_epoch_cache=None,
                **kwargs):
     assert mode in ['PRIMAL', 'DUAL'], mode
@@ -56,6 +57,14 @@ def lagrangian(losses_dict, objective_key, lagrange_multipliers, max_constraint=
     
     def get_constraint():
         other_losses_dict = {x: y for x, y in losses_dict.items() if x != objective_key}
+        constraint_loss_metrics = linear_combination(other_losses_dict, **modify_coeff(kwargs, lm.item()))
+        return constraint_loss_metrics
+
+    def get_constraint_override():
+        if constraint_keys_override is None:
+            return get_constraint()
+        
+        other_losses_dict = {x: y for x, y in losses_dict.items() if x in constraint_keys_override}
         constraint_loss_metrics = linear_combination(other_losses_dict, **modify_coeff(kwargs, lm.item()))
         return constraint_loss_metrics
         
@@ -74,8 +83,9 @@ def lagrangian(losses_dict, objective_key, lagrange_multipliers, max_constraint=
         
         loss = obj_loss + lm * (constraint_loss_metrics['loss'] - max_constraint)
     elif mode == 'DUAL':
-        constraint_loss_metrics = cache_get(loss_epoch_cache, key='constraint_cached',
-                                            fcn=get_constraint, force=False)
+        constraint_loss_metrics = cache_get(loss_epoch_cache, key='constraint_cached_dual',
+                                            fcn=get_constraint_override, force=False)
+        metrics['constraint'] = constraint_loss_metrics['metrics']
         
         loss = -lm * ((constraint_loss_metrics['loss'] - max_constraint).detach())
 
