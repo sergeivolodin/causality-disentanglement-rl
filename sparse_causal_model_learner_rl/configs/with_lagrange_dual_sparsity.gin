@@ -7,7 +7,7 @@ Config.lagrange_multipliers = @LagrangeMultipliers
 
 lagrangian.losses_dict = %LOSSES_DICT
 lagrangian.objective_key = 'sparsity'
-lagrangian.max_constraint = 0.05
+lagrangian.max_constraint = %TARGET_LOSS_VAL
 lagrangian.constraint_keys_override = ['fit', 'reconstruction', 'fit_all_on']
 
 primal/lagrangian.mode = 'PRIMAL'

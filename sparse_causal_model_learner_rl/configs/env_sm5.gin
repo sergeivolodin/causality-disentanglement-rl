@@ -19,7 +19,7 @@ tune_run.resources_per_trial = {'gpu': 0, 'cpu': 4}
 Config.collect_every = 1
 Config.batch_training = False
 Config.shuffle = False
-Config.train_steps = 6000
+Config.train_steps = 50000
 
 
 # FEATURE SPACE
@@ -54,3 +54,5 @@ FIT_HALF_COEFF = 0.005
 
 Config.rot_pre = None
 Config.rot_post = None
+
+TARGET_LOSS_VAL = 0.05
