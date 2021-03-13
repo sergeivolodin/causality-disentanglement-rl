@@ -20,8 +20,8 @@ Config.losses = {
 
 Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer}
 
-opt1/Optimizer.lr = 1e-3
-opt1/Optimizer.name = 'Adam'
+#opt1/Optimizer.lr = 1e-3
+#opt1/Optimizer.name = 'Adam'
 opt2/Optimizer.lr = 1e-3
 opt2/Optimizer.name = 'Adam'
 
@@ -36,11 +36,11 @@ Config.optim_params = {
 }
 Config.opt_iterations = {'opt1': 1, 'opt2': 1}
 
-FIT_COEFF = 0.9
+FIT_COEFF = 0.3
 SPARSITY_COEFF = 1.0
 REC_COEFF = 0.5
-FIT_ON_COEFF = 0.5
-FIT_HALF_COEFF = 0.1
+FIT_ON_COEFF = 0.2
+FIT_HALF_COEFF = 0.02
 
 LagrangeMultipliers.param_min = -10
 LagrangeMultipliers.param_max = 10

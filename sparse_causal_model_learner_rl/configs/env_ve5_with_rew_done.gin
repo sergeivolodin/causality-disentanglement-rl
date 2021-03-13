@@ -4,7 +4,7 @@ include 'env_ve2.gin'
 include 'with_additional_features.gin'
 include '../../vectorincrement/config/ve5_toy_digits.gin'
 
-N_FEATURES = 6
+N_FEATURES = 12
 
 # only doing 25k steps (~4 hours)
 Config.train_steps = 250000
@@ -13,19 +13,23 @@ Config.train_steps = 250000
 #opt1/Optimizer.betas = (0.5, 0.8)
 
 # batch size = 1k
-Config.minibatch_size = 2000
-Config.env_steps = 2000
+Config.minibatch_size = 8000
+Config.env_steps = 8000
 
-model_gnn/FCCombinedModel.skipconns = [False, True, True, False]
-model_gnn/FCCombinedModel.hidden_sizes = [64, 64, 64]  # tuning...
-model_gnn/FCCombinedModel.activation_cls = @Tanh
+model_gnn/FCCombinedModel.skipconns = [False, True, True, True, False]
+model_gnn/FCCombinedModel.hidden_sizes = [64, 64, 64, 64]  # tuning...
+model_gnn/FCCombinedModel.activation_cls = [@LeakyReLU, @ReLU, @ReLU, @ReLU, None]
 
-decoder/FCCombinedModel.hidden_sizes = [64, 64, 64]
-decoder/FCCombinedModel.skipconns = [False, True, True, False]
-decoder/FCCombinedModel.activation_cls = @Tanh
-rec/FCCombinedModel.hidden_sizes = [64, 64, 64]
-rec/FCCombinedModel.skipconns = [False, True, True, False]
-rec/FCCombinedModel.activation_cls = @Tanh
+decoder/FCCombinedModel.hidden_sizes = [32, 32, 32]
+decoder/FCCombinedModel.skipconns = None#[False, True, True, False]
+decoder/FCCombinedModel.activation_cls = [@LeakyReLU, @ReLU, @ReLU, None]
+rec/FCCombinedModel.hidden_sizes = [32, 16, 16]
+rec/FCCombinedModel.skipconns = None#[False, True, True, False]
+rec/FCCombinedModel.activation_cls = [@LeakyReLU, @ReLU, @Sigmoid, None]
+
+model_gnn/FCCombinedModel.add_input_batchnorm = False
+decoder/FCCombinedModel.add_input_batchnorm = False
+rec/FCCombinedModel.add_input_batchnorm = False
 
 
 # LOSSES COEFFICIENTS
@@ -35,4 +39,7 @@ REC_COEFF = 0.01
 FIT_ON_COEFF = 0.05
 FIT_HALF_COEFF = 0.01
 
-TARGET_LOSS_VAL = 0.35
+TARGET_LOSS_VAL = 0.01
+
+opt1/Optimizer.lr = 5e-4 # 5e-4 for 6k steps, 1e-4 later
+opt1/Optimizer.name = 'Adam'

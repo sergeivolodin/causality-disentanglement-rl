@@ -122,7 +122,7 @@ class FCCombinedModel(AbstractCombinedModel):
                 x = self.activation[i](x)
             if self.skipconns[i]:
                 x = x + x_inp
-        assert x.shape[1] == self.output_dim
+        assert x.shape[1] == self.output_dim, (x.shape, self.output_dim, self.n_models)
         assert x.shape[2] == self.n_models
         if self.output_dim == 1:
             x = x.view(x.shape[0], x.shape[2])
