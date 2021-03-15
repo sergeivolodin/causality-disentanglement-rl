@@ -54,7 +54,10 @@ class VectorIncrementEnvironment(gym.Env):
         if maxtomin > 0:
             # reward is proportional to the difference between the selected component
             # and the worse component to choose
-            r = (max(s_old) - s_old[action]) / maxtomin
+            #r = (max(s_old) - s_old[action]) / maxtomin
+
+            # reward is 1 if a=argmin(s_old)
+            r = 1.0 if np.allclose(s_old[action], min(s_old)) else 0.0
         else:
             r = 0
 
