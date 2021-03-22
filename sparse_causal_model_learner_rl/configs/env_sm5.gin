@@ -15,7 +15,7 @@ Config.minibatch_size = 1000
 Config.n_collectors = 3
 Config.env_steps = 1000
 Config.collect_initial_steps = 100000
-tune_run.resources_per_trial = {'gpu': 0, 'cpu': 4}
+tune_run.resources_per_trial = {'gpu': 0.5, 'cpu': 4}
 Config.collect_every = 1
 Config.batch_training = False
 Config.shuffle = False
@@ -31,8 +31,8 @@ Config.decoder = @IdentityDecoder
 
 # MODEL
 Config.model = @sparse_model/ManyNetworkCombinedModel
-model_gnn/FCCombinedModel.hidden_sizes = []  # tuning...
-model_gnn/FCCombinedModel.activation_cls = None
+model_gnn/FCCombinedModel.hidden_sizes = [32, 32]  # tuning...
+model_gnn/FCCombinedModel.activation_cls = @Tanh
 model_gnn/FCCombinedModel.add_input_batchnorm = True
 WithInputSwitch.model_cls = @model_gnn/FCCombinedModel
 sparse_model/ManyNetworkCombinedModel.model_cls = @sparse_model/WithInputSwitch
@@ -55,4 +55,9 @@ FIT_HALF_COEFF = 0.005
 Config.rot_pre = None
 Config.rot_post = None
 
-TARGET_LOSS_VAL = 0.05
+TARGET_REC = 0
+TARGET_FIT_OBS = 1e-2
+TARGET_FIT_FEAT = 1e-2
+TARGET_FIT_ADD = 0
+
+BURSTS_TIME_SCALES = {'opt1d': 0, 'opt1m': 10, 'opt1r': 0}

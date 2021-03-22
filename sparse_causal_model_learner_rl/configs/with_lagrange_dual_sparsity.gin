@@ -1,46 +1,170 @@
 # Use two-optimizer setup with a lagrange multiplier
 import sparse_causal_model_learner_rl.loss.losses
 import sparse_causal_model_learner_rl.trainable.lagrange
+import sparse_causal_model_learner_rl.configs.search_helpers.opt_cycle
 
-LagrangeMultipliers.n = 1
+LagrangeMultipliers.n = 13
 Config.lagrange_multipliers = @LagrangeMultipliers
 
-lagrangian.losses_dict = %LOSSES_DICT
-lagrangian.objective_key = 'sparsity'
-lagrangian.max_constraint = %TARGET_LOSS_VAL
-lagrangian.constraint_keys_override = ['fit', 'reconstruction', 'fit_all_on']
+lagrangian_granular.losses_dict = %LOSSES_DICT
+lagrangian_granular.constraints_dict = {
+    'sparsity': {  # objective
+        'constraint': None,
+        'controlling': False
+    },
 
-primal/lagrangian.mode = 'PRIMAL'
-dual/lagrangian.mode = 'DUAL'
+    # don't need reconstructor because it only slows down convergence
+    #'reconstruction': {  # reconstruction loss
+    #    'constraint': %TARGET_REC,
+    #    'controlling': True,
+    #},
 
-Config.losses = {
-    'primal': {'fcn': @primal/lagrangian, 'coeff': 1.0},
-    'dual': {'fcn': @dual/lagrangian, 'coeff': 1.0},
+    # FIT LOSS
+
+    'fit/obs': {  # fit loss: observation part
+        'constraint': %TARGET_FIT_OBS,
+        'controlling': True
+    },
+
+    'fit/feat': {  # fit loss: decoder feature part
+        'constraint': %TARGET_FIT_FEAT,
+        'controlling': True
+    },
+
+    'fit/feat_model': {  # fit loss: model feature space part
+        'constraint': %TARGET_FIT_FEAT,
+        'controlling': True
+    },
+
+    'fit/additional': {  # fit loss: rew/done part
+        'constraint': %TARGET_FIT_ADD,
+        'controlling': True
+    },
+
+    # FIT ALL ON
+
+    'fit_all_on/obs': {  # fit loss: observation part
+        'constraint': %TARGET_FIT_OBS,
+        'controlling': True
+    },
+
+    'fit_all_on/feat': {  # fit loss: decoder feature part
+        'constraint': %TARGET_FIT_FEAT,
+        'controlling': True
+    },
+
+    'fit_all_on/feat_model': {  # fit loss: model feature space part
+        'constraint': %TARGET_FIT_FEAT,
+        'controlling': True
+    },
+
+    'fit_all_on/additional': {  # fit loss: rew/done part
+        'constraint': %TARGET_FIT_ADD,
+        'controlling': True
+    },
+
+    # FIT EXPLORATION
+
+    'fit_all_half/obs': {  # loss: observation part
+        'constraint': 0,
+        'controlling': False,
+        'take_lm_from': 'fit/obs',
+    },
+
+    'fit_all_half/feat': {  # fit loss: decoder feature part
+        'constraint': 0,
+        'controlling': False,
+        'take_lm_from': 'fit/feat',
+    },
+
+    'fit_all_half/feat_model': {  # fit loss: model feature space part
+        'constraint': 0,
+        'controlling': False,
+        'take_lm_from': 'fit/feat_model',
+    },
+
+    'fit_all_half/additional': {  # fit loss: rew/done part
+        'constraint': 0,
+        'controlling': False,
+        'take_lm_from': 'fit/additional',
+    },
 }
 
-Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer}
+primal/lagrangian_granular.mode = 'PRIMAL'
+dual/lagrangian_granular.mode = 'DUAL'
 
-#opt1/Optimizer.lr = 1e-3
-#opt1/Optimizer.name = 'Adam'
+Config.losses = {
+    'primal': {'fcn': @primal/lagrangian_granular, 'coeff': 1.0},
+    'dual': {'fcn': @dual/lagrangian_granular, 'coeff': 1.0},
+}
+
+Config.optimizers = {
+#    'opt1': @opt1/Optimizer,
+
+    'opt1d': @opt1d/Optimizer,
+    'opt1m': @opt1m/Optimizer,
+    'opt1r': @opt1r/Optimizer,
+
+
+    'opt2': @opt2/Optimizer,
+}
+
+opt1/Optimizer.lr = 1e-3
+opt1/Optimizer.name = 'Adam'
+
+opt1d/Optimizer.lr = 1e-3
+opt1d/Optimizer.name = 'Adam'
+
+opt1m/Optimizer.lr = 1e-3
+opt1m/Optimizer.name = 'Adam'
+
+opt1r/Optimizer.lr = 1e-3
+opt1r/Optimizer.name = 'Adam'
+
 opt2/Optimizer.lr = 1e-3
 opt2/Optimizer.name = 'Adam'
 
 Config.execution = {
-    'opt1': ['primal'],
+#    'opt1': ['primal'],
+
+    'opt1d': ['primal'],
+    'opt1m': ['primal'],
+    'opt1r': ['primal'],
+
     'opt2': ['dual'],
 }
 
 Config.optim_params = {
-    'opt1': ['rot_pre', 'rot_post', 'model', 'decoder', 'reconstructor'],
+#    'opt1': ['rot_pre', 'rot_post', 'model', 'decoder', 'reconstructor'],
+
+    'opt1d': ['decoder'],
+    'opt1m': ['model', 'rot_pre', 'rot_post'],
+    'opt1r': ['reconstructor'], #, 'reconstructor1'], # copy of a reconstructor makes it go faster! -- otherwise conflict
+
     'opt2': ['lagrange_multipliers']
 }
-Config.opt_iterations = {'opt1': 1, 'opt2': 1}
+Config.opt_iterations = {
+#    'opt1': 1,
 
-FIT_COEFF = 0.3
+    'opt1d': 1,
+    'opt1m': 1,
+    'opt1r': 1,
+
+    'opt2': 1
+}
+
+FIT_COEFF = 0.0#0.3
 SPARSITY_COEFF = 1.0
 REC_COEFF = 0.5
 FIT_ON_COEFF = 0.2
-FIT_HALF_COEFF = 0.02
+FIT_HALF_COEFF = 0#0.02
 
 LagrangeMultipliers.param_min = -10
-LagrangeMultipliers.param_max = 10
+LagrangeMultipliers.param_max = 7
+LagrangeMultipliers.param_init = 0.0
+LagrangeMultipliers.fcn = 'exp'
+
+Config.opt_enabled_fcn = @opt_active_cycle
+#opt_active_cycle.burst_sizes = {'opt1d': 10, 'opt1m': 10, 'opt1r': 10}
+opt_active_cycle.burst_sizes = %BURSTS_TIME_SCALES
+opt_active_cycle.opts_list = ['opt1d', 'opt1m', 'opt1r']

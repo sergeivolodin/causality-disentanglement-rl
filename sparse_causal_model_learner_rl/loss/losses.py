@@ -1,4 +1,5 @@
 import torch
+import logging
 from sparse_causal_model_learner_rl.loss import loss
 import gin
 import numpy as np
@@ -37,6 +38,7 @@ def linear_combination(losses_dct, **kwargs):
         metrics[loss_key] = c_metrics
         metrics[loss_key]['coeff'] = coeff
         metrics[loss_key]['value'] = c_loss.item()
+        metrics[loss_key]['coeff_value'] = coeff * c_loss.item()
         total += c_loss * coeff
     metrics['total'] = total.item()
     return {'loss': total, 'metrics': metrics}
@@ -94,6 +96,111 @@ def lagrangian(losses_dict, objective_key, lagrange_multipliers, max_constraint=
     return {'loss': loss,
             'metrics': metrics}
 
+@gin.configurable
+def lagrangian_granular(
+               losses_dict,
+               constraints_dict, # map loss key (/ goes into ['losses']) -> constraint: float [None for objective], controlling: bool
+               lagrange_multipliers,
+               mode=None,
+               loss_epoch_cache=None,
+               **kwargs):
+    assert mode in ['PRIMAL', 'DUAL'], mode
+    metrics = {}
+
+
+    def get_losses():
+        result = {}
+        for loss_key, loss_dct in losses_dict.items():
+            result[loss_key] = {'computed': loss_dct['fcn'](**kwargs),
+                                'original': loss_dct}
+            for ind_loss_key, ind_loss_val in result[loss_key]['computed'].get('losses', {}).items():
+                result[f"{loss_key}/{ind_loss_key}"] = {'computed': {'loss': ind_loss_val, 'metrics': {}},
+                                                        'original': loss_dct}
+
+        return result
+
+    losses = cache_get(loss_epoch_cache, '_lagrange_losses', get_losses,
+                       force=(mode == 'PRIMAL'))
+
+    total_constraint = 0.0
+    total_objective = 0.0
+
+    def maybe_item(z):
+        if hasattr(z, 'item'):
+            return z.item()
+        return z
+    def maybe_detach(z):
+        if hasattr(z, 'detach'):
+            return z.detach()
+        return z
+
+    all_losses_lst = list(constraints_dict.keys())
+    assert lagrange_multipliers.n == len(all_losses_lst), (lagrange_multipliers.n, all_losses_lst, len(all_losses_lst))
+
+    # filling in the metrics
+    for loss_key, loss_dct in losses.items():
+        metrics[loss_key] = {'value': maybe_item(loss_dct['computed']['loss']), 'coeff': loss_dct['original']['coeff']}
+
+    # computing the objective and the constraints
+    for loss_key, config in constraints_dict.items():
+        assert loss_key in losses, (loss_key, losses.keys())
+        loss_dct = losses[loss_key]
+        current_val_coeff = loss_dct['computed']['loss'] * loss_dct['original']['coeff']
+        metrics[loss_key] = loss_dct['computed']['metrics']
+        metrics[loss_key]['value'] = maybe_item(loss_dct['computed']['loss'])
+
+        if mode == 'DUAL':
+            current_val_coeff = maybe_detach(current_val_coeff)
+
+        if config['constraint'] is None:  # this is the objective
+            total_objective += current_val_coeff
+        else:
+
+            idx = all_losses_lst.index(loss_key)
+            c = config['constraint']
+            lm = lagrange_multipliers()[idx]
+
+            if not config['controlling']:
+                # not using lagrange multiplier
+                idx = all_losses_lst.index(config['take_lm_from'])
+                lm = lagrange_multipliers()[idx].detach()
+            else:
+                metrics['lagrange_multiplier_' + loss_key] = maybe_item(lm)
+
+            if mode == 'PRIMAL':
+                lm = lm.detach()
+            total_constraint += (current_val_coeff - c) * lm
+
+    # initializing lagrange multipliers
+    for loss_key, config in constraints_dict.items():
+        loss_dct = losses[loss_key]
+        current_val_coeff = loss_dct['computed']['loss'] * loss_dct['original']['coeff']
+
+        if config['constraint'] is not None:  # this is the objective
+            idx = all_losses_lst.index(loss_key)
+            current_delta = current_val_coeff - config['constraint']
+            if lagrange_multipliers.initialized[idx] is False and current_delta > 0:
+                new_value = total_objective / current_delta
+                new_value = maybe_item(new_value)
+                lagrange_multipliers.set_value(idx, new_value)
+                logging.warning(f"Objective={total_objective} Loss={current_val_coeff}")
+                logging.warning(f"Initializing lagrange multiplier {loss_key} with {new_value}")
+
+
+    lagrangian = total_objective + total_constraint
+
+    metrics['constraint'] = maybe_item(total_constraint)
+    metrics['objective'] = maybe_item(total_objective)
+    metrics['lagrangian'] = maybe_item(lagrangian)
+
+    if mode == 'PRIMAL':
+        loss = lagrangian
+    elif mode == 'DUAL':
+        loss = -lagrangian
+
+    return {'loss': loss,
+            'metrics': metrics}
+
 def tensor_std(t, eps=1e-8):
     """Compute standard deviation, output 1 if std < eps for stability (disabled features)."""
     s = t.std(0, keepdim=True)
@@ -145,7 +252,7 @@ def delta_01_obs(obs, rec_dec_obs):
     return delta_01_agg
     
 @gin.configurable
-def reconstruction_loss(obs, decoder, reconstructor, relative=False,
+def reconstruction_loss(obs, decoder, reconstructor1, relative=False,
                         report_01=True,
                         **kwargs):
     """Ensure that the decoder is not degenerate by fitting a reconstructor."""
@@ -154,7 +261,7 @@ def reconstruction_loss(obs, decoder, reconstructor, relative=False,
     else:
         mse = lambda x, y: (x - y).flatten(start_dim=1).pow(2).sum(1).mean(0)
         
-    rec_dec_obs = reconstructor(decoder(obs))
+    rec_dec_obs = reconstructor1(decoder(obs), source_index=1)
     metrics = {}
     loss = mse(rec_dec_obs, obs)
     
@@ -162,6 +269,7 @@ def reconstruction_loss(obs, decoder, reconstructor, relative=False,
         metrics['rec_acc_loss_01_agg'] = 2 - delta_01_obs(obs, rec_dec_obs).item()
         
     return {'loss': loss,
+            'losses': {'reconstruction': loss},
             'metrics': metrics}
 
 def square(t):
@@ -429,8 +537,19 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
                'loss_fcons_pre': loss_fcons_model.mean(0).item() if loss_fcons is not None else 0.0,
                'rec_fit_acc_loss_01_agg': 2 - delta_01_obs(obs_y, obs_yp).item(),
                }
+
+    def l_out(l):
+        if hasattr(l, 'mean'):
+            return l.mean()
+        return 0.0
     
     return {'loss': loss.mean(0),
+            'losses': {
+                'additional': l_out(loss_additional),
+                'obs': l_out(loss_rec),
+                'feat': l_out(loss_fcons),
+                'feat_model': l_out(loss_fcons_model),
+            },
             'metrics': metrics}
 
 def linreg(X, Y):

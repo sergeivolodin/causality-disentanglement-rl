@@ -79,16 +79,20 @@ def linear_encoder_unbiased_normal(inp_shape, out_shape):
 @gin.configurable
 class LinearMatrixEncoder(TransformObservation):
     """Use a random matrix to transform observations."""
+    def __str__(self):
+        return f"<LinearMatrixEncoder seed={self.seed} env={self.env}>"
+
 
     def __init__(self, env, seed=42, **kwargs):
         if isinstance(env, str):
             env = gym.make(env)
-
+        self.seed = seed
+        self.env = env
         assert len(env.observation_space.shape) == 1, env.observation_space.shape
         n_obs = env.observation_space.shape[0]
 
         # set the seed using gin scopes
-        with np_random_seed():
+        with np_random_seed(seed=seed):
             self.linear_encoder = np.random.randn(n_obs, n_obs)
 
         def code_obs(obs, A=self.linear_encoder):
@@ -104,10 +108,14 @@ class KerasEncoderWrapper(TransformObservation):
         if isinstance(env, str):
             env = gym.make(env)
         fcn = KerasEncoder(inp_shape=env.observation_space.shape, **kwargs)
+        self.fcn = fcn
+        self.env = env
         super(KerasEncoderWrapper, self).__init__(env, fcn)
         self.observation_space = gym.spaces.Box(low=np.float32(-np.inf),
                                                 high=np.float32(np.inf),
                                                 shape=fcn.out_shape)
+    def __str__(self):
+        return f"<KerasEncoderWrapper fcn={self.fcn} env={self.env}>"
 
 @gin.configurable
 def permute_observation(obs, perm):
