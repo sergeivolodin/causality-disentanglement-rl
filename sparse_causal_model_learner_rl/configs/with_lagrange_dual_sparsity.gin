@@ -3,11 +3,87 @@ import sparse_causal_model_learner_rl.loss.losses
 import sparse_causal_model_learner_rl.trainable.lagrange
 import sparse_causal_model_learner_rl.configs.search_helpers.opt_cycle
 
-LagrangeMultipliers.n = 1
+LagrangeMultipliers.n = 13
 Config.lagrange_multipliers = @LagrangeMultipliers
 
 lagrangian.losses_dict = %LOSSES_DICT
-lagrangian.objective_key = 'sparsity'
+lagrangian.constraints_dict = {
+    'sparsity': {  # objective
+        'constraint': None,
+        'controlling': False
+    },
+
+    'reconstruction': {  # reconstruction loss
+        'constraint': 1e-3,
+        'controlling': True,
+    },
+
+    # FIT LOSS
+
+    'fit/obs': {  # fit loss: observation part
+        'constraint': 1e-3,
+        'controlling': True
+    },
+
+    'fit/feat': {  # fit loss: decoder feature part
+        'constraint': 1e-3,
+        'controlling': True
+    },
+
+    'fit/feat_model': {  # fit loss: model feature space part
+        'constraint': 1e-3,
+        'controlling': True
+    },
+
+    'fit/additional': {  # fit loss: rew/done part
+        'constraint': 1e-3,
+        'controlling': True
+    },
+
+    # FIT ALL ON
+
+    'fit_all_on/obs': {  # fit loss: observation part
+        'constraint': 1e-3,
+        'controlling': True
+    },
+
+    'fit_all_on/feat': {  # fit loss: decoder feature part
+        'constraint': 1e-3,
+        'controlling': True
+    },
+
+    'fit_all_on/feat_model': {  # fit loss: model feature space part
+        'constraint': 1e-3,
+        'controlling': True
+    },
+
+    'fit_all_on/additional': {  # fit loss: rew/done part
+        'constraint': 1e-3,
+        'controlling': True
+    },
+
+    # FIT EXPLORATION
+
+    'fit_all_half/obs': {  # loss: observation part
+        'constraint': 0,
+        'controlling': False
+    },
+
+    'fit_all_half/feat': {  # fit loss: decoder feature part
+        'constraint': 0,
+        'controlling': False
+    },
+
+    'fit_all_half/feat_model': {  # fit loss: model feature space part
+        'constraint': 0,
+        'controlling': False
+    },
+
+    'fit_all_half/additional': {  # fit loss: rew/done part
+        'constraint': 0,
+        'controlling': False
+    },
+}
 lagrangian.max_constraint = %TARGET_LOSS_VAL
 lagrangian.constraint_keys_override = ['fit', 'reconstruction', 'fit_all_on']
 
@@ -65,7 +141,7 @@ Config.optim_params = {
     'opt2': ['lagrange_multipliers']
 }
 Config.opt_iterations = {
-    'opt1': 1,
+#    'opt1': 1,
 
     'opt1d': 1,
     'opt1m': 1,

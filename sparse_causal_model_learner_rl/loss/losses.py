@@ -95,6 +95,71 @@ def lagrangian(losses_dict, objective_key, lagrange_multipliers, max_constraint=
     return {'loss': loss,
             'metrics': metrics}
 
+@gin.configurable
+def lagrangian_granular(
+               losses_dict,
+               constraints_dict, # map loss key (/ goes into ['losses']) -> constraint: float [None for objective], controlling: bool
+               lagrange_multipliers,
+               mode=None,
+               loss_epoch_cache=None,
+               **kwargs):
+    assert mode in ['PRIMAL', 'DUAL'], mode
+    metrics = {}
+
+
+    def get_losses():
+        result = {}
+        for loss_key, loss_dct in losses_dict.items():
+            result[loss_key] = {'computed': loss_dct['fcn'](**kwargs),
+                                'original': loss_dct}
+            for ind_loss_key, ind_loss_val in result[loss_key]['computed'].get('losses', {}):
+                result[f"{loss_key}/{ind_loss_key}"] = {'computed': {'loss': ind_loss_val},
+                                                        'original': loss_dct}
+
+        return result
+
+    losses = cache_get(loss_epoch_cache, '_lagrange_losses', get_losses)
+
+    total_constraint = 0.0
+    total_objective = 0.0
+
+    all_losses_lst = list(constraint_dict.keys())
+    for loss_key, config in constraints_dict.items():
+        assert loss_key in losses, (loss_key, losses.keys())
+        loss_dct = losses[loss_key]
+        current_val_coeff = loss_dct['computed']['loss'] * loss_dct['original']['coeff']
+
+        if mode == 'dual':
+            current_val_coeff = current_val_coeff.detach()
+
+        if config['constraint'] is None:  # this is the objective
+            total_objective += current_val_coeff
+        else:
+            if mode == 'dual' and config['contrillong'] is False:
+                continue  # not including non-controlling variables to the dual
+
+            idx = all_losses_lst.index(loss_key)
+            assert langrange_multipliers.n == len(all_losses_lst), (lagrange_multipliers.n, all_losses_lst, len(all_losses_lst))
+            lm = lagrange_multipliers()[idx]
+            total_constraint += (current_val_coeff - config['constraint']) * lm
+            metrics['lagrange_multiplier_' + loss_key] = lm.item()
+            metrics[loss_key] = loss_dct['computed']['metrics']
+            metrics[loss_key]['total'] = loss_dct['computed']['loss'].item()
+
+    lagrangian = total_objective + total_constraint
+
+    metrics['constraint'] = total_constraint.item()
+    metrics['objective'] = total_objective.item()
+    metrics['lagrangian'] = lagrangian.item()
+
+    if mode == 'PRIMAL':
+        loss = lagrangian
+    elif mode == 'DUAL':
+        loss = -lagrangian
+
+    return {'loss': loss,
+            'metrics': metrics}
+
 def tensor_std(t, eps=1e-8):
     """Compute standard deviation, output 1 if std < eps for stability (disabled features)."""
     s = t.std(0, keepdim=True)
