@@ -76,6 +76,25 @@ def linear_encoder_unbiased_normal(inp_shape, out_shape):
     ])
     return model
 
+@gin.configurable
+class LinearMatrixEncoder(TransformObservation):
+    """Use a random matrix to transform observations."""
+
+    def __init__(self, env, seed=42, **kwargs):
+        if isinstance(env, str):
+            env = gym.make(env)
+
+        assert len(env.observation_space.shape) == 1, env.observation_space.shape
+        n_obs = env.observation_space.shape[0]
+
+        # set the seed using gin scopes
+        with np_random_seed():
+            self.linear_encoder = np.random.randn(n_obs, n_obs)
+
+        def code_obs(obs, A=self.linear_encoder):
+            return A @ obs
+
+        super(LinearMatrixEncoder, self).__init__(env, code_obs)
 
 @gin.configurable
 class KerasEncoderWrapper(TransformObservation):
