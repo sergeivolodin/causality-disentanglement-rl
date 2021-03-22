@@ -6,7 +6,7 @@ from torch import nn
 @gin.configurable
 class LagrangeMultipliers(nn.Module):
     """Learnable 1d tensor."""
-    def __init__(self, n, param_min=-10, param_max=10, fcn=None, **kwargs):
+    def __init__(self, n, param_min=-10, param_init=0.0, param_max=10, fcn=None, **kwargs):
         super(LagrangeMultipliers, self).__init__()
 
         self.initialized = [False] * n
@@ -14,7 +14,7 @@ class LagrangeMultipliers(nn.Module):
         self.fcn = fcn
         self.param_min = param_min
         self.param_max = param_max
-        self.tensor = torch.nn.Parameter(torch.ones(n, dtype=torch.float32) * param_max)
+        self.tensor = torch.nn.Parameter(torch.ones(n, dtype=torch.float32) * param_init)
 
     def set_value(idx, val):
         assert not self.initialized[idx]
