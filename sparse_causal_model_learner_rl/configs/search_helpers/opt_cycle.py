@@ -29,7 +29,7 @@ def opt_active_cycle(learner, opt_key, opts_list=None, burst_sizes=None, **kwarg
     opt_index = opts_list.index(opt_key)
     active = opt_index == stage
 
-    if active:
-        logging.warning(f"Epoch {epoch} Stage {stage} optimizer {opt_key} active")
+#    if active:
+    logging.warning(f"Epoch {epoch} Stage {stage} optimizer {opt_key} active={active}")
 
     return active
