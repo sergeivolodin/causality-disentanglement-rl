@@ -37,6 +37,7 @@ def linear_combination(losses_dct, **kwargs):
         metrics[loss_key] = c_metrics
         metrics[loss_key]['coeff'] = coeff
         metrics[loss_key]['value'] = c_loss.item()
+        metrics[loss_key]['coeff_value'] = coeff * c_loss.item()
         total += c_loss * coeff
     metrics['total'] = total.item()
     return {'loss': total, 'metrics': metrics}
@@ -162,6 +163,7 @@ def reconstruction_loss(obs, decoder, reconstructor, relative=False,
         metrics['rec_acc_loss_01_agg'] = 2 - delta_01_obs(obs, rec_dec_obs).item()
         
     return {'loss': loss,
+            'losses': {'reconstruction': loss},
             'metrics': metrics}
 
 def square(t):
@@ -431,6 +433,12 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
                }
     
     return {'loss': loss.mean(0),
+            'losses': {
+                'additional': loss_additional.mean(0),
+                'obs': loss_rec.mean(0),
+                'feat': loss_fcons.mean(0),
+                'feat_model': loss_fcons_model.mean(0),
+            },
             'metrics': metrics}
 
 def linreg(X, Y):
