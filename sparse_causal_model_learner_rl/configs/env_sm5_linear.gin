@@ -3,27 +3,34 @@
 # the environment
 include 'env_sm5.gin'
 include '../../vectorincrement/config/sm5_linear.gin'
-include 'with_secondary_stage_features.gin'
 
 # DECODER
-decoder/FCCombinedModel.hidden_sizes = [8]
-decoder/FCCombinedModel.activation_cls = @Tanh
-decoder/FCCombinedModel.add_input_batchnorm = True
+decoder/FCCombinedModel.hidden_sizes = []
+decoder/FCCombinedModel.activation_cls = None
+decoder/FCCombinedModel.add_input_batchnorm = False
 decoder/FCCombinedModel.input_reshape = True
 
 ModelDecoder.model_cls = @decoder/FCCombinedModel
 Config.decoder = @ModelDecoder
 
 # RECONSTRUCTOR
-rec/FCCombinedModel.hidden_sizes = [16]
-rec/FCCombinedModel.activation_cls = @Tanh
-rec/FCCombinedModel.add_input_batchnorm = True
+rec/FCCombinedModel.hidden_sizes = []
+rec/FCCombinedModel.activation_cls = None
+rec/FCCombinedModel.add_input_batchnorm = False
 rec/FCCombinedModel.input_reshape = True
 
 ModelReconstructor.model_cls = @rec/FCCombinedModel
 ModelReconstructor.give_source = False #True
 Config.reconstructor = @ModelReconstructor
 #Config.reconstructor1 = @ModelReconstructor
+
+
+# MODEL
+# MODEL
+Config.model = @sparse_model/ManyNetworkCombinedModel
+model_gnn/FCCombinedModel.hidden_sizes = []  # tuning...
+model_gnn/FCCombinedModel.activation_cls = None
+
 
 TARGET_REC = 1e-3
 TARGET_FIT_OBS = 1e-3
