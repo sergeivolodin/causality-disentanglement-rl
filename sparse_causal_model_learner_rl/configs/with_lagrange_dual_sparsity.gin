@@ -160,5 +160,6 @@ LagrangeMultipliers.param_init = 0.0
 LagrangeMultipliers.fcn = 'exp'
 
 Config.opt_enabled_fcn = @opt_active_cycle
-opt_active_cycle.burst_sizes = {'opt1d': 10, 'opt1m': 10, 'opt1r': 10}
+#opt_active_cycle.burst_sizes = {'opt1d': 10, 'opt1m': 10, 'opt1r': 10}
+opt_active_cycle.burst_sizes = {'opt1d': 0, 'opt1m': 10, 'opt1r': 0}
 opt_active_cycle.opts_list = ['opt1d', 'opt1m', 'opt1r']

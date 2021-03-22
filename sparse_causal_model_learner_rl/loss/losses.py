@@ -170,16 +170,17 @@ def lagrangian_granular(
 
     # initializing lagrange multipliers
     for loss_key, config in constraints_dict.items():
+        loss_dct = losses[loss_key]
         current_val_coeff = loss_dct['computed']['loss'] * loss_dct['original']['coeff']
 
         if config['constraint'] is not None:  # this is the objective
             idx = all_losses_lst.index(loss_key)
-            constraint_violated = current_val_coeff >= c
             current_delta = current_val_coeff - config['constraint']
             if lagrange_multipliers.initialized[idx] is False and current_delta > 0:
                 new_value = total_objective / current_delta
                 new_value = maybe_item(new_value)
                 lagrange_multipliers.set_value(idx, new_value)
+                logging.warning(f"Objective={total_objective} Loss={current_val_coeff}")
                 logging.warning(f"Initializing lagrange multiplier {loss_key} with {new_value}")
 
 
