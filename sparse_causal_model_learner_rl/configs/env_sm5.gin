@@ -1,4 +1,5 @@
 # VectorIncrement 2 DIGITS CONFIG
+import sparse_causal_model_learner_rl.learners.rl_learner
 
 # the environment
 include '../../vectorincrement/config/sm5.gin'
@@ -62,3 +63,5 @@ TARGET_FIT_FEAT = 1e-3
 TARGET_FIT_ADD = 0
 
 BURSTS_TIME_SCALES = {'opt1d': 0, 'opt1m': 10, 'opt1r': 0}
+causal_learner_stopping_condition.edges_Mf = 7
+causal_learner_stopping_condition.edges_Ma = None
