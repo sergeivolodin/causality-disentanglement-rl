@@ -155,6 +155,7 @@ def lagrangian_granular(
         metrics[loss_key] = {'value': maybe_item(loss_dct['computed']['loss']), 'coeff': loss_dct['original']['coeff']}
 
     constraints_satisfied = 0
+    constraints_total = 0
 
     # computing the objective and the constraints
     for loss_key, config in constraints_dict.items():
@@ -185,10 +186,14 @@ def lagrangian_granular(
             if mode == 'PRIMAL':
                 lm = lm.detach()
             total_constraint += (current_val_coeff - c) * lm
-            if current_val_coeff <= c:
-                constraints_satisfied += 1
+
+            if config.get('required', False):
+                if current_val_coeff <= c:
+                    constraints_satisfied += 1
+                constraints_total += 1
 
     metrics['constraints_satisfied'] = constraints_satisfied
+    metrics['constraints_satisfied_frac'] = constraints_satisfied / constraints_total
 
     # initializing lagrange multipliers
     for loss_key, config in constraints_dict.items():

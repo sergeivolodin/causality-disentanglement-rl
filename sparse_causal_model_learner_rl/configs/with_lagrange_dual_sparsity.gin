@@ -4,7 +4,7 @@ import sparse_causal_model_learner_rl.trainable.lagrange
 import sparse_causal_model_learner_rl.configs.search_helpers.opt_cycle
 import sparse_causal_model_learner_rl.learners.rl_learner
 
-%N_CONSTRAINTS = 13
+N_CONSTRAINTS = 13
 LagrangeMultipliers.n = %N_CONSTRAINTS
 Config.lagrange_multipliers = @LagrangeMultipliers
 
@@ -26,50 +26,59 @@ lagrangian_granular.constraints_dict = {
     #'reconstruction': {  # reconstruction loss
     #    'constraint': %TARGET_REC,
     #    'controlling': True,
+    #    'required': True,
     #},
 
     # FIT LOSS
 
     'fit/obs': {  # fit loss: observation part
         'constraint': %TARGET_FIT_OBS,
-        'controlling': True
+        'controlling': True,
+        'required': True,
     },
 
     'fit/feat': {  # fit loss: decoder feature part
         'constraint': %TARGET_FIT_FEAT,
-        'controlling': True
+        'controlling': True,
+        'required': True,
     },
 
     'fit/feat_model': {  # fit loss: model feature space part
         'constraint': %TARGET_FIT_FEAT,
-        'controlling': True
+        'controlling': True,
+        'required': True,
     },
 
     'fit/additional': {  # fit loss: rew/done part
         'constraint': %TARGET_FIT_ADD,
-        'controlling': True
+        'controlling': True,
+        'required': True,
     },
 
     # FIT ALL ON
 
     'fit_all_on/obs': {  # fit loss: observation part
         'constraint': %TARGET_FIT_OBS,
-        'controlling': True
+        'controlling': True,
+        'required': True,
     },
 
     'fit_all_on/feat': {  # fit loss: decoder feature part
         'constraint': %TARGET_FIT_FEAT,
-        'controlling': True
+        'controlling': True,
+        'required': True,
     },
 
     'fit_all_on/feat_model': {  # fit loss: model feature space part
         'constraint': %TARGET_FIT_FEAT,
-        'controlling': True
+        'controlling': True,
+        'required': True,
     },
 
     'fit_all_on/additional': {  # fit loss: rew/done part
         'constraint': %TARGET_FIT_ADD,
-        'controlling': True
+        'controlling': True,
+        'required': True,
     },
 
     # FIT EXPLORATION
@@ -180,5 +189,5 @@ opt_active_cycle.opts_list = ['opt1d', 'opt1m', 'opt1r']
 
 Config.stopping_condition = @causal_learner_stopping_condition
 causal_learner_stopping_condition.metric_geq = {
-    'constraints_satisfied': %N_CONSTRAINTS,
+    'constraints_satisfied_frac': 1.0,
 }
