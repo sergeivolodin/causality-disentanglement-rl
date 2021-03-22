@@ -22,6 +22,7 @@ def opt_active_cycle(learner, opt_key, opts_list=None, burst_sizes=None, **kwarg
 
     epoch = learner.epochs
     if opt_key not in opts_list: # unknown optimizers are always active
+    #    logging.warning(f"Unknown optimizer {opt_key} not found in {opts_list}")
         return True
 
     stage = get_stage(epoch, [burst_sizes[k] for k in opts_list])
@@ -29,7 +30,7 @@ def opt_active_cycle(learner, opt_key, opts_list=None, burst_sizes=None, **kwarg
     opt_index = opts_list.index(opt_key)
     active = opt_index == stage
 
-#    if active:
-    logging.warning(f"Epoch {epoch} Stage {stage} optimizer {opt_key} active={active}")
+    if active:
+        logging.warning(f"Epoch {epoch} Stage {stage} optimizer {opt_key} index {opt_index} active={active}")
 
     return active

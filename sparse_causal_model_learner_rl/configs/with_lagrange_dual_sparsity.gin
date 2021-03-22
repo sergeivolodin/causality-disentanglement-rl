@@ -133,7 +133,7 @@ Config.optim_params = {
 #    'opt1': ['rot_pre', 'rot_post', 'model', 'decoder', 'reconstructor'],
 
     'opt1d': ['decoder'],
-    'opt1m': ['rot_pre', 'rot_post', 'model'],
+    'opt1m': ['model', 'rot_pre', 'rot_post'],
     'opt1r': ['reconstructor'],
 
     'opt2': ['lagrange_multipliers']
