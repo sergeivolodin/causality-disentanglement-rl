@@ -191,4 +191,3 @@ Config.stopping_condition = @causal_learner_stopping_condition
 causal_learner_stopping_condition.metric_geq = {
     'constraints_satisfied_frac': 1.0,
 }
-causal_learner_stopping_condition.graph_threshold = 0.02
