@@ -164,9 +164,9 @@ def lagrangian_granular(
             if not config['controlling']:
                 # not using lagrange multiplier
                 lm = 1.0
-
+            else:
+                metrics['lagrange_multiplier_' + loss_key] = maybe_item(lm)
             total_constraint += (current_val_coeff - c) * lm
-            metrics['lagrange_multiplier_' + loss_key] = maybe_item(lm)
 
     # initializing lagrange multipliers
     for loss_key, config in constraints_dict.items():
