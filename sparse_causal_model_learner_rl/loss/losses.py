@@ -114,15 +114,19 @@ def lagrangian_granular(
     def get_losses():
         result = {}
         for loss_key, loss_dct in losses_dict.items():
-            mapped = loss_to_lagrange_map[loss_key]
+            mapped = loss_to_lagrange_map.get(loss_key, 1.0)
             if isinstance(mapped, int) or isinstance(mapped, float):
                 lm = mapped
             elif isinstance(mapped, list):
                 lms = lagrange_multipliers()
-                coeffs = [lms[all_losses_lst.index(m)].item() for m in mapped]
-                lm = sum(coeffs)
-            kwargs1 = modify_coeff(kwargs, losses_dct['coeff'] * lm)
-            result[loss_key] = {'computed': loss_dct['fcn'](**kwargs),
+                lm = 0
+                for m in mapped:
+                    if m in all_losses_lst:
+                        lm += lms[all_losses_lst.index(m)].item()
+            else:
+                raise NotImplementedError(f"Wrong input: {mapped}")
+            kwargs1 = modify_coeff(kwargs, loss_dct['coeff'] * lm)
+            result[loss_key] = {'computed': loss_dct['fcn'](**kwargs1),
                                 'original': loss_dct}
             for ind_loss_key, ind_loss_val in result[loss_key]['computed'].get('losses', {}).items():
                 result[f"{loss_key}/{ind_loss_key}"] = {'computed': {'loss': ind_loss_val, 'metrics': {}},
