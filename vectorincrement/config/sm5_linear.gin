@@ -1,0 +1,16 @@
+import vectorincrement
+import encoder.observation_encoder
+import causal_util.helpers
+
+load_env.env_name = "SparseMatrix-v0"
+load_env.time_limit = 40
+load_env.wrappers = [@observation_encoder.LinearMatrixEncoder]
+
+LinearMatrixEncoder.seed = 42
+
+sparsematrix.random_sparse_matrix.n_add_elements_frac = 0.1
+sparsematrix.random_sparse_matrix.elements = (-1, 1)
+sparsematrix.random_sparse_matrix.add_elements = (-1, 1)
+sparsematrix.SparseMatrixEnvironment.n = 5
+sparsematrix.SparseMatrixEnvironment.matrix_fcn = @sparsematrix.random_sparse_matrix
+sparsematrix.SparseMatrixEnvironment.seed = 42

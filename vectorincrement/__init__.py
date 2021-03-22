@@ -3,6 +3,7 @@ import gym
 from vectorincrement.vectorincrementenv import VectorIncrementEnvironment
 from vectorincrement.line import LineEnvironment
 from vectorincrement.sparsematrix import SparseMatrixEnvironment
+from vectorincrement.bounce import BounceEnv
 
 
 gym.envs.register(
@@ -18,4 +19,9 @@ gym.envs.register(
 gym.envs.register(
     id='SparseMatrix-v0',
     entry_point=SparseMatrixEnvironment,
+)
+
+gym.envs.register(
+    id='Bounce-v0',
+    entry_point=BounceEnv,
 )

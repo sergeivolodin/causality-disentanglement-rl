@@ -1,0 +1,9 @@
+import vectorincrement
+import causal_util.helpers
+import encoder.observation_encoder
+
+load_env.env_name = "Bounce-v0"
+load_env.time_limit = 100
+load_env.wrappers = [@observation_encoder.LinearMatrixEncoder]
+
+LinearMatrixEncoder.seed = 42
