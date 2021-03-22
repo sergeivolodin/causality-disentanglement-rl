@@ -24,6 +24,8 @@ class LagrangeMultipliers(nn.Module):
             val = np.sqrt(np.abs(val))
         elif self.fcn == 'square_root':
             val = np.power(val, 2)
+        elif self.fcn == 'identity':
+            pass
         else:
             raise NotImplementedError(f"{self.fcn} {val}")
 
@@ -42,6 +44,10 @@ class LagrangeMultipliers(nn.Module):
             data = torch.pow(data, 2.0)
         elif self.fcn == 'square_root':
             data = torch.sqrt(data)
+        elif self.fcn == 'identity':
+            pass
+        else:
+            raise NotImplementedError
         return data
 
     def project(self):
