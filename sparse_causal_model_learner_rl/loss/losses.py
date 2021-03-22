@@ -124,6 +124,9 @@ def lagrangian_granular(
     total_objective = 0.0
 
     all_losses_lst = list(constraint_dict.keys())
+    assert langrange_multipliers.n == len(all_losses_lst), (lagrange_multipliers.n, all_losses_lst, len(all_losses_lst))
+
+    # computing the objective and the constraints
     for loss_key, config in constraints_dict.items():
         assert loss_key in losses, (loss_key, losses.keys())
         loss_dct = losses[loss_key]
@@ -135,16 +138,33 @@ def lagrangian_granular(
         if config['constraint'] is None:  # this is the objective
             total_objective += current_val_coeff
         else:
-            if mode == 'dual' and config['contrillong'] is False:
-                continue  # not including non-controlling variables to the dual
 
             idx = all_losses_lst.index(loss_key)
-            assert langrange_multipliers.n == len(all_losses_lst), (lagrange_multipliers.n, all_losses_lst, len(all_losses_lst))
+            c = config['constraint']
             lm = lagrange_multipliers()[idx]
-            total_constraint += (current_val_coeff - config['constraint']) * lm
+            if not config['controlling']:
+                # not using lagrange multiplier
+                lm = 1.0
+
+            total_constraint += (current_val_coeff - c) * lm
             metrics['lagrange_multiplier_' + loss_key] = lm.item()
             metrics[loss_key] = loss_dct['computed']['metrics']
             metrics[loss_key]['total'] = loss_dct['computed']['loss'].item()
+
+    # initializing lagrange multipliers
+    for loss_key, config in constraints_dict.items():
+        current_val_coeff = loss_dct['computed']['loss'] * loss_dct['original']['coeff']
+
+        if config['constraint'] is not None:  # this is the objective
+            idx = all_losses_lst.index(loss_key)
+            constraint_violated = current_val_coeff >= c
+            current_delta = current_val_coeff - config['constraint']
+            if lagrange_multipliers.initialized[idx] is False and current_delta > 0:
+                new_value = total_objective / current_delta
+                new_value = new_value.item()
+                lagrange_multipliers.set_value(idx, new_value)
+                logging.warning(f"Initializing lagrange multiplier {loss_key} with {new_value}")
+
 
     lagrangian = total_objective + total_constraint
 
