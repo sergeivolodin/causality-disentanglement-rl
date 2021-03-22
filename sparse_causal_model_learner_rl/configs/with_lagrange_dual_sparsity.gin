@@ -3,11 +3,11 @@ import sparse_causal_model_learner_rl.loss.losses
 import sparse_causal_model_learner_rl.trainable.lagrange
 import sparse_causal_model_learner_rl.configs.search_helpers.opt_cycle
 
-LagrangeMultipliers.n = 13
+LagrangeMultipliers.n = 14
 Config.lagrange_multipliers = @LagrangeMultipliers
 
-lagrangian.losses_dict = %LOSSES_DICT
-lagrangian.constraints_dict = {
+lagrangian_granular.losses_dict = %LOSSES_DICT
+lagrangian_granular.constraints_dict = {
     'sparsity': {  # objective
         'constraint': None,
         'controlling': False
@@ -84,15 +84,13 @@ lagrangian.constraints_dict = {
         'controlling': False
     },
 }
-lagrangian.max_constraint = %TARGET_LOSS_VAL
-lagrangian.constraint_keys_override = ['fit', 'reconstruction', 'fit_all_on']
 
-primal/lagrangian.mode = 'PRIMAL'
-dual/lagrangian.mode = 'DUAL'
+primal/lagrangian_granular.mode = 'PRIMAL'
+dual/lagrangian_granular.mode = 'DUAL'
 
 Config.losses = {
-    'primal': {'fcn': @primal/lagrangian, 'coeff': 1.0},
-    'dual': {'fcn': @dual/lagrangian, 'coeff': 1.0},
+    'primal': {'fcn': @primal/lagrangian_granular, 'coeff': 1.0},
+    'dual': {'fcn': @dual/lagrangian_granular, 'coeff': 1.0},
 }
 
 Config.optimizers = {
@@ -161,6 +159,6 @@ LagrangeMultipliers.param_max = 10
 LagrangeMultipliers.param_init = 0.0
 LagrangeMultipliers.fcn = 'exp'
 
-Config.opt_enabled_fcns = @opt_enabled_cycle
-opt_enabled_cycle.burst_sizes = {'opt1d': 10, 'opt1m': 10, 'opt1r': 10}
-opt_enabled_cycle.opts_list = ['opt1d', 'opt1m', 'opt1r']
+Config.opt_enabled_fcn = @opt_active_cycle
+opt_active_cycle.burst_sizes = {'opt1d': 10, 'opt1m': 10, 'opt1r': 10}
+opt_active_cycle.opts_list = ['opt1d', 'opt1m', 'opt1r']
