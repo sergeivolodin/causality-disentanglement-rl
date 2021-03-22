@@ -178,6 +178,11 @@ class AbstractLearner(ABC):
             else:
                 self._epoch()
             self.config.update_communicator()
+            f = self.config.get('stopping_condition', None)
+            if callable(f) and f(self) is True:
+                logging.warning(f"Stopping via the stopping condition")
+                break
+
 
     @abstractmethod
     def maybe_write_artifacts(self, path_epoch, add_artifact_local):

@@ -2,8 +2,10 @@
 import sparse_causal_model_learner_rl.loss.losses
 import sparse_causal_model_learner_rl.trainable.lagrange
 import sparse_causal_model_learner_rl.configs.search_helpers.opt_cycle
+import sparse_causal_model_learner_rl.learners.rl_learner
 
-LagrangeMultipliers.n = 13
+%N_CONSTRAINTS = 13
+LagrangeMultipliers.n = %N_CONSTRAINTS
 Config.lagrange_multipliers = @LagrangeMultipliers
 
 lagrangian_granular.losses_dict = %LOSSES_DICT
@@ -175,3 +177,8 @@ Config.opt_enabled_fcn = @opt_active_cycle
 #opt_active_cycle.burst_sizes = {'opt1d': 10, 'opt1m': 10, 'opt1r': 10}
 opt_active_cycle.burst_sizes = %BURSTS_TIME_SCALES
 opt_active_cycle.opts_list = ['opt1d', 'opt1m', 'opt1r']
+
+Config.stopping_condition = @causal_learner_stopping_condition
+causal_learner_stopping_condition.metric_geq = {
+    'constraints_satisfied': %N_CONSTRAINTS,
+}
