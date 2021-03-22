@@ -66,6 +66,7 @@ Config.potential_trainables_list = [
     {'name': 'model', 'description': "Transform current time-step features into next time-step features"},
     {'name': 'decoder', 'description': "Transform high-dimensional observation into low-dimensional features"},
     {'name': 'reconstructor', 'description': "Predict the original observation from features"},
+    {'name': 'reconstructor1', 'description': "Second reconstructor"},
     {'name': 'value_predictor', 'description': "Predict value-to-go from the current features"},
     {'name': 'causal_feature_model_discriminator', 'description': "Discriminate between correct and incorrect of pairs (f1, f2)"},
     {'name': 'decoder_discriminator', 'description': "Discriminate between correct and incorrect pairs of (observation, feature)"},

@@ -15,14 +15,15 @@ ModelDecoder.model_cls = @decoder/FCCombinedModel
 Config.decoder = @ModelDecoder
 
 # RECONSTRUCTOR
-rec/FCCombinedModel.hidden_sizes = [64, 32, 16]
+rec/FCCombinedModel.hidden_sizes = [16]
 rec/FCCombinedModel.activation_cls = @Tanh
-rec/FCCombinedModel.add_input_batchnorm = True
+rec/FCCombinedModel.add_input_batchnorm = False#True
 rec/FCCombinedModel.input_reshape = True
 
 ModelReconstructor.model_cls = @rec/FCCombinedModel
-ModelReconstructor.give_source = True
+ModelReconstructor.give_source = False #True
 Config.reconstructor = @ModelReconstructor
+#Config.reconstructor1 = @ModelReconstructor
 
 TARGET_REC = 1e-3
 TARGET_FIT_OBS = 1e-3

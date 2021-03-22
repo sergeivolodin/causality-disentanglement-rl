@@ -3,7 +3,7 @@ import sparse_causal_model_learner_rl.loss.losses
 import sparse_causal_model_learner_rl.trainable.lagrange
 import sparse_causal_model_learner_rl.configs.search_helpers.opt_cycle
 
-LagrangeMultipliers.n = 14
+LagrangeMultipliers.n = 13
 Config.lagrange_multipliers = @LagrangeMultipliers
 
 lagrangian_granular.losses_dict = %LOSSES_DICT
@@ -13,10 +13,11 @@ lagrangian_granular.constraints_dict = {
         'controlling': False
     },
 
-    'reconstruction': {  # reconstruction loss
-        'constraint': %TARGET_REC,
-        'controlling': True,
-    },
+    # don't need reconstructor because it only slows down convergence
+    #'reconstruction': {  # reconstruction loss
+    #    'constraint': %TARGET_REC,
+    #    'controlling': True,
+    #},
 
     # FIT LOSS
 
@@ -138,7 +139,7 @@ Config.optim_params = {
 
     'opt1d': ['decoder'],
     'opt1m': ['model', 'rot_pre', 'rot_post'],
-    'opt1r': ['reconstructor'],
+    'opt1r': ['reconstructor'], #, 'reconstructor1'], # copy of a reconstructor makes it go faster! -- otherwise conflict
 
     'opt2': ['lagrange_multipliers']
 }

@@ -252,7 +252,7 @@ def delta_01_obs(obs, rec_dec_obs):
     return delta_01_agg
     
 @gin.configurable
-def reconstruction_loss(obs, decoder, reconstructor, relative=False,
+def reconstruction_loss(obs, decoder, reconstructor1, relative=False,
                         report_01=True,
                         **kwargs):
     """Ensure that the decoder is not degenerate by fitting a reconstructor."""
@@ -261,7 +261,7 @@ def reconstruction_loss(obs, decoder, reconstructor, relative=False,
     else:
         mse = lambda x, y: (x - y).flatten(start_dim=1).pow(2).sum(1).mean(0)
         
-    rec_dec_obs = reconstructor(decoder(obs), source_index=1)
+    rec_dec_obs = reconstructor1(decoder(obs), source_index=1)
     metrics = {}
     loss = mse(rec_dec_obs, obs)
     
