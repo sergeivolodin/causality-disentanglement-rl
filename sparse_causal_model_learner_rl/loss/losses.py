@@ -101,16 +101,27 @@ def lagrangian_granular(
                losses_dict,
                constraints_dict, # map loss key (/ goes into ['losses']) -> constraint: float [None for objective], controlling: bool
                lagrange_multipliers,
+               loss_to_lagrange_map,  # map loss key -> lagrange coefficients array to sum
                mode=None,
                loss_epoch_cache=None,
                **kwargs):
     assert mode in ['PRIMAL', 'DUAL'], mode
     metrics = {}
 
+    all_losses_lst = list(constraints_dict.keys())
+    assert lagrange_multipliers.n == len(all_losses_lst), (lagrange_multipliers.n, all_losses_lst, len(all_losses_lst))
 
     def get_losses():
         result = {}
         for loss_key, loss_dct in losses_dict.items():
+            mapped = loss_to_lagrange_map[loss_key]
+            if isinstance(mapped, int) or isinstance(mapped, float):
+                lm = mapped
+            elif isinstance(mapped, list):
+                lms = lagrange_multipliers()
+                coeffs = [lms[all_losses_lst.index(m)].item() for m in mapped]
+                lm = sum(coeffs)
+            kwargs1 = modify_coeff(kwargs, losses_dct['coeff'] * lm)
             result[loss_key] = {'computed': loss_dct['fcn'](**kwargs),
                                 'original': loss_dct}
             for ind_loss_key, ind_loss_val in result[loss_key]['computed'].get('losses', {}).items():
@@ -134,8 +145,6 @@ def lagrangian_granular(
             return z.detach()
         return z
 
-    all_losses_lst = list(constraints_dict.keys())
-    assert lagrange_multipliers.n == len(all_losses_lst), (lagrange_multipliers.n, all_losses_lst, len(all_losses_lst))
 
     # filling in the metrics
     for loss_key, loss_dct in losses.items():
