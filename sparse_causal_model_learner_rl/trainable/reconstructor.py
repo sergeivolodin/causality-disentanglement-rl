@@ -27,7 +27,7 @@ class LinearReconstructor(Reconstructor):
         self.fc = nn.Linear(self.feature_shape[0], self.observation_shape[0],
                             bias=self.use_bias)
 
-    def forward(self, x):
+    def forward(self, x, **kwargs):
         return self.fc(x)
 
 @gin.configurable
@@ -36,7 +36,7 @@ class IdentityReconstructor(Reconstructor):
         super(IdentityReconstructor, self).__init__(**kwargs)
         assert self.observation_shape == self.feature_shape, (self.observation_shape, self.feature_shape)
 
-    def forward(self, x):
+    def forward(self, x, **kwargs):
         return x
 
 @gin.configurable

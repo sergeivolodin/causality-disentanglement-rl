@@ -17,7 +17,7 @@ Config.decoder = @ModelDecoder
 # RECONSTRUCTOR
 rec/FCCombinedModel.hidden_sizes = [16]
 rec/FCCombinedModel.activation_cls = @Tanh
-rec/FCCombinedModel.add_input_batchnorm = False#True
+rec/FCCombinedModel.add_input_batchnorm = True
 rec/FCCombinedModel.input_reshape = True
 
 ModelReconstructor.model_cls = @rec/FCCombinedModel
@@ -30,5 +30,6 @@ TARGET_FIT_OBS = 1e-3
 TARGET_FIT_FEAT = 1e-3
 TARGET_FIT_ADD = 1e-3
 
-BURSTS_TIME_SCALES = {'opt1d': 10, 'opt1m': 10, 'opt1r': 50}
+BURSTS_TIME_SCALES = {'opt1d': 5, 'opt1m': 5, 'opt1r': 5}
 
+reconstruction_loss.disable = True
