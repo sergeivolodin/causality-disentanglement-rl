@@ -1,4 +1,5 @@
 import gin
+import torch
 import numpy as np
 from torch import nn
 
@@ -40,16 +41,23 @@ class IdentityReconstructor(Reconstructor):
 
 @gin.configurable
 class ModelReconstructor(Reconstructor):
-    def __init__(self, model_cls=None, unflatten=False, **kwargs):
+    def __init__(self, model_cls=None, unflatten=False, give_source=False, **kwargs):
         super(ModelReconstructor, self).__init__(**kwargs)
         self.unflatten = unflatten
+        self.give_source = give_source
         if self.unflatten:
             self.model_out_shape = (np.prod(self.observation_shape), )
         else:
             self.model_out_shape = self.observation_shape
-        self.model = model_cls(input_shape=self.feature_shape, output_shape=self.model_out_shape)
+        f_shape = self.feature_shape
+        if self.give_source:
+            f_shape = (f_shape[0] + 1,)
+        self.model = model_cls(input_shape=f_shape, output_shape=self.model_out_shape)
 
-    def forward(self, x):
+    def forward(self, x, source_index=0):
+        if self.give_source:
+            x_source = torch.ones((x.shape[0], 1), device=x.device, dtype=x.dtype, requires_grad=False) * source_index
+            x = torch.cat([x, x_source], dim=1)
         x = self.model(x)
         if self.unflatten:
             x = x.view(x.shape[0], *self.observation_shape)

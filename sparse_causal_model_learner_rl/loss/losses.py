@@ -261,7 +261,7 @@ def reconstruction_loss(obs, decoder, reconstructor, relative=False,
     else:
         mse = lambda x, y: (x - y).flatten(start_dim=1).pow(2).sum(1).mean(0)
         
-    rec_dec_obs = reconstructor(decoder(obs))
+    rec_dec_obs = reconstructor(decoder(obs), source_index=1)
     metrics = {}
     loss = mse(rec_dec_obs, obs)
     
