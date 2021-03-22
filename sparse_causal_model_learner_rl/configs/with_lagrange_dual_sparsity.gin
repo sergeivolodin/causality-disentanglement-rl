@@ -1,6 +1,7 @@
 # Use two-optimizer setup with a lagrange multiplier
 import sparse_causal_model_learner_rl.loss.losses
 import sparse_causal_model_learner_rl.trainable.lagrange
+import sparse_causal_model_learner_rl.configs.search_helpers.opt_cycle
 
 LagrangeMultipliers.n = 1
 Config.lagrange_multipliers = @LagrangeMultipliers
@@ -18,23 +19,60 @@ Config.losses = {
     'dual': {'fcn': @dual/lagrangian, 'coeff': 1.0},
 }
 
-Config.optimizers = {'opt1': @opt1/Optimizer, 'opt2': @opt2/Optimizer}
+Config.optimizers = {
+#    'opt1': @opt1/Optimizer,
 
-#opt1/Optimizer.lr = 1e-3
-#opt1/Optimizer.name = 'Adam'
+    'opt1d': @opt1d/Optimizer,
+    'opt1m': @opt1m/Optimizer,
+    'opt1r': @opt1r/Optimizer,
+
+
+    'opt2': @opt2/Optimizer,
+}
+
+opt1/Optimizer.lr = 1e-3
+opt1/Optimizer.name = 'Adam'
+
+opt1d/Optimizer.lr = 1e-3
+opt1d/Optimizer.name = 'Adam'
+
+opt1m/Optimizer.lr = 1e-3
+opt1m/Optimizer.name = 'Adam'
+
+opt1r/Optimizer.lr = 1e-3
+opt1r/Optimizer.name = 'Adam'
+
 opt2/Optimizer.lr = 1e-3
 opt2/Optimizer.name = 'Adam'
 
 Config.execution = {
-    'opt1': ['primal'],
+#    'opt1': ['primal'],
+
+    'opt1d': ['primal'],
+    'opt1m': ['primal'],
+    'opt1r': ['primal'],
+
     'opt2': ['dual'],
 }
 
 Config.optim_params = {
-    'opt1': ['rot_pre', 'rot_post', 'model', 'decoder', 'reconstructor'],
+#    'opt1': ['rot_pre', 'rot_post', 'model', 'decoder', 'reconstructor'],
+
+    'opt1d': ['decoder'],
+    'opt1m': ['rot_pre', 'rot_post', 'model'],
+    'opt1r': ['reconstructor'],
+
     'opt2': ['lagrange_multipliers']
 }
-Config.opt_iterations = {'opt1': 1, 'opt2': 1}
+Config.opt_iterations = {
+    'opt1': 1,
+
+    'opt1d': 1,
+    'opt1m': 1,
+    'opt1r': 1,
+
+    'opt2': 1
+}
 
 FIT_COEFF = 0.3
 SPARSITY_COEFF = 1.0
@@ -44,3 +82,8 @@ FIT_HALF_COEFF = 0.02
 
 LagrangeMultipliers.param_min = -10
 LagrangeMultipliers.param_max = 10
+LagrangeMultipliers.fcn = 'exp'
+
+Config.opt_enabled_fcns = @opt_enabled_cycle
+opt_enabled_cycle.burst_sizes = {'opt1d': 10, 'opt1m': 10, 'opt1r': 10}
+opt_enabled_cycle.opts_list = ['opt1d', 'opt1m', 'opt1r']

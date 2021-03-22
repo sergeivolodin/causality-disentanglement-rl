@@ -371,6 +371,13 @@ class AbstractLearner(ABC):
         for opt_label in sorted(self.optimizer_objects.keys()):
             opt = self.optimizer_objects[opt_label]
 
+            # disabling and enabling optimizers
+            if self.config.get('opt_enabled_fcn', None):
+                fcn = self.config.get('opt_enabled_fcn')
+                opt_enabled = fcn(opt_key=opt_label, learner=self)
+                if not opt_enabled:
+                    continue
+
             for _ in range(self.config.get('opt_iterations', {}).get(opt_label, 1)):
                 opt.zero_grad()
                 loss_local_cache = {}
