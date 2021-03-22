@@ -1,0 +1,32 @@
+# VectorIncrement 2 DIGITS CONFIG
+
+# the environment
+include 'env_sm5.gin'
+include '../../vectorincrement/config/sm5_linear.gin'
+
+
+# DECODER
+decoder/FCCombinedModel.hidden_sizes = [8]
+decoder/FCCombinedModel.activation_cls = [@Tanh]
+decoder/FCCombinedModel.add_input_batchnorm = False
+
+ModelDecoder.model_cls = @decoder/FCCombinedModel
+Config.decoder = @ModelDecoder
+
+# RECONSTRUCTOR
+rec/FCCombinedModel.hidden_sizes = [8]
+rec/FCCombinedModel.activation_cls = [@Tanh]
+rec/FCCombinedModel.add_input_batchnorm = False
+
+ModelReconstructor.model_cls = @rec/FCCombinedModel
+Config.reconstructor = @ModelReconstructor
+
+
+
+TARGET_REC = 1e-3
+TARGET_FIT_OBS = 1e-3
+TARGET_FIT_FEAT = 1e-3
+TARGET_FIT_ADD = 1e-3
+
+BURSTS_TIME_SCALES = {'opt1d': 10, 'opt1m': 10, 'opt1r': 1t0}
+

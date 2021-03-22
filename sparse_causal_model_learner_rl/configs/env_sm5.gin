@@ -55,4 +55,9 @@ FIT_HALF_COEFF = 0.005
 Config.rot_pre = None
 Config.rot_post = None
 
-TARGET_LOSS_VAL = 0.05
+TARGET_REC = 0
+TARGET_FIT_OBS = 1e-2
+TARGET_FIT_FEAT = 1e-2
+TARGET_FIT_ADD = 0
+
+BURSTS_TIME_SCALES = {'opt1d': 0, 'opt1m': 10, 'opt1r': 0}
