@@ -159,13 +159,16 @@ def lagrangian_granular(
             idx = all_losses_lst.index(loss_key)
             c = config['constraint']
             lm = lagrange_multipliers()[idx]
-            if mode == 'PRIMAL':
-                lm = lm.detach()
+
             if not config['controlling']:
                 # not using lagrange multiplier
-                lm = 1.0
+                idx = all_losses_lst.index(config['take_lm_from'])
+                lm = lagrange_multipliers()[idx].detach()
             else:
                 metrics['lagrange_multiplier_' + loss_key] = maybe_item(lm)
+
+            if mode == 'PRIMAL':
+                lm = lm.detach()
             total_constraint += (current_val_coeff - c) * lm
 
     # initializing lagrange multipliers

@@ -66,22 +66,26 @@ lagrangian_granular.constraints_dict = {
 
     'fit_all_half/obs': {  # loss: observation part
         'constraint': 0,
-        'controlling': False
+        'controlling': False,
+        'take_lm_from': 'fit/obs',
     },
 
     'fit_all_half/feat': {  # fit loss: decoder feature part
         'constraint': 0,
-        'controlling': False
+        'controlling': False,
+        'take_lm_from': 'fit/feat',
     },
 
     'fit_all_half/feat_model': {  # fit loss: model feature space part
         'constraint': 0,
-        'controlling': False
+        'controlling': False,
+        'take_lm_from': 'fit/feat_model',
     },
 
     'fit_all_half/additional': {  # fit loss: rew/done part
         'constraint': 0,
-        'controlling': False
+        'controlling': False,
+        'take_lm_from': 'fit/additional',
     },
 }
 
@@ -155,7 +159,7 @@ FIT_ON_COEFF = 0.2
 FIT_HALF_COEFF = 0.02
 
 LagrangeMultipliers.param_min = -10
-LagrangeMultipliers.param_max = 10
+LagrangeMultipliers.param_max = 7
 LagrangeMultipliers.param_init = 0.0
 LagrangeMultipliers.fcn = 'exp'
 
