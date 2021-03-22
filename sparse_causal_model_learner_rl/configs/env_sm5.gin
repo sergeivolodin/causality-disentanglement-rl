@@ -31,8 +31,8 @@ Config.decoder = @IdentityDecoder
 
 # MODEL
 Config.model = @sparse_model/ManyNetworkCombinedModel
-model_gnn/FCCombinedModel.hidden_sizes = [16]  # tuning...
-model_gnn/FCCombinedModel.activation_cls = @Tanh
+model_gnn/FCCombinedModel.hidden_sizes = []  # tuning...
+model_gnn/FCCombinedModel.activation_cls = None
 model_gnn/FCCombinedModel.add_input_batchnorm = True
 WithInputSwitch.model_cls = @model_gnn/FCCombinedModel
 sparse_model/ManyNetworkCombinedModel.model_cls = @sparse_model/WithInputSwitch

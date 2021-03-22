@@ -107,6 +107,8 @@ def select_threshold(array, name='exp', eps=1e-10, do_plot=True, do_log=True):
         # log would not work for low values
         array[array == 0.0] = eps
         aflat = np.abs(array.flatten())
+        if np.allclose(np.min(aflat), np.max(aflat)):
+            return 0.5
         if do_log:
             aflat = np.log(aflat)
         x = pd.DataFrame({'x': aflat})
