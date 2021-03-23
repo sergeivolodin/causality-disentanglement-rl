@@ -1,0 +1,6 @@
+# disable stopping criterions
+
+import sparse_causal_model_learner_rl.config
+
+Config.train_steps = 100000000
+Config.stopping_condition = None

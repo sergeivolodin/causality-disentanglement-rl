@@ -4,5 +4,5 @@ import causal_util.helpers
 load_env.env_name = "GridWorldNavigation-v0"
 load_env.time_limit = 40
 
-GridWorldNavigation.H = 5
-GridWorldNavigation.W = 5
+GridWorldNavigationEnv.H = 5
+GridWorldNavigationEnv.W = 5

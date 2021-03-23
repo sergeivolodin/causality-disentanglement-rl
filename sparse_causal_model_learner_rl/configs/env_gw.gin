@@ -1,0 +1,94 @@
+# VectorIncrement 2 DIGITS CONFIG
+import sparse_causal_model_learner_rl.learners.rl_learner
+
+# the environment
+include '../../vectorincrement/config/gw.gin'
+include 'with_secondary_stage_features.gin'
+include 'remote_collect.gin'
+#include 'with_additional_features.gin'
+
+N_FEATURES = 5
+
+# DATA COLLECTION PREFS
+Config.min_collected_sample_ratio = 0.5
+Config.buffer_steps = 100000
+Config.minibatch_size = 1000
+Config.n_collectors = 3
+Config.env_steps = 1000
+Config.collect_initial_steps = 100000
+tune_run.resources_per_trial = {'gpu': 0.5, 'cpu': 4}
+Config.collect_every = 1
+Config.batch_training = False
+Config.shuffle = False
+Config.train_steps = 50000
+
+
+# FEATURE SPACE
+Config.feature_shape = (%N_FEATURES, )
+
+# DECODER
+decoder/FCCombinedModel.hidden_sizes = [32, 16]
+decoder/FCCombinedModel.activation_cls = @Tanh
+decoder/FCCombinedModel.add_input_batchnorm = False
+decoder/FCCombinedModel.input_reshape = True
+ModelDecoder.flatten = True
+
+ModelDecoder.model_cls = @decoder/FCCombinedModel
+Config.decoder = @ModelDecoder
+
+# RECONSTRUCTOR
+rec/FCCombinedModel.hidden_sizes = [32]
+rec/FCCombinedModel.activation_cls = @Tanh
+rec/FCCombinedModel.add_input_batchnorm = False
+rec/FCCombinedModel.input_reshape = True
+ModelReconstructor.unflatten = True
+
+
+ModelReconstructor.model_cls = @rec/FCCombinedModel
+ModelReconstructor.give_source = False #True
+Config.reconstructor = @ModelReconstructor
+
+# MODEL
+Config.model = @sparse_model/ManyNetworkCombinedModel
+model_gnn/FCCombinedModel.hidden_sizes = [32]  # tuning...
+model_gnn/FCCombinedModel.activation_cls = @Tanh
+model_gnn/FCCombinedModel.add_input_batchnorm = False#True
+WithInputSwitch.model_cls = @model_gnn/FCCombinedModel
+sparse_model/ManyNetworkCombinedModel.model_cls = @sparse_model/WithInputSwitch
+ManyNetworkCombinedModel.sparse_do_max = False
+ManyNetworkCombinedModel.sparse_do_max_mfma = False
+ManyNetworkCombinedModel.add_linear_transform = False
+ManyNetworkCombinedModel.input_batchnorm = False
+sparse_model/WithInputSwitch.enable_switch = True
+LearnableSwitchSimple.init_identity_up_to = %N_FEATURES
+Config.model = @sparse_model/ManyNetworkCombinedModel
+
+
+TARGET_REC = 1e-3
+TARGET_FIT_OBS = 1e-3
+TARGET_FIT_FEAT = 1e-3
+TARGET_FIT_ADD = 1e-3
+
+BURSTS_TIME_SCALES = {'opt1d': 10, 'opt1m': 5, 'opt1r': 20} 
+
+reconstruction_loss.disable = True
+
+LearnableSwitchSimple.initial_proba = 1.0
+LearnableSwitchSimple.init_identity_up_to = 0
+
+Config.opt_iterations = {
+#    'opt1': 1,
+
+    'opt1d': 5,
+    'opt1m': 5,
+    'opt1r': 5,
+
+    'opt2': 1
+}
+
+
+Config.rot_pre = None
+Config.rot_post = None
+
+causal_learner_stopping_condition.edges_Mf = 2
+causal_learner_stopping_condition.edges_Ma = 4
