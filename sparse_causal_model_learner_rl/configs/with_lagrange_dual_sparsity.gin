@@ -161,15 +161,6 @@ Config.optim_params = {
 
     'opt2': ['lagrange_multipliers']
 }
-Config.opt_iterations = {
-#    'opt1': 1,
-
-    'opt1d': 1,
-    'opt1m': 1,
-    'opt1r': 1,
-
-    'opt2': 1
-}
 
 FIT_COEFF = 1.0
 SPARSITY_COEFF = 1.0

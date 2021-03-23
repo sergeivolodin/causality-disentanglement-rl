@@ -37,6 +37,20 @@ TARGET_FIT_OBS = 1e-3
 TARGET_FIT_FEAT = 1e-3
 TARGET_FIT_ADD = 1e-3
 
-BURSTS_TIME_SCALES = {'opt1d': 5, 'opt1m': 5, 'opt1r': 5}
+BURSTS_TIME_SCALES = {'opt1d': 10, 'opt1m': 5, 'opt1r': 5} 
 
 reconstruction_loss.disable = True
+
+LearnableSwitchSimple.initial_proba = 1.0
+LearnableSwitchSimple.init_identity_up_to = 0
+
+Config.opt_iterations = {
+#    'opt1': 1,
+
+    'opt1d': 10,
+    'opt1m': 10,
+    'opt1r': 10,
+
+    'opt2': 1
+}
+
