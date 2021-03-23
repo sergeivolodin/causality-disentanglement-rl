@@ -83,7 +83,7 @@ Config.opt_iterations = {
     'opt1m': 5,
     'opt1r': 5,
 
-    'opt2': 1
+    'opt2': 5
 }
 
 

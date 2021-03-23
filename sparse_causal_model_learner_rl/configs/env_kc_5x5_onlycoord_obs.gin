@@ -76,9 +76,9 @@ LearnableSwitchSimple.init_identity_up_to = 0
 Config.opt_iterations = {
 #    'opt1': 1,
 
-    'opt1d': 5,
-    'opt1m': 5,
-    'opt1r': 5,
+    'opt1d': 1,
+    'opt1m': 1,
+    'opt1r': 1,
 
     'opt2': 1
 }

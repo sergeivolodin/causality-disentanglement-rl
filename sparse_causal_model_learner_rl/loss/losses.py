@@ -186,6 +186,12 @@ def lagrangian_granular(
 
             if mode == 'PRIMAL':
                 lm = lm.detach()
+            if config.get('controlling_loss_override', False):
+                loss_dct = losses[config['controlling_loss_override']]
+                current_val_coeff = loss_dct['computed']['loss'] * loss_dct['original']['coeff']
+                if mode == 'DUAL':
+                    current_val_coeff = maybe_detach(current_val_coeff)
+
             total_constraint += (current_val_coeff - c) * lm
 
             if config.get('required', False):
@@ -370,13 +376,14 @@ def manual_switch_gradient(loss_delta_noreduce, model, eps=1e-5, loss_coeff=1.0)
     mask_coeff = mask_atleast * (mask_pos - mask_neg)
     p_grad = (delta_expanded * mask_coeff).sum(dim=0)
     
-    p_grad *= loss_coeff
+    #p_grad *= loss_coeff
 
-    if model.model.switch.probas.grad is None:
-        model.model.switch.probas.grad = p_grad.clone()
-    else:
-        model.model.switch.probas.grad += p_grad.clone()
-    return 0.0
+    #if model.model.switch.probas.grad is None:
+    #    model.model.switch.probas.grad = p_grad.clone()
+    #else:
+    #    model.model.switch.probas.grad += p_grad.clone()
+    #return 0.0
+    return model.model.switch.probas * p_grad.clone().detach()
 
 class MedianStd():
     """Compute median standard deviation of features."""
@@ -521,6 +528,10 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
     loss_rec = delta_pow2_sum1(obs_y.flatten(start_dim=1),
                                obs_yp.flatten(start_dim=1),
                                divide_by_std=obs_relative)
+
+    loss_rec_discrete = manual_switch_gradient(loss_rec, model).sum() if fill_switch_grad else 0.0
+    loss_rec, loss_rec_orig = loss_rec + loss_rec_discrete, loss_rec
+
     loss = loss_rec
 
     if additional_feature_keys:
@@ -528,9 +539,15 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
             additional_feature_keys=additional_feature_keys, **kwargs)
         f_yp_fadd_model = f_yp_model[:, model.n_features:]
         loss_additional = delta_pow2_sum1(f_y_fadd, f_yp_fadd_model)
+
+        loss_additional_discrete = manual_switch_gradient(loss_additional, model).sum() if fill_switch_grad else 0.0
+        loss_additional, loss_additional_orig = loss_additional + loss_additional_discrete, loss_additional
+
         loss += loss_additional
     else:
         loss_additional = None
+        loss_additional_orig = None
+        loss_additional_discrete = 0.0
 
 
     if add_fcons:
@@ -544,27 +561,37 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
 
         loss_fcons = delta_pow2_sum1(f_y, f_yp_f, divide_by_std=divide_by_std,
                                      std_from=f_x if cross_std else f_y)
+
+        loss_fcons_discrete = manual_switch_gradient(loss_fcons, model).sum() if fill_switch_grad else 0.0
+        loss_fcons, loss_fcons_orig = loss_fcons + loss_fcons_discrete, loss_fcons
+
         loss += loss_fcons
 
         loss_fcons_model = delta_pow2_sum1(f_y_model, f_yp_f_model, divide_by_std=divide_by_std,
                                            std_from=f_x_model if cross_std else f_y_model)
+
+        loss_fcons_model_discrete = manual_switch_gradient(loss_fcons_model, model).sum() if fill_switch_grad else 0.0
+        loss_fcons_model, loss_fcons_model_orig = loss_fcons_model + loss_fcons_model_discrete, loss_fcons_model
+
         loss += loss_fcons_model
     else:
         loss_fcons = None
         loss_fcons_model = None
-
-    if fill_switch_grad:
-        manual_switch_gradient(loss, model, loss_coeff=loss_coeff)
+        loss_fcons_orig = None
+        loss_fcons_discrete = 0.0
+        loss_fcons_model_orig = None
+        loss_fcons_model_discrete = 0.0
 
     metrics = {'mean_feature': f_x.mean(0).detach().cpu().numpy(),
                'std_feature': f_x.std(0).detach().cpu().numpy(),
                'min_feature': f_x.min().item(),
                'max_feature': f_x.max().item(),
-               'loss_fcons': loss_fcons.mean(0).item() if loss_fcons is not None else 0.0,
-               'loss_add': loss_additional.mean(0).item() if loss_additional is not None else 0.0,
-               'loss_rec': loss_rec.mean(0).item(),
-               'loss_fcons_pre': loss_fcons_model.mean(0).item() if loss_fcons is not None else 0.0,
+               'loss_fcons': loss_fcons_orig.mean(0).item() if loss_fcons_orig is not None else 0.0,
+               'loss_add': loss_additional_orig.mean(0).item() if loss_additional_orig is not None else 0.0,
+               'loss_rec': loss_rec_orig.mean(0).item(),
+               'loss_fcons_pre': loss_fcons_model_orig.mean(0).item() if loss_fcons_model_orig is not None else 0.0,
                'rec_fit_acc_loss_01_agg': 2 - delta_01_obs(obs_y, obs_yp).item(),
+               'loss_discrete': loss_fcons_model_discrete + loss_fcons_discrete + loss_additional_discrete + loss_rec_discrete,
                }
 
     def l_out(l):
@@ -578,6 +605,11 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
                 'obs': l_out(loss_rec),
                 'feat': l_out(loss_fcons),
                 'feat_model': l_out(loss_fcons_model),
+
+                'additional_orig': l_out(loss_additional_orig),
+                'obs_orig': l_out(loss_rec_orig),
+                'feat_orig': l_out(loss_fcons_orig),
+                'feat_model_orig': l_out(loss_fcons_model_orig),
             },
             'metrics': metrics}
 

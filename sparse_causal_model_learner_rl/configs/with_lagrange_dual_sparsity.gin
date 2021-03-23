@@ -35,24 +35,28 @@ lagrangian_granular.constraints_dict = {
         'constraint': %TARGET_FIT_OBS,
         'controlling': True,
         'required': True,
+        'controlling_loss_override': 'fit/obs_orig',
     },
 
     'fit/feat': {  # fit loss: decoder feature part
         'constraint': %TARGET_FIT_FEAT,
         'controlling': True,
         'required': True,
+        'controlling_loss_override': 'fit/feat_orig',
     },
 
     'fit/feat_model': {  # fit loss: model feature space part
         'constraint': %TARGET_FIT_FEAT,
         'controlling': True,
         'required': True,
+        'controlling_loss_override': 'fit/feat_model_orig',
     },
 
     'fit/additional': {  # fit loss: rew/done part
         'constraint': %TARGET_FIT_ADD,
         'controlling': True,
         'required': True,
+        'controlling_loss_override': 'fit/additional_orig',
     },
 
     # FIT ALL ON
@@ -61,24 +65,28 @@ lagrangian_granular.constraints_dict = {
         'constraint': %TARGET_FIT_OBS,
         'controlling': True,
         'required': True,
+        'controlling_loss_override': 'fit_all_on/obs_orig',
     },
 
     'fit_all_on/feat': {  # fit loss: decoder feature part
         'constraint': %TARGET_FIT_FEAT,
         'controlling': True,
         'required': True,
+        'controlling_loss_override': 'fit_all_on/feat_orig',
     },
 
     'fit_all_on/feat_model': {  # fit loss: model feature space part
         'constraint': %TARGET_FIT_FEAT,
         'controlling': True,
         'required': True,
+        'controlling_loss_override': 'fit_all_on/feat_model_orig',
     },
 
     'fit_all_on/additional': {  # fit loss: rew/done part
         'constraint': %TARGET_FIT_ADD,
         'controlling': True,
         'required': True,
+        'controlling_loss_override': 'fit_all_on/additional_orig',
     },
 
     # FIT EXPLORATION
