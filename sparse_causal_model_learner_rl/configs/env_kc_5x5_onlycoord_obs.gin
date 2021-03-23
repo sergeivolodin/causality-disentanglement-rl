@@ -12,9 +12,9 @@ N_FEATURES = 16
 # DATA COLLECTION PREFS
 Config.min_collected_sample_ratio = 0.5
 Config.buffer_steps = 100000
-Config.minibatch_size = 3000
+Config.minibatch_size = 500
 Config.n_collectors = 5
-Config.env_steps = 3000
+Config.env_steps = 500
 Config.collect_initial_steps = 100000
 tune_run.resources_per_trial = {'gpu': 0.4, 'cpu': 6}
 Config.collect_every = 1
@@ -28,9 +28,9 @@ Config.feature_shape = (%N_FEATURES, )
 
 # DECODER
 Config.decoder = @ModelDecoder
-decoder/FCCombinedModel.hidden_sizes = [64, 64, 64]
-decoder/FCCombinedModel.activation_cls = [@LeakyReLU, @ReLU, @ReLU, None]
-decoder/FCCombinedModel.add_input_batchnorm = True
+decoder/FCCombinedModel.hidden_sizes = []
+decoder/FCCombinedModel.activation_cls = None
+decoder/FCCombinedModel.add_input_batchnorm = False
 decoder/FCCombinedModel.input_reshape = True
 ModelDecoder.model_cls = @decoder/FCCombinedModel
 ModelDecoder.flatten = True
@@ -39,8 +39,8 @@ ModelDecoder.use_batchnorm = False
 
 # MODEL
 Config.model = @sparse_model/ManyNetworkCombinedModel
-model_gnn/FCCombinedModel.hidden_sizes = [64, 64, 64]  # tuning...
-model_gnn/FCCombinedModel.activation_cls = [@LeakyReLU, @ReLU, @ReLU, None]
+model_gnn/FCCombinedModel.hidden_sizes = [64, 32]  # tuning...
+model_gnn/FCCombinedModel.activation_cls = @LeakyReLU
 WithInputSwitch.model_cls = @model_gnn/FCCombinedModel
 sparse_model/ManyNetworkCombinedModel.model_cls = @sparse_model/WithInputSwitch
 ManyNetworkCombinedModel.sparse_do_max = False
@@ -53,22 +53,40 @@ LearnableSwitchSimple.init_identity_up_to = %N_FEATURES
 Config.reconstructor = @ModelReconstructor
 ModelReconstructor.model_cls = @rec/FCCombinedModel
 ModelReconstructor.unflatten = True
-rec/FCCombinedModel.hidden_sizes = [32, 32, 32]
-rec/FCCombinedModel.activation_cls = [@LeakyReLU, @ReLU, @Sigmoid, None]
+rec/FCCombinedModel.hidden_sizes = [8, 8]
+rec/FCCombinedModel.activation_cls = @LeakyReLU
 rec/FCCombinedModel.input_reshape = True
-
-# LOSSES COEFFICIENTS
-FIT_COEFF = 0.12
-SPARSITY_COEFF = 0.008
-REC_COEFF = 0.001
-FIT_ON_COEFF = 0.05
-FIT_HALF_COEFF = 0.01
-
-TARGET_LOSS_VAL = 0.01
 
 model_gnn/FCCombinedModel.add_input_batchnorm = False
 decoder/FCCombinedModel.add_input_batchnorm = False
 rec/FCCombinedModel.add_input_batchnorm = False
 
-opt1/Optimizer.lr = 5e-4
-opt1/Optimizer.name = 'Adam'
+TARGET_REC = 1e-3
+TARGET_FIT_OBS = 5e-3
+TARGET_FIT_FEAT = 1e-3
+TARGET_FIT_ADD = 1e-3
+
+BURSTS_TIME_SCALES = {'opt1d': 5, 'opt1m': 5, 'opt1r': 5} 
+
+reconstruction_loss.disable = True
+
+LearnableSwitchSimple.initial_proba = 1.0
+LearnableSwitchSimple.init_identity_up_to = 0
+
+Config.opt_iterations = {
+#    'opt1': 1,
+
+    'opt1d': 5,
+    'opt1m': 5,
+    'opt1r': 5,
+
+    'opt2': 1
+}
+
+
+Config.rot_pre = None
+Config.rot_post = None
+
+causal_learner_stopping_condition.edges_Mf = 2
+causal_learner_stopping_condition.edges_Ma = 4
+

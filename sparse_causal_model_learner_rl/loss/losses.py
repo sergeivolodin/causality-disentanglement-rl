@@ -152,7 +152,8 @@ def lagrangian_granular(
 
     # filling in the metrics
     for loss_key, loss_dct in losses.items():
-        metrics[loss_key] = {'value': maybe_item(loss_dct['computed']['loss']), 'coeff': loss_dct['original']['coeff']}
+        metrics[loss_key] = {'value': maybe_item(loss_dct['computed']['loss']), 'coeff': loss_dct['original']['coeff'],
+                             **loss_dct['computed']['metrics']}
 
     constraints_satisfied = 0
     constraints_total = 0

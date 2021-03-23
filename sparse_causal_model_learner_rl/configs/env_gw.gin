@@ -27,8 +27,8 @@ Config.train_steps = 50000
 Config.feature_shape = (%N_FEATURES, )
 
 # DECODER
-decoder/FCCombinedModel.hidden_sizes = [32, 16]
-decoder/FCCombinedModel.activation_cls = @Tanh
+decoder/FCCombinedModel.hidden_sizes = []
+decoder/FCCombinedModel.activation_cls = None#@Tanh
 decoder/FCCombinedModel.add_input_batchnorm = False
 decoder/FCCombinedModel.input_reshape = True
 ModelDecoder.flatten = True
@@ -37,8 +37,8 @@ ModelDecoder.model_cls = @decoder/FCCombinedModel
 Config.decoder = @ModelDecoder
 
 # RECONSTRUCTOR
-rec/FCCombinedModel.hidden_sizes = [32, 16]
-rec/FCCombinedModel.activation_cls = @Tanh
+rec/FCCombinedModel.hidden_sizes = [64, 32]
+rec/FCCombinedModel.activation_cls = @LeakyReLU
 rec/FCCombinedModel.add_input_batchnorm = False
 rec/FCCombinedModel.input_reshape = True
 ModelReconstructor.unflatten = True
@@ -50,8 +50,8 @@ Config.reconstructor = @ModelReconstructor
 
 # MODEL
 Config.model = @sparse_model/ManyNetworkCombinedModel
-model_gnn/FCCombinedModel.hidden_sizes = [32]  # tuning...
-model_gnn/FCCombinedModel.activation_cls = @Tanh
+model_gnn/FCCombinedModel.hidden_sizes = [64]  # tuning...
+model_gnn/FCCombinedModel.activation_cls = @LeakyReLU
 model_gnn/FCCombinedModel.add_input_batchnorm = False#True
 WithInputSwitch.model_cls = @model_gnn/FCCombinedModel
 sparse_model/ManyNetworkCombinedModel.model_cls = @sparse_model/WithInputSwitch
@@ -65,11 +65,11 @@ Config.model = @sparse_model/ManyNetworkCombinedModel
 
 
 TARGET_REC = 1e-3
-TARGET_FIT_OBS = 1e-3
+TARGET_FIT_OBS = 5e-3
 TARGET_FIT_FEAT = 1e-3
 TARGET_FIT_ADD = 1e-3
 
-BURSTS_TIME_SCALES = {'opt1d': 10, 'opt1m': 5, 'opt1r': 20} 
+BURSTS_TIME_SCALES = {'opt1d': 5, 'opt1m': 5, 'opt1r': 5} 
 
 reconstruction_loss.disable = True
 

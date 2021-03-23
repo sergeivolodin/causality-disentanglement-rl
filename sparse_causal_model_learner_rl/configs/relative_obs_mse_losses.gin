@@ -5,6 +5,8 @@ import sparse_causal_model_learner_rl.loss.losses
 # observations are assumed to be normalized already
 reconstruction_loss.relative = False
 
+fit_loss_obs_space.cross_std = False
+
 # all probas are 1
 all_on/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': False}
 all_on/fit_loss_obs_space.detach_features = True

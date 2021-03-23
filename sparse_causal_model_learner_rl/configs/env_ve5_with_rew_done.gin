@@ -13,19 +13,20 @@ Config.train_steps = 250000
 #opt1/Optimizer.betas = (0.5, 0.8)
 
 # batch size = 1k
-Config.minibatch_size = 8000
-Config.env_steps = 8000
+Config.minibatch_size = 2000
+Config.env_steps = 2000
 
 model_gnn/FCCombinedModel.skipconns = None # [False, True, True, True, False]
 model_gnn/FCCombinedModel.hidden_sizes = [64, 64]  # tuning...
-model_gnn/FCCombinedModel.activation_cls = @Tanh
+model_gnn/FCCombinedModel.activation_cls = @LeakyReLU
 
-decoder/FCCombinedModel.hidden_sizes = [32, 32]
+decoder/FCCombinedModel.hidden_sizes = [64]
 decoder/FCCombinedModel.skipconns = None #[False, True, True, False]
-decoder/FCCombinedModel.activation_cls = @Tanh #[@LeakyReLU, @ReLU, @ReLU, None]
+decoder/FCCombinedModel.activation_cls = @LeakyReLU #None # @Tanh #[@LeakyReLU, @ReLU, @ReLU, None]
+
 rec/FCCombinedModel.hidden_sizes = [32, 16]
 rec/FCCombinedModel.skipconns = None #[False, True, True, False]
-rec/FCCombinedModel.activation_cls = @Tanh # [@LeakyReLU, @ReLU, @Sigmoid, None]
+rec/FCCombinedModel.activation_cls = @LeakyReLU #Tanh # [@LeakyReLU, @ReLU, @Sigmoid, None]
 
 model_gnn/FCCombinedModel.add_input_batchnorm = False
 decoder/FCCombinedModel.add_input_batchnorm = False
@@ -36,7 +37,7 @@ TARGET_FIT_OBS = 1e-3
 TARGET_FIT_FEAT = 1e-3
 TARGET_FIT_ADD = 1e-3
 
-BURSTS_TIME_SCALES = {'opt1d': 10, 'opt1m': 5, 'opt1r': 20} 
+BURSTS_TIME_SCALES = {'opt1d': 5, 'opt1m': 5, 'opt1r': 5} 
 
 reconstruction_loss.disable = True
 
