@@ -178,6 +178,11 @@ class AbstractLearner(ABC):
             else:
                 self._epoch()
             self.config.update_communicator()
+            f = self.config.get('stopping_condition', None)
+            if callable(f) and f(self) is True:
+                logging.warning(f"Stopping via the stopping condition")
+                break
+
 
     @abstractmethod
     def maybe_write_artifacts(self, path_epoch, add_artifact_local):
@@ -370,6 +375,13 @@ class AbstractLearner(ABC):
         loss_epoch_cache = {}
         for opt_label in sorted(self.optimizer_objects.keys()):
             opt = self.optimizer_objects[opt_label]
+
+            # disabling and enabling optimizers
+            if self.config.get('opt_enabled_fcn', None):
+                fcn = self.config.get('opt_enabled_fcn')
+                opt_enabled = fcn(opt_key=opt_label, learner=self)
+                if not opt_enabled:
+                    continue
 
             for _ in range(self.config.get('opt_iterations', {}).get(opt_label, 1)):
                 opt.zero_grad()

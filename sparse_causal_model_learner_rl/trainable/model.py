@@ -195,7 +195,7 @@ class ManyNetworkModel(Model):
 class ManyNetworkCombinedModel(Model):
     """Instantiate many networks, each modelling one feature."""
     def __init__(self, model_cls=None, sparse_do_max=True,
-                 input_batchnorm=True,
+                 input_batchnorm=False,
                  add_linear_transform=False,
                  sparse_do_max_mfma=True, **kwargs):
         super(ManyNetworkCombinedModel, self).__init__(**kwargs)

@@ -1,6 +1,7 @@
 # Configuration for sparsity
 
 import sparse_causal_model_learner_rl.trainable.gumbel_switch
+import sparse_causal_model_learner_rl.learners.rl_learner
 import sparse_causal_model_learner_rl.loss.losses
 
 # give the sampled mask to the model
@@ -16,3 +17,6 @@ sparsity_loss.add_inv = False
 
 # using the REINFORCE gradient
 WithInputSwitch.switch_cls = @LearnableSwitchSimple
+
+# final threshold for graph
+causal_learner_stopping_condition.graph_threshold = 0.02

@@ -15,7 +15,29 @@ from sparse_causal_model_learner_rl.visual.learner_visual import plot_model, gra
 from sparse_causal_model_learner_rl.visual.learner_visual import total_loss, loss_and_history, \
     plot_contour, plot_3d
 from .rl_data import RLContext, ParallelContextCollector, get_shuffle_together
+from sparse_causal_model_learner_rl.metrics import find_value
 
+
+@gin.configurable
+def causal_learner_stopping_condition(learner, edges_Mf=None, edges_Ma=None, metric_geq=None,
+                                      graph_threshold=0.01):
+    """Stop if sparsity <= z and losses <= c."""
+    Mf, Ma = learner.graph
+    info = learner.epoch_info
+    nnz_Mf = np.sum(Mf > graph_threshold)
+    nnz_Ma = np.sum(Ma > graph_threshold)
+    
+    if edges_Mf is not None and nnz_Mf > edges_Mf:
+        return False
+    if edges_Ma is not None and nnz_Ma > edges_Ma:
+        return False
+    for metric_key, metric_thr in metric_geq.items():
+        val = find_value(info, metric_key)
+        if val < metric_thr:
+            return False
+    print("Feature graph matrix", Mf)
+    print("Action graph matrix", Ma)
+    return True
 
 @gin.register
 class CausalModelLearnerRL(AbstractLearner):

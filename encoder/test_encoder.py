@@ -1,10 +1,15 @@
 import gym
 import gin
 from encoder.observation_encoder import linear_encoder_unbiased_normal, KerasEncoderWrapper,\
-    ShuffleObservationWrapper
+    ShuffleObservationWrapper, LinearMatrixEncoder
 import numpy as np
 from .digit_encoder import digit_to_np, digits, small_int_vector_asimage
 
+def test_linear_encoder():
+    env = gym.make('CartPole-v0')
+    assert env.reset().shape[0] == 4, env.reset()
+    env_wrapped = LinearMatrixEncoder(env, seed=42)
+    assert env_wrapped.reset().shape[0] == 4, env_wrapped.reset()
 
 def test_keras_encoder():
     env = gym.make('CartPole-v0')

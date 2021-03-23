@@ -192,7 +192,7 @@ def test_rollouts(do_print=False, time_for_test=3):
         food_efficiency = np.random.choice(np.arange(1, 20))
 
         wh = width * height
-        n_objects = 2 + n_keys + n_chests + n_food
+        n_objects = 3 + n_keys + n_chests + n_food
 
         params = dict(width=width, height=height, n_keys=n_keys, n_chests=n_chests, n_food=n_food,
                       initial_health=initial_health, food_efficiency=food_efficiency)
