@@ -3,6 +3,7 @@
 # the environment
 include 'env_sm5.gin'
 include '../../vectorincrement/config/sm5_linear.gin'
+include 'with_secondary_stage_features.gin'
 
 # DECODER
 decoder/FCCombinedModel.hidden_sizes = []

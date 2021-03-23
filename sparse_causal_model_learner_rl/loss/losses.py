@@ -209,6 +209,9 @@ def lagrangian_granular(
 
         if config['constraint'] is not None:  # this is the objective
             idx = all_losses_lst.index(loss_key)
+            if config.get('controlling_loss_override', False):
+                loss_dct = losses[config['controlling_loss_override']]
+                current_val_coeff = loss_dct['computed']['loss'] * loss_dct['original']['coeff']
             current_delta = current_val_coeff - config['constraint']
             if lagrange_multipliers.initialized[idx] is False and current_delta > 0:
                 new_value = total_objective / current_delta
@@ -592,6 +595,7 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
                'loss_fcons_pre': loss_fcons_model_orig.mean(0).item() if loss_fcons_model_orig is not None else 0.0,
                'rec_fit_acc_loss_01_agg': 2 - delta_01_obs(obs_y, obs_yp).item(),
                'loss_discrete': loss_fcons_model_discrete + loss_fcons_discrete + loss_additional_discrete + loss_rec_discrete,
+               # for sparsity gap 'total_orig': 
                }
 
     def l_out(l):

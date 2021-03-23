@@ -69,7 +69,7 @@ TARGET_FIT_OBS = 5e-3
 TARGET_FIT_FEAT = 1e-3
 TARGET_FIT_ADD = 1e-3
 
-BURSTS_TIME_SCALES = {'opt1d': 5, 'opt1m': 5, 'opt1r': 5} 
+BURSTS_TIME_SCALES = {'opt1d': 10, 'opt1m': 5, 'opt1r': 10} 
 
 reconstruction_loss.disable = True
 
@@ -86,9 +86,6 @@ Config.opt_iterations = {
     'opt2': 5
 }
 
-
-Config.rot_pre = None
-Config.rot_post = None
 
 causal_learner_stopping_condition.edges_Mf = 2
 causal_learner_stopping_condition.edges_Ma = 4
