@@ -75,7 +75,7 @@ def test_vectorincrement_steps():
     step_verify(env.step(0), (np.array([1., 0., 0., 0., 0.], dtype=np.float32), np.float32(0.0), False, {}))
     step_verify(env.step(1), (np.array([1., 1., 0., 0., 0.], dtype=np.float32), np.float32(1.0), False, {}))
     step_verify(env.step(0), (np.array([2., 1., 0., 0., 0.], dtype=np.float32), np.float32(0.0), False, {}))
-    step_verify(env.step(1), (np.array([2., 2., 0., 0., 0.], dtype=np.float32), np.float32(0.5), False, {}))
+    step_verify(env.step(1), (np.array([2., 2., 0., 0., 0.], dtype=np.float32), np.float32(0.0), False, {}))
     step_verify(env.step(2), (np.array([2., 2., 1., 0., 0.], dtype=np.float32), np.float32(1.0), False, {}))
 
 
