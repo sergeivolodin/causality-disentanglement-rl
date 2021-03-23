@@ -2,12 +2,12 @@
 import sparse_causal_model_learner_rl.learners.rl_learner
 
 # the environment
-include '../../vectorincrement/config/gw.gin'
+include '../../vectorincrement/config/bounce.gin'
 include 'with_secondary_stage_features.gin'
 include 'remote_collect.gin'
 #include 'with_additional_features.gin'
 
-N_FEATURES = 5
+N_FEATURES = 6
 
 # DATA COLLECTION PREFS
 Config.min_collected_sample_ratio = 0.5
@@ -27,7 +27,7 @@ Config.train_steps = 50000
 Config.feature_shape = (%N_FEATURES, )
 
 # DECODER
-decoder/FCCombinedModel.hidden_sizes = [32, 16]
+decoder/FCCombinedModel.hidden_sizes = [16]
 decoder/FCCombinedModel.activation_cls = @Tanh
 decoder/FCCombinedModel.add_input_batchnorm = False
 decoder/FCCombinedModel.input_reshape = True
@@ -37,7 +37,7 @@ ModelDecoder.model_cls = @decoder/FCCombinedModel
 Config.decoder = @ModelDecoder
 
 # RECONSTRUCTOR
-rec/FCCombinedModel.hidden_sizes = [32, 16]
+rec/FCCombinedModel.hidden_sizes = [32]
 rec/FCCombinedModel.activation_cls = @Tanh
 rec/FCCombinedModel.add_input_batchnorm = False
 rec/FCCombinedModel.input_reshape = True
@@ -90,5 +90,5 @@ Config.opt_iterations = {
 Config.rot_pre = None
 Config.rot_post = None
 
-causal_learner_stopping_condition.edges_Mf = 2
-causal_learner_stopping_condition.edges_Ma = 4
+causal_learner_stopping_condition.edges_Mf = 0
+causal_learner_stopping_condition.edges_Ma = 0

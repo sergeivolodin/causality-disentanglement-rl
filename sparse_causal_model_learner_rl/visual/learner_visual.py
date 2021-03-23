@@ -98,7 +98,7 @@ def plot_model(model, vmin=None, vmax=None, additional_features=None,
     return fig
 
 
-def select_threshold(array, name='exp', eps=1e-10, do_plot=True, do_log=True):
+def select_threshold(array, name='exp', eps=1e-10, do_plot=True, do_log=True, thr_half=0.1):
     """Select threshold for a matrix."""
     try:
         if not do_log:
@@ -107,7 +107,7 @@ def select_threshold(array, name='exp', eps=1e-10, do_plot=True, do_log=True):
         # log would not work for low values
         array[array == 0.0] = eps
         aflat = np.abs(array.flatten())
-        if np.allclose(np.min(aflat), np.max(aflat)):
+        if np.max(aflat) - np.min(aflat) < thr_half:
             return 0.5
         if do_log:
             aflat = np.log(aflat)

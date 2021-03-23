@@ -62,3 +62,7 @@ class ModelReconstructor(Reconstructor):
         if self.unflatten:
             x = x.view(x.shape[0], *self.observation_shape)
         return x
+
+    def __repr__(self, *args, **kwargs):
+        orig = super(ModelReconstructor, self).__repr__(*args, **kwargs)
+        return f"{orig} unflatten={self.unflatten} give_source={self.give_source} model_out_shape={self.model_out_shape} obs_shape={self.observation_shape} feature_shape={self.feature_shape}"

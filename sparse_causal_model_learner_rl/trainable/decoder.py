@@ -68,3 +68,7 @@ class ModelDecoder(Decoder):
         if self.use_batchnorm:
             x = self.bn(x)
         return x
+
+    def __repr__(self, *args, **kwargs):
+        orig = super(ModelDecoder, self).__repr__(*args, **kwargs)
+        return f"{orig} flatten={self.flatten} model_obs_shape={self.model_obs_shape} obs_shape={self.observation_shape} feature_shape={self.feature_shape}"

@@ -83,6 +83,10 @@ class LearnableSwitchSimple(Switch):
         self.probas = torch.nn.Parameter(torch.from_numpy(init))
         self.return_grad = return_grad
         self.min_proba = min_proba
+        self.initial_proba = initial_proba
+
+    def __repr__(self):
+        return f"LearnableSwitchSimple(min_proba={self.min_proba} initial_proba={self.initial_proba} shape={self.shape} sample_many={self.sample_many})"
 
     def logits_batch(self, n_batch):
         return self.probas.view(1, *self.probas.shape).expand(

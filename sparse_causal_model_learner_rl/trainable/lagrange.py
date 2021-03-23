@@ -16,6 +16,9 @@ class LagrangeMultipliers(nn.Module):
         self.param_max = param_max
         self.tensor = torch.nn.Parameter(torch.ones(n, dtype=torch.float32) * param_init)
 
+    def __str__(self):
+        return f"LagrangeMultipliers(n={self.n} initialized={self.initialized} fcn={self.fcn} param_min={self.param_min} param_max={self.param_max})"
+
     def set_value(self, idx, val):
         assert not self.initialized[idx]
         if self.fcn == 'exp':

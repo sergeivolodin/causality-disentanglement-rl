@@ -97,6 +97,8 @@ class AbstractLearner(ABC):
                 obj = cls(**self.model_kwargs)
                 setattr(self, trainable['name'], obj)
                 self.trainables[trainable['name']] = obj
+                logging.info(f"Created trainable {trainable['name']}")
+                logging.info(str(obj.__str__()))
             else:
                 logging.warning(f"No class provided for trainable {trainable['name']}")
 

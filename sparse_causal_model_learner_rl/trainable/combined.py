@@ -37,6 +37,9 @@ class CombinedLinearLayer(nn.Module):
         self.bias = nn.Parameter(torch.zeros(self.out_features, self.n_models))
         self.reset_parameters()
 
+    def __repr__(self):
+        return f"CombinedLinearLayer(inf={self.in_features}, outf={self.out_features}, n_models={self.n_models})"
+
     def weight_by_model(self, idx):
         return self.weight[:, :, idx]
 
@@ -107,6 +110,10 @@ class FCCombinedModel(AbstractCombinedModel):
             setattr(self, f'fc%02d' % i, self.fc[-1])
         if add_input_batchnorm:
             self.bn = nn.BatchNorm1d(self.input_dim)
+
+    def __repr__(self, *args, **kwargs):
+        orig = super(FCCombinedModel, self).__repr__(*args, **kwargs)
+        return f"{orig} input_dim={self.input_dim} output_dim={self.output_dim} skips={self.skipconns} act={self.activation} hidden_sizes={self.hidden_sizes}"
 
     def forward(self, x):
         if self.input_reshape:

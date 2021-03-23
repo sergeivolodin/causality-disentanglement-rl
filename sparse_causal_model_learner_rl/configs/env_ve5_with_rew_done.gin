@@ -16,30 +16,47 @@ Config.train_steps = 250000
 Config.minibatch_size = 8000
 Config.env_steps = 8000
 
-model_gnn/FCCombinedModel.skipconns = [False, True, True, True, False]
-model_gnn/FCCombinedModel.hidden_sizes = [64, 64, 64, 64]  # tuning...
-model_gnn/FCCombinedModel.activation_cls = [@LeakyReLU, @ReLU, @ReLU, @ReLU, None]
+model_gnn/FCCombinedModel.skipconns = None # [False, True, True, True, False]
+model_gnn/FCCombinedModel.hidden_sizes = [64, 64]  # tuning...
+model_gnn/FCCombinedModel.activation_cls = @Tanh
 
-decoder/FCCombinedModel.hidden_sizes = [32, 32, 32]
-decoder/FCCombinedModel.skipconns = None#[False, True, True, False]
-decoder/FCCombinedModel.activation_cls = [@LeakyReLU, @ReLU, @ReLU, None]
-rec/FCCombinedModel.hidden_sizes = [32, 16, 16]
-rec/FCCombinedModel.skipconns = None#[False, True, True, False]
-rec/FCCombinedModel.activation_cls = [@LeakyReLU, @ReLU, @Sigmoid, None]
+decoder/FCCombinedModel.hidden_sizes = [32, 32]
+decoder/FCCombinedModel.skipconns = None #[False, True, True, False]
+decoder/FCCombinedModel.activation_cls = @Tanh #[@LeakyReLU, @ReLU, @ReLU, None]
+rec/FCCombinedModel.hidden_sizes = [32, 16]
+rec/FCCombinedModel.skipconns = None #[False, True, True, False]
+rec/FCCombinedModel.activation_cls = @Tanh # [@LeakyReLU, @ReLU, @Sigmoid, None]
 
 model_gnn/FCCombinedModel.add_input_batchnorm = False
 decoder/FCCombinedModel.add_input_batchnorm = False
 rec/FCCombinedModel.add_input_batchnorm = False
 
+TARGET_REC = 1e-3
+TARGET_FIT_OBS = 1e-3
+TARGET_FIT_FEAT = 1e-3
+TARGET_FIT_ADD = 1e-3
 
-# LOSSES COEFFICIENTS
-FIT_COEFF = 0.14
-SPARSITY_COEFF = 0.02
-REC_COEFF = 0.01
-FIT_ON_COEFF = 0.05
-FIT_HALF_COEFF = 0.01
+BURSTS_TIME_SCALES = {'opt1d': 10, 'opt1m': 5, 'opt1r': 20} 
 
-TARGET_LOSS_VAL = 0.01
+reconstruction_loss.disable = True
 
-opt1/Optimizer.lr = 5e-4 # 5e-4 for 6k steps, 1e-4 later
-opt1/Optimizer.name = 'Adam'
+LearnableSwitchSimple.initial_proba = 1.0
+LearnableSwitchSimple.init_identity_up_to = 0
+
+Config.opt_iterations = {
+#    'opt1': 1,
+
+    'opt1d': 5,
+    'opt1m': 5,
+    'opt1r': 5,
+
+    'opt2': 1
+}
+
+
+Config.rot_pre = None
+Config.rot_post = None
+
+causal_learner_stopping_condition.edges_Mf = 0
+causal_learner_stopping_condition.edges_Ma = 0
+
