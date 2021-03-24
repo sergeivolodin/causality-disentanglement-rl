@@ -1,0 +1,13 @@
+import vectorincrement
+import causal_util.helpers
+
+load_env.env_name = "SparseMatrix-v0"
+load_env.time_limit = 10
+
+sparsematrix.random_sparse_matrix.n_add_elements_frac = 0.1
+sparsematrix.random_sparse_matrix.elements = (-1, 1)
+sparsematrix.random_sparse_matrix.add_elements = (-1, 1)
+sparsematrix.SparseMatrixEnvironment.n = 5
+sparsematrix.SparseMatrixEnvironment.matrix_fcn = @sparsematrix.random_sparse_matrix
+sparsematrix.SparseMatrixEnvironment.seed = 42
+sparsematrix.SparseMatrixEnvironment.use_actions = False

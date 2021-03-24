@@ -13,31 +13,31 @@ Config.train_steps = 250000
 #opt1/Optimizer.betas = (0.5, 0.8)
 
 # batch size = 1k
-Config.minibatch_size = 500 
-Config.env_steps = 500
+Config.minibatch_size = 1000 
+Config.env_steps = 1000
 
 model_gnn/FCCombinedModel.skipconns = None # [False, True, True, True, False]
-model_gnn/FCCombinedModel.hidden_sizes = [64, 64]  # tuning...
-model_gnn/FCCombinedModel.activation_cls = @LeakyReLU
+model_gnn/FCCombinedModel.hidden_sizes = [64, 64, 64]  # tuning...
+model_gnn/FCCombinedModel.activation_cls = @Tanh
 
-decoder/FCCombinedModel.hidden_sizes = [64, 32]
+decoder/FCCombinedModel.hidden_sizes = [128]
 decoder/FCCombinedModel.skipconns = None #[False, True, True, False]
-decoder/FCCombinedModel.activation_cls = @LeakyReLU #None # @Tanh #[@LeakyReLU, @ReLU, @ReLU, None]
+decoder/FCCombinedModel.activation_cls = @ReLU #None # @Tanh #[@LeakyReLU, @ReLU, @ReLU, None]
 
-rec/FCCombinedModel.hidden_sizes = [32, 16]
+rec/FCCombinedModel.hidden_sizes = [64, 32]
 rec/FCCombinedModel.skipconns = None #[False, True, True, False]
-rec/FCCombinedModel.activation_cls = @LeakyReLU #Tanh # [@LeakyReLU, @ReLU, @Sigmoid, None]
+rec/FCCombinedModel.activation_cls = @Tanh #Tanh # [@LeakyReLU, @ReLU, @Sigmoid, None]
 
 model_gnn/FCCombinedModel.add_input_batchnorm = False
 decoder/FCCombinedModel.add_input_batchnorm = False
 rec/FCCombinedModel.add_input_batchnorm = False
 
 TARGET_REC = 1e-3
-TARGET_FIT_OBS = 1e-3
+TARGET_FIT_OBS = 1e-2
 TARGET_FIT_FEAT = 1e-3
 TARGET_FIT_ADD = 1e-3
 
-BURSTS_TIME_SCALES = {'opt1d': 1, 'opt1m': 1, 'opt1r': 1} 
+BURSTS_TIME_SCALES = {'opt1d': 2, 'opt1m': 1, 'opt1r': 2} 
 
 reconstruction_loss.disable = True
 
@@ -47,11 +47,11 @@ LearnableSwitchSimple.init_identity_up_to = 0
 Config.opt_iterations = {
 #    'opt1': 1,
 
-    'opt1d': 10,
-    'opt1m': 10,
-    'opt1r': 10,
+    'opt1d': 20,
+    'opt1m': 20,
+    'opt1r': 20,
 
-    'opt2': 10
+    'opt2': 20
 }
 
 

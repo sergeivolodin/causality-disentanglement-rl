@@ -6,7 +6,7 @@ include '../../vectorincrement/config/sm5_linear.gin'
 include 'with_secondary_stage_features.gin'
 
 # DECODER
-decoder/FCCombinedModel.hidden_sizes = []
+decoder/FCCombinedModel.hidden_sizes = [64, 64]
 decoder/FCCombinedModel.activation_cls = None
 decoder/FCCombinedModel.add_input_batchnorm = False
 decoder/FCCombinedModel.input_reshape = True
@@ -15,8 +15,8 @@ ModelDecoder.model_cls = @decoder/FCCombinedModel
 Config.decoder = @ModelDecoder
 
 # RECONSTRUCTOR
-rec/FCCombinedModel.hidden_sizes = [64, 32]
-rec/FCCombinedModel.activation_cls = @LeakyReLU
+rec/FCCombinedModel.hidden_sizes = [64, 128, 128]
+rec/FCCombinedModel.activation_cls = @ReLU
 rec/FCCombinedModel.add_input_batchnorm = False
 rec/FCCombinedModel.input_reshape = True
 
@@ -29,8 +29,8 @@ Config.reconstructor = @ModelReconstructor
 # MODEL
 # MODEL
 Config.model = @sparse_model/ManyNetworkCombinedModel
-model_gnn/FCCombinedModel.hidden_sizes = [64, 64]  # tuning...
-model_gnn/FCCombinedModel.activation_cls = @LeakyReLU
+model_gnn/FCCombinedModel.hidden_sizes = [64, 64, 64]  # tuning...
+model_gnn/FCCombinedModel.activation_cls = @ReLU
 
 
 TARGET_REC = 1e-3

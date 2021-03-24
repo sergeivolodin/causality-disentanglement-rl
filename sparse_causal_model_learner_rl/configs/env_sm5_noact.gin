@@ -2,7 +2,7 @@
 import sparse_causal_model_learner_rl.learners.rl_learner
 
 # the environment
-include '../../vectorincrement/config/sm5.gin'
+include '../../vectorincrement/config/sm5_noact.gin'
 #include 'with_secondary_stage_features.gin'
 include 'remote_collect.gin'
 #include 'with_additional_features.gin'
@@ -33,7 +33,7 @@ Config.decoder = @IdentityDecoder
 # MODEL
 Config.model = @sparse_model/ManyNetworkCombinedModel
 model_gnn/FCCombinedModel.hidden_sizes = [64, 64]  # tuning...
-model_gnn/FCCombinedModel.activation_cls = @Tanh
+model_gnn/FCCombinedModel.activation_cls = @LeakyReLU
 model_gnn/FCCombinedModel.add_input_batchnorm = False#True
 WithInputSwitch.model_cls = @model_gnn/FCCombinedModel
 sparse_model/ManyNetworkCombinedModel.model_cls = @sparse_model/WithInputSwitch
@@ -64,4 +64,4 @@ TARGET_FIT_ADD = 0
 
 BURSTS_TIME_SCALES = {'opt1d': 0, 'opt1m': 10, 'opt1r': 0}
 causal_learner_stopping_condition.edges_Mf = 7
-causal_learner_stopping_condition.edges_Ma = 7
+causal_learner_stopping_condition.edges_Ma = None
