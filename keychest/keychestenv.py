@@ -110,9 +110,18 @@ class KeyChestEnvironment(object):
     def __init__(self, labyrinth_maps, initial_health, food_efficiency,
                  food_rows=None, keys_rows=None, callback=None,
                  flatten_observation=False, return_rgb=False,
+                 select_outputs=None,
                  return_features_xy=False):
         """Environment with keys and chests."""
         self.initial_maps = deepcopy(labyrinth_maps)
+
+        if select_outputs is None:
+            select_outputs = self.OBJECTS
+        assert len(select_outputs) == len(set(select_outputs)), select_outputs
+        assert all([z in self.OBJECTS for z in select_outputs]), (self.OBJECTS, select_outputs)
+        self.select_outputs = select_outputs
+        self.select_output_indices = [self.OBJECTS.index(z) for z in self.select_outputs]
+
         self.maps = {x: np.array(y, dtype=np.bool) for x, y in labyrinth_maps.items()}
         self.executor = DelayedExecutor()
         self.delay = 1
@@ -235,6 +244,9 @@ class KeyChestEnvironment(object):
     def observation(self):
         result = self._observation
 
+        if len(self.select_output_indices) < len(self.OBJECTS):
+            result = result[:, :, self.select_output_indices]
+            
         if self.return_features_xy:
             return dict_to_arr(obs_features_handcoded(self, result))
 

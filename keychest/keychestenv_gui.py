@@ -130,6 +130,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     gin.parse_config_file(args.config)
     env = KeyChestGymEnv(flatten_observation=False)
+    print("Observation shape:", env.reset().shape)
     gin.bind_parameter("show_rendered.scale", args.scale)
     if args.solver:
         gui_for_env_gofa(env)
