@@ -55,3 +55,5 @@ Config.opt_iterations = {
     'opt2': 1
 }
 
+causal_learner_stopping_condition.edges_Mf = 8
+causal_learner_stopping_condition.edges_Ma = 7

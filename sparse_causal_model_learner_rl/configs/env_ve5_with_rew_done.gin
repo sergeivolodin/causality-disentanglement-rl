@@ -4,7 +4,7 @@ include 'env_ve2.gin'
 include 'with_additional_features.gin'
 include '../../vectorincrement/config/ve5_toy_digits.gin'
 
-N_FEATURES = 12
+N_FEATURES = 5
 
 # only doing 25k steps (~4 hours)
 Config.train_steps = 250000
@@ -20,7 +20,7 @@ model_gnn/FCCombinedModel.skipconns = None # [False, True, True, True, False]
 model_gnn/FCCombinedModel.hidden_sizes = [64, 64]  # tuning...
 model_gnn/FCCombinedModel.activation_cls = @LeakyReLU
 
-decoder/FCCombinedModel.hidden_sizes = [64]
+decoder/FCCombinedModel.hidden_sizes = [64, 32]
 decoder/FCCombinedModel.skipconns = None #[False, True, True, False]
 decoder/FCCombinedModel.activation_cls = @LeakyReLU #None # @Tanh #[@LeakyReLU, @ReLU, @ReLU, None]
 
@@ -54,9 +54,6 @@ Config.opt_iterations = {
     'opt2': 10
 }
 
-
-Config.rot_pre = None
-Config.rot_post = None
 
 causal_learner_stopping_condition.edges_Mf = 0
 causal_learner_stopping_condition.edges_Ma = 0
