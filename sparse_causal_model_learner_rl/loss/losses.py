@@ -116,7 +116,7 @@ def lagrangian_granular(
     assert mode in ['PRIMAL', 'DUAL'], mode
     metrics = {}
 
-    all_losses_lst = list(constraints_dict.keys())
+    all_losses_lst = list(sorted(constraints_dict.keys()))
     assert lagrange_multipliers.n == len(all_losses_lst), (lagrange_multipliers.n, all_losses_lst, len(all_losses_lst))
 
     def get_losses():
@@ -185,11 +185,10 @@ def lagrangian_granular(
 
             if mode == 'PRIMAL':
                 lm = lm.detach()
-            if config.get('controlling_loss_override', False):
+            if config.get('controlling_loss_override', False) and mode == 'DUAL':
                 loss_dct = losses[config['controlling_loss_override']]
                 current_val_coeff = loss_dct['computed']['loss'] * loss_dct['original']['coeff']
-                if mode == 'DUAL':
-                    current_val_coeff = maybe_detach(current_val_coeff)
+                current_val_coeff = maybe_detach(current_val_coeff)
 
             total_constraint += (current_val_coeff - c) * lm
 

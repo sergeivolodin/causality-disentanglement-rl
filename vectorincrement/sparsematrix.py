@@ -114,7 +114,7 @@ class SparseMatrixEnvironment(gym.Env):
         self.state = self.A @ self.state
         if self.use_actions:
             act_infl = self.Aa[:, action]
-            act_infl = np.multiply(np.sign(self.state), act_infl)
+            act_infl = np.multiply(1. * (self.state > 0), act_infl)
             self.state += act_infl
         obs = self.observation()
         rew = np.float32(0.0)

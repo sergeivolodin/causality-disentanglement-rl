@@ -17,16 +17,16 @@ Config.minibatch_size = 1000
 Config.env_steps = 1000
 
 model_gnn/FCCombinedModel.skipconns = None # [False, True, True, True, False]
-model_gnn/FCCombinedModel.hidden_sizes = [64, 64, 64]  # tuning...
+model_gnn/FCCombinedModel.hidden_sizes = [256, 256]  # tuning...
 model_gnn/FCCombinedModel.activation_cls = @Tanh
 
 decoder/FCCombinedModel.hidden_sizes = [128]
 decoder/FCCombinedModel.skipconns = None #[False, True, True, False]
-decoder/FCCombinedModel.activation_cls = @ReLU #None # @Tanh #[@LeakyReLU, @ReLU, @ReLU, None]
+decoder/FCCombinedModel.activation_cls = @Tanh # @ReLU #None # @Tanh #[@LeakyReLU, @ReLU, @ReLU, None]
 
-rec/FCCombinedModel.hidden_sizes = [64, 32]
+rec/FCCombinedModel.hidden_sizes = [256, 128]
 rec/FCCombinedModel.skipconns = None #[False, True, True, False]
-rec/FCCombinedModel.activation_cls = @Tanh #Tanh # [@LeakyReLU, @ReLU, @Sigmoid, None]
+rec/FCCombinedModel.activation_cls = @ReLU #Tanh # [@LeakyReLU, @ReLU, @Sigmoid, None]
 
 model_gnn/FCCombinedModel.add_input_batchnorm = False
 decoder/FCCombinedModel.add_input_batchnorm = False
@@ -47,11 +47,11 @@ LearnableSwitchSimple.init_identity_up_to = 0
 Config.opt_iterations = {
 #    'opt1': 1,
 
-    'opt1d': 20,
-    'opt1m': 20,
-    'opt1r': 20,
+    'opt1d': 2,
+    'opt1m': 2,
+    'opt1r': 2,
 
-    'opt2': 20
+    'opt2': 2
 }
 
 

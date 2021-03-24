@@ -6,7 +6,7 @@ include '../../vectorincrement/config/sm5_linear.gin'
 include 'with_secondary_stage_features.gin'
 
 # DECODER
-decoder/FCCombinedModel.hidden_sizes = [64, 64]
+decoder/FCCombinedModel.hidden_sizes = []
 decoder/FCCombinedModel.activation_cls = None
 decoder/FCCombinedModel.add_input_batchnorm = False
 decoder/FCCombinedModel.input_reshape = True
@@ -15,7 +15,7 @@ ModelDecoder.model_cls = @decoder/FCCombinedModel
 Config.decoder = @ModelDecoder
 
 # RECONSTRUCTOR
-rec/FCCombinedModel.hidden_sizes = [64, 128, 128]
+rec/FCCombinedModel.hidden_sizes = [256, 64]
 rec/FCCombinedModel.activation_cls = @ReLU
 rec/FCCombinedModel.add_input_batchnorm = False
 rec/FCCombinedModel.input_reshape = True
@@ -29,8 +29,8 @@ Config.reconstructor = @ModelReconstructor
 # MODEL
 # MODEL
 Config.model = @sparse_model/ManyNetworkCombinedModel
-model_gnn/FCCombinedModel.hidden_sizes = [64, 64, 64]  # tuning...
-model_gnn/FCCombinedModel.activation_cls = @ReLU
+model_gnn/FCCombinedModel.hidden_sizes = [128, 128]  # tuning...
+model_gnn/FCCombinedModel.activation_cls = @Tanh
 
 
 TARGET_REC = 1e-3
@@ -38,7 +38,7 @@ TARGET_FIT_OBS = 1e-3
 TARGET_FIT_FEAT = 1e-3
 TARGET_FIT_ADD = 1e-3
 
-BURSTS_TIME_SCALES = {'opt1d': 10, 'opt1m': 5, 'opt1r': 10} 
+BURSTS_TIME_SCALES = {'opt1d': 2, 'opt1m': 1, 'opt1r': 2} 
 
 reconstruction_loss.disable = True
 
@@ -49,10 +49,10 @@ Config.opt_iterations = {
 #    'opt1': 1,
 
     'opt1d': 10,
-    'opt1m': 10,
+    'opt1m': 20,
     'opt1r': 10,
 
-    'opt2': 1
+    'opt2': 20
 }
 
 causal_learner_stopping_condition.edges_Mf = 8
