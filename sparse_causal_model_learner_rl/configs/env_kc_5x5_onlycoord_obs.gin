@@ -7,7 +7,7 @@ include 'with_secondary_stage_features.gin'
 include 'remote_collect.gin'
 #include 'with_additional_features.gin'
 
-N_FEATURES = 16
+N_FEATURES = 10 # player 2, health, button x2, lamp x2 + lamp state -> 
 
 # DATA COLLECTION PREFS
 Config.min_collected_sample_ratio = 0.5
@@ -39,8 +39,8 @@ ModelDecoder.use_batchnorm = False
 
 # MODEL
 Config.model = @sparse_model/ManyNetworkCombinedModel
-model_gnn/FCCombinedModel.hidden_sizes = [64, 32]  # tuning...
-model_gnn/FCCombinedModel.activation_cls = @LeakyReLU
+model_gnn/FCCombinedModel.hidden_sizes = [256, 256]  # tuning...
+model_gnn/FCCombinedModel.activation_cls = @Tanh
 WithInputSwitch.model_cls = @model_gnn/FCCombinedModel
 sparse_model/ManyNetworkCombinedModel.model_cls = @sparse_model/WithInputSwitch
 ManyNetworkCombinedModel.sparse_do_max = False
@@ -53,8 +53,8 @@ LearnableSwitchSimple.init_identity_up_to = %N_FEATURES
 Config.reconstructor = @ModelReconstructor
 ModelReconstructor.model_cls = @rec/FCCombinedModel
 ModelReconstructor.unflatten = True
-rec/FCCombinedModel.hidden_sizes = [8, 8]
-rec/FCCombinedModel.activation_cls = @LeakyReLU
+rec/FCCombinedModel.hidden_sizes = [256, 128]
+rec/FCCombinedModel.activation_cls = @ReLU
 rec/FCCombinedModel.input_reshape = True
 
 model_gnn/FCCombinedModel.add_input_batchnorm = False
@@ -66,7 +66,7 @@ TARGET_FIT_OBS = 5e-3
 TARGET_FIT_FEAT = 1e-3
 TARGET_FIT_ADD = 1e-3
 
-BURSTS_TIME_SCALES = {'opt1d': 5, 'opt1m': 5, 'opt1r': 5} 
+BURSTS_TIME_SCALES = {'opt1d': 2, 'opt1m': 1, 'opt1r': 2} 
 
 reconstruction_loss.disable = True
 
@@ -76,11 +76,11 @@ LearnableSwitchSimple.init_identity_up_to = 0
 Config.opt_iterations = {
 #    'opt1': 1,
 
-    'opt1d': 1,
-    'opt1m': 1,
-    'opt1r': 1,
+    'opt1d': 2,
+    'opt1m': 2,
+    'opt1r': 2,
 
-    'opt2': 1
+    'opt2': 2
 }
 
 
