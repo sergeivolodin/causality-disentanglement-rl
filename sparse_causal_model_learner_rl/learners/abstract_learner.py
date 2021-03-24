@@ -246,7 +246,7 @@ class AbstractLearner(ABC):
             logging.info(f"Loading {key} weights from a checkpoint...")
             orig_dict = deepcopy(self.trainables[key].state_dict())
             try:
-                self.trainables[key].load_state_dict(dct['trainables_weights'][key])
+                self.trainables[key].load_state_dict(dct['trainables_weights'][key], strict=False)
             except RuntimeError as e:
                 logging.error(f"Can't load weights for {key}: {e}, undoing loading")
             #    self.trainables[key].load_state_dict(orig_dict)

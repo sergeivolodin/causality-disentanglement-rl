@@ -62,7 +62,7 @@ def random_sparse_matrix(n, n_add_elements_frac=None,
 class SparseMatrixEnvironment(gym.Env):
     """State is multiplied by a fixed sparse matrix at each time-step."""
 
-    def __init__(self, n=10, seed=42, matrix_fcn=None):
+    def __init__(self, n=10, seed=42, matrix_fcn=None, use_actions=False):
         """
         Initialize.
 
@@ -70,22 +70,34 @@ class SparseMatrixEnvironment(gym.Env):
             n: dimensionality of the state
         """
         self.n = n
-        
+        self.use_actions = use_actions
         self.matrix_fcn = matrix_fcn
 
         # the transition dynamics matrix
         with np_random_seed(seed=seed):
             self.A = matrix_fcn(n=n)
 
+        if self.use_actions:
+            with np_random_seed(seed = seed + 1):
+                self.Aa = matrix_fcn(n=n)
+
         self.reset()
 
         self.observation_space = gym.spaces.Box(low=np.float32(-np.inf),
                                                 high=np.float32(np.inf),
                                                 shape=(self.n,))
-        self.action_space = gym.spaces.Discrete(1)
-        self.true_graph = CausalGraphProbas(n_state=n, n_actions=1,
+        if self.use_actions:
+            self.action_space = gym.spaces.Discrete(self.n)
+            n_actions = self.n
+            true_Aa = 1. * (np.abs(self.Aa) > 0)
+        else:
+            self.action_space = gym.spaces.Discrete(1)
+            n_actions = 1
+            true_Aa = np.zeros((n, 1))
+            self.Aa = true_Aa
+        self.true_graph = CausalGraphProbas(n_state=n, n_actions=n_actions,
                                             As=1. * (np.abs(self.A) > 0),
-                                            Aa=np.zeros((n, 1)))
+                                            Aa=true_Aa)
         
     def render(self, mode='rgb_array'):
         return vec_heatmap(self.state)
@@ -99,7 +111,12 @@ class SparseMatrixEnvironment(gym.Env):
         return self.observation()
 
     def step(self, action):
+        orig_state = self.state
         self.state = self.A @ self.state
+        if self.use_actions:
+            act_infl = self.Aa[:, action]
+            action_infl = np.multiply(np.sign(orig_state), act_infl)
+            self.state += act_infl
         obs = self.observation()
         rew = np.float32(0.0)
         done = False

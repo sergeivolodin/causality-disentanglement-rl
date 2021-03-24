@@ -23,6 +23,7 @@ class LagrangeMultipliers(nn.Module):
 
     def load_state_dict(self, *args, **kwargs):
         orig = super(LagrangeMultipliers, self).load_state_dict(*args, **kwargs)
+        print("LSD", args, kwargs)
         if len(args) == 1 and 'initialized' in args[0]:
             self.initialized = args[0]['initialized']
         return orig

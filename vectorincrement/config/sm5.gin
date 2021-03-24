@@ -10,3 +10,4 @@ sparsematrix.random_sparse_matrix.add_elements = (-1, 1)
 sparsematrix.SparseMatrixEnvironment.n = 5
 sparsematrix.SparseMatrixEnvironment.matrix_fcn = @sparsematrix.random_sparse_matrix
 sparsematrix.SparseMatrixEnvironment.seed = 42
+sparsematrix.SparseMatrixEnvironment.use_actions = True
