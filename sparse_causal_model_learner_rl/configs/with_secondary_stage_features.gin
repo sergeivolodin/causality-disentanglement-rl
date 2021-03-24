@@ -4,11 +4,13 @@ import sparse_causal_model_learner_rl.trainable.model
 import sparse_causal_model_learner_rl.config
 import sparse_causal_model_learner_rl.visual.learner_visual
 
-graph_for_matrices.last_is_constant = True
+graph_for_matrices.last_is_constant = False
 
-rot_pre/Rotation.add_last_constant = True
-rot_post/Rotation.remove_last_constant = True
-ManyNetworkCombinedModel.add_last_constant = True
+rot_pre/Rotation.add_one = True
+rot_post/Rotation.add_one = True
+ManyNetworkCombinedModel.add_one = True
+ModelDecoder.add_batch_number = True
+ModelReconstructor.add_one = True
 
 Config.rot_pre = @rot_pre/Rotation
 Config.rot_post = @rot_post/Rotation

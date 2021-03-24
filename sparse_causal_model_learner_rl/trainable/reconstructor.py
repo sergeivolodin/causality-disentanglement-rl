@@ -41,8 +41,9 @@ class IdentityReconstructor(Reconstructor):
 
 @gin.configurable
 class ModelReconstructor(Reconstructor):
-    def __init__(self, model_cls=None, unflatten=False, give_source=False, **kwargs):
+    def __init__(self, model_cls=None, unflatten=False, give_source=False, add_one=False, **kwargs):
         super(ModelReconstructor, self).__init__(**kwargs)
+        self.add_one = add_one
         self.unflatten = unflatten
         self.give_source = give_source
         if self.unflatten:
@@ -51,6 +52,8 @@ class ModelReconstructor(Reconstructor):
             self.model_out_shape = self.observation_shape
         f_shape = self.feature_shape
         if self.give_source:
+            f_shape = (f_shape[0] + 1,)
+        if self.add_one:
             f_shape = (f_shape[0] + 1,)
         self.model = model_cls(input_shape=f_shape, output_shape=self.model_out_shape)
 
