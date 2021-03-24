@@ -41,6 +41,7 @@ ModelDecoder.use_batchnorm = False
 Config.model = @sparse_model/ManyNetworkCombinedModel
 model_gnn/FCCombinedModel.hidden_sizes = [256, 256]  # tuning...
 model_gnn/FCCombinedModel.activation_cls = @Tanh
+model_gnn/FCCombinedModel.skipconns = [False, True, False]
 WithInputSwitch.model_cls = @model_gnn/FCCombinedModel
 sparse_model/ManyNetworkCombinedModel.model_cls = @sparse_model/WithInputSwitch
 ManyNetworkCombinedModel.sparse_do_max = False
