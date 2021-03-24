@@ -197,6 +197,7 @@ class ManyNetworkCombinedModel(Model):
     def __init__(self, model_cls=None, sparse_do_max=True,
                  input_batchnorm=False,
                  add_linear_transform=False,
+                 add_last_constant=False,
                  sparse_do_max_mfma=True, **kwargs):
         super(ManyNetworkCombinedModel, self).__init__(**kwargs)
         assert len(self.feature_shape) == 1, f"Features must be scalar: {self.feature_shape}"
@@ -205,8 +206,13 @@ class ManyNetworkCombinedModel(Model):
 
         self.add_linear_transform = add_linear_transform
         self.input_batchnorm = input_batchnorm
+        self.add_last_constant = add_last_constant
 
         self.n_features = self.feature_shape[0]
+
+        if self.add_last_constant:
+            self.n_features += 1
+
         self.n_actions = self.action_shape[0]
         self.n_additional_features = self.additional_feature_shape[0]
         self.n_total_features = self.n_features + self.n_additional_features
@@ -477,6 +483,8 @@ class ModelModel(Model):
 class Rotation(nn.Module):
     """One fully-connected layer."""
     def __init__(self, feature_shape, init_identity=True,
+                 add_last_constant=False,
+                 remove_last_constant=False,
                  **kwargs):
         super(Rotation, self).__init__()
         assert len(feature_shape) == 1, feature_shape
@@ -484,11 +492,20 @@ class Rotation(nn.Module):
         self.rot = nn.Linear(in_features=self.n_features,
                              out_features=self.n_features,
                              bias=True)
+        self.add_last_constant = add_last_constant
+        self.remove_last_constant = remove_last_constant
 
         if init_identity:
             self.rot.weight.data[:] += torch.eye(self.n_features)
             self.rot.bias.data[:] = 0.0
 
     def forward(self, x):
-        return self.rot(x)
+        if self.remove_last_constant:
+            x = x[:, :-1]
+
+        x = self.rot(x)
+        if self.add_last_constant:
+            xconst = torch.ones((x.shape[0], 1), device=x.device, dtype=x.dtype, requires_grad=False)
+            x = torch.cat([x, xconst], dim=1)
+        return x
 

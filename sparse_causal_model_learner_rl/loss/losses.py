@@ -5,6 +5,14 @@ import gin
 import numpy as np
 from .helpers import gather_additional_features, get_loss_and_metrics
 
+def maybe_item(z):
+    if hasattr(z, 'item'):
+        return z.item()
+    return z
+def maybe_detach(z):
+    if hasattr(z, 'detach'):
+        return z.detach()
+    return z
 
 def modify_coeff(kwargs, mult=1.0):
     """Change coefficient of the loss."""
@@ -139,15 +147,6 @@ def lagrangian_granular(
 
     total_constraint = 0.0
     total_objective = 0.0
-
-    def maybe_item(z):
-        if hasattr(z, 'item'):
-            return z.item()
-        return z
-    def maybe_detach(z):
-        if hasattr(z, 'detach'):
-            return z.detach()
-        return z
 
 
     # filling in the metrics
@@ -594,7 +593,7 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
                'loss_rec': loss_rec_orig.mean(0).item(),
                'loss_fcons_pre': loss_fcons_model_orig.mean(0).item() if loss_fcons_model_orig is not None else 0.0,
                'rec_fit_acc_loss_01_agg': 2 - delta_01_obs(obs_y, obs_yp).item(),
-               'loss_discrete': loss_fcons_model_discrete + loss_fcons_discrete + loss_additional_discrete + loss_rec_discrete,
+               'loss_discrete': maybe_item(loss_fcons_model_discrete + loss_fcons_discrete + loss_additional_discrete + loss_rec_discrete),
                # for sparsity gap 'total_orig': 
                }
 

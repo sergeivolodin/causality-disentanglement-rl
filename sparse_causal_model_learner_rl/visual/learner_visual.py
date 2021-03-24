@@ -145,6 +145,7 @@ def select_threshold(array, name='exp', eps=1e-10, do_plot=True, do_log=True, th
 @gin.configurable
 def graph_for_matrices(model, threshold_act=0.2, threshold_f=0.2, do_write=True,
                        additional_features=None,
+                       last_is_constant=False,
                        feature_names=None,
                        engine='dot'):
     """Visualize matrices as a graph."""
@@ -175,6 +176,8 @@ def graph_for_matrices(model, threshold_act=0.2, threshold_f=0.2, do_write=True,
         feature_names_dct = dict(zip(range(Mf.shape[1]), feature_names))
 
     def feature_name(idx):
+        if last_is_constant and idx == features - 1:
+            return 'const'
         if idx in additional_features_dct:
             return additional_features_dct[idx]
         elif idx in feature_names_dct:

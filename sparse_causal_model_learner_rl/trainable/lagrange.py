@@ -16,6 +16,17 @@ class LagrangeMultipliers(nn.Module):
         self.param_max = param_max
         self.tensor = torch.nn.Parameter(torch.ones(n, dtype=torch.float32) * param_init)
 
+    def state_dict(self, *args, **kwargs):
+        orig = super(LagrangeMultipliers, self).state_dict(*args, **kwargs)
+        orig['initialized'] = self.initialized
+        return orig
+
+    def load_state_dict(self, *args, **kwargs):
+        orig = super(LagrangeMultipliers, self).load_state_dict(*args, **kwargs)
+        if len(args) == 1 and 'initialized' in args[0]:
+            self.initialized = args[0]['initialized']
+        return orig
+
     def __str__(self):
         return f"LagrangeMultipliers(n={self.n} initialized={self.initialized} fcn={self.fcn} param_min={self.param_min} param_max={self.param_max})"
 
