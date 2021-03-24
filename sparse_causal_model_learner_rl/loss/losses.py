@@ -584,6 +584,8 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
         loss_fcons_model_orig = None
         loss_fcons_model_discrete = 0.0
 
+    discrete_total = maybe_item(loss_fcons_model_discrete + loss_fcons_discrete + loss_additional_discrete + loss_rec_discrete)
+
     metrics = {'mean_feature': f_x.mean(0).detach().cpu().numpy(),
                'std_feature': f_x.std(0).detach().cpu().numpy(),
                'min_feature': f_x.min().item(),
@@ -593,8 +595,8 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
                'loss_rec': loss_rec_orig.mean(0).item(),
                'loss_fcons_pre': loss_fcons_model_orig.mean(0).item() if loss_fcons_model_orig is not None else 0.0,
                'rec_fit_acc_loss_01_agg': 2 - delta_01_obs(obs_y, obs_yp).item(),
-               'loss_discrete': maybe_item(loss_fcons_model_discrete + loss_fcons_discrete + loss_additional_discrete + loss_rec_discrete),
-               # for sparsity gap 'total_orig': 
+               'loss_discrete': discrete_total,
+               'loss_orig': loss.mean(0).item() - discrete_total,
                }
 
     def l_out(l):
