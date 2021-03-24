@@ -33,9 +33,9 @@ decoder/FCCombinedModel.add_input_batchnorm = False
 rec/FCCombinedModel.add_input_batchnorm = False
 
 TARGET_REC = 1e-3
-TARGET_FIT_OBS = 1e-2
-TARGET_FIT_FEAT = 1e-3
-TARGET_FIT_ADD = 1e-3
+TARGET_FIT_OBS = 0.2
+TARGET_FIT_FEAT = 0.02
+TARGET_FIT_ADD = 0.05
 
 BURSTS_TIME_SCALES = {'opt1d': 2, 'opt1m': 1, 'opt1r': 2} 
 
