@@ -2,6 +2,9 @@ import causal_util.helpers
 import keychest.keychestenv
 include '5x5_1f1c1k.gin'
 
-KeyChestEnvironment.flatten_observation = True
+KeyChestEnvironment.flatten_observation = False
 KeyChestEnvironment.return_rgb = False
 KeyChestEnvironment.return_features_xy = False
+KeyChestEnvironmentRandom.add_lamp_off = False
+KeyChestEnvironmentRandom.add_button = False
+KeyChestEnvironment.select_outputs = ['health', 'keys_collected', 'food', 'key', 'chest', 'player']

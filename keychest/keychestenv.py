@@ -418,8 +418,12 @@ compute_attrs(KeyChestEnvironment)
 class KeyChestEnvironmentRandom(KeyChestEnvironment):
     """Generate a random map for the KeyChest environment."""
 
-    def __init__(self, width=10, height=10, n_keys=2, n_chests=2, n_food=2, **kwargs):
-        objects_to_fill = ['player', 'lamp_off', 'button']
+    def __init__(self, width=10, height=10, n_keys=2, n_chests=2, n_food=2, add_button=True, add_lamp_off=True, **kwargs):
+        objects_to_fill = ['player']
+        if add_button:
+            objects_to_fill.append('button')
+        if add_lamp_off:
+            objects_to_fill.append('lamp_off')
         objects_to_fill += ['key'] * n_keys
         objects_to_fill += ['chest'] * n_chests
         objects_to_fill += ['food'] * n_food

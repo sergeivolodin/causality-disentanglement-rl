@@ -5,5 +5,6 @@ include '5x5_onlycoord.gin'
 KeyChestEnvironment.flatten_observation = True
 KeyChestEnvironment.return_rgb = False
 KeyChestEnvironment.return_features_xy = False
-
-KeyChestEnvironment.select_outputs = ['health', 'button', 'lamp_on', 'lamp_off', 'player']
+KeyChestEnvironmentRandom.add_lamp_off = False
+KeyChestEnvironmentRandom.add_button = False
+KeyChestEnvironment.select_outputs = ['health', 'player']
