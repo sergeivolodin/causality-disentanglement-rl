@@ -181,7 +181,7 @@ def lagrangian_granular(
                 idx = all_losses_lst.index(config['take_lm_from'])
                 lm = lagrange_multipliers()[idx].detach()
             else:
-                metrics['lagrange_multiplier_' + loss_key] = maybe_item(lm)
+                metrics['lagrange_multiplier/' + loss_key] = maybe_item(lm)
 
             if mode == 'PRIMAL':
                 lm = lm.detach()
