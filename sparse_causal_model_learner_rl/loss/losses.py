@@ -117,7 +117,7 @@ def lagrangian_granular(
     metrics = {}
 
     all_losses_lst = list(sorted(constraints_dict.keys()))
-    assert lagrange_multipliers.n == len(all_losses_lst), (lagrange_multipliers.n, all_losses_lst, len(all_losses_lst))
+    assert lagrange_multipliers.n >= len(all_losses_lst), (lagrange_multipliers.n, all_losses_lst, len(all_losses_lst))
 
     def get_losses():
         result = {}

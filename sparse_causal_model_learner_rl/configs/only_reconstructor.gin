@@ -1,0 +1,28 @@
+# Use two-optimizer setup with a lagrange multiplier
+import sparse_causal_model_learner_rl.loss.losses
+import sparse_causal_model_learner_rl.trainable.lagrange
+import sparse_causal_model_learner_rl.configs.search_helpers.opt_cycle
+import sparse_causal_model_learner_rl.learners.rl_learner
+
+primal/lagrangian_granular.mode = 'PRIMAL'
+dual/lagrangian_granular.mode = 'DUAL'
+
+Config.losses = {
+    'reconstruction': {'fcn': @reconstruction_loss, 'coeff': 1.0},
+}
+
+optr/Optimizer.lr = 1e-3
+optr/Optimizer.name = 'Adam'
+
+Config.optimizers = {
+    'optr': @optr/Optimizer,
+}
+Config.execution = {
+    'optr': ['reconstruction'],
+}
+
+Config.optim_params = {
+    'optr': ['decoder', 'reconstructor'],
+}
+
+reconstruction_loss.disable = False

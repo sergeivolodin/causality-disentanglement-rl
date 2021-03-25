@@ -4,7 +4,7 @@ import sparse_causal_model_learner_rl.trainable.lagrange
 import sparse_causal_model_learner_rl.configs.search_helpers.opt_cycle
 import sparse_causal_model_learner_rl.learners.rl_learner
 
-N_CONSTRAINTS = 13
+N_CONSTRAINTS = 14
 LagrangeMultipliers.n = %N_CONSTRAINTS
 Config.lagrange_multipliers = @LagrangeMultipliers
 
@@ -23,11 +23,12 @@ lagrangian_granular.constraints_dict = {
     },
 
     # don't need reconstructor because it only slows down convergence
-    #'reconstruction': {  # reconstruction loss
-    #    'constraint': %TARGET_REC,
-    #    'controlling': True,
-    #    'required': True,
-    #},
+    'reconstruction': {  # reconstruction loss
+        'constraint': %TARGET_REC,
+        'controlling': True,
+        'required': False,
+        #'take_lm_from': 'fit/obs',
+    },
 
     # FIT LOSS
 

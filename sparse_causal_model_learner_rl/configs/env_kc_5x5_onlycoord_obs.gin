@@ -12,9 +12,9 @@ N_FEATURES = 10 # player 2, health, button x2, lamp x2 + lamp state ->
 # DATA COLLECTION PREFS
 Config.min_collected_sample_ratio = 0.5
 Config.buffer_steps = 100000
-Config.minibatch_size = 500
+Config.minibatch_size = 2000
 Config.n_collectors = 5
-Config.env_steps = 500
+Config.env_steps = 2000
 Config.collect_initial_steps = 100000
 tune_run.resources_per_trial = {'gpu': 0.4, 'cpu': 6}
 Config.collect_every = 1
@@ -63,13 +63,13 @@ decoder/FCCombinedModel.add_input_batchnorm = False
 rec/FCCombinedModel.add_input_batchnorm = False
 
 TARGET_REC = 1e-3
-TARGET_FIT_OBS = 5e-3
+TARGET_FIT_OBS = 0.02
 TARGET_FIT_FEAT = 1e-3
 TARGET_FIT_ADD = 1e-3
 
 BURSTS_TIME_SCALES = {'opt1d': 2, 'opt1m': 1, 'opt1r': 2} 
 
-reconstruction_loss.disable = True
+reconstruction_loss.disable = False
 
 LearnableSwitchSimple.initial_proba = 1.0
 LearnableSwitchSimple.init_identity_up_to = 0
@@ -81,12 +81,9 @@ Config.opt_iterations = {
     'opt1m': 2,
     'opt1r': 2,
 
-    'opt2': 2
+    'opt2': 6
 }
 
-
-Config.rot_pre = None
-Config.rot_post = None
 
 causal_learner_stopping_condition.edges_Mf = 2
 causal_learner_stopping_condition.edges_Ma = 4
