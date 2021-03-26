@@ -40,7 +40,7 @@ ModelDecoder.use_batchnorm = False
 # MODEL
 Config.model = @sparse_model/ManyNetworkCombinedModel
 model_gnn/FCCombinedModel.hidden_sizes = [1024, 1024]  # tuning...
-model_gnn/FCCombinedModel.activation_cls = @Tanh
+model_gnn/FCCombinedModel.activation_cls = @ReLU
 model_gnn/FCCombinedModel.skipconns = None #[False, True, False]
 WithInputSwitch.model_cls = @model_gnn/FCCombinedModel
 sparse_model/ManyNetworkCombinedModel.model_cls = @sparse_model/WithInputSwitch
@@ -63,8 +63,8 @@ decoder/FCCombinedModel.add_input_batchnorm = False
 rec/FCCombinedModel.add_input_batchnorm = False
 
 TARGET_REC = 1e-3
-TARGET_FIT_OBS = 1e-3
-TARGET_FIT_FEAT = 1e-3
+TARGET_FIT_OBS = 0.01
+TARGET_FIT_FEAT = 0.005
 TARGET_FIT_ADD = 1e-3
 
 BURSTS_TIME_SCALES = {'opt1d': 2, 'opt1m': 1, 'opt1r': 2} 

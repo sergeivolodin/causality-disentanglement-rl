@@ -28,8 +28,8 @@ Config.feature_shape = (%N_FEATURES, )
 
 # DECODER
 Config.decoder = @ModelDecoder
-decoder/FCCombinedModel.hidden_sizes = []
-decoder/FCCombinedModel.activation_cls = None
+decoder/FCCombinedModel.hidden_sizes = [1024]
+decoder/FCCombinedModel.activation_cls = @ReLU
 decoder/FCCombinedModel.add_input_batchnorm = False
 decoder/FCCombinedModel.input_reshape = True
 ModelDecoder.model_cls = @decoder/FCCombinedModel
@@ -88,3 +88,5 @@ Config.opt_iterations = {
 causal_learner_stopping_condition.edges_Mf = 2
 causal_learner_stopping_condition.edges_Ma = 4
 
+# does not decrease the obs loss significantly
+#fit_loss_obs_space.divide_by_std = False

@@ -13,6 +13,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
     gin.parse_config_file(args.config)
     env = gym.make('SparseMatrix-v0')
+
+    print("State matrix", env.A)
+    print("Action matrix", env.Aa)
+
     plt.figure()
     plt.subplot(1, 2, 1)
     sns.heatmap(np.abs(env.A), vmin=0)
