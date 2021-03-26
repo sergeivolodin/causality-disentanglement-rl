@@ -83,7 +83,7 @@ class LinearMatrixEncoder(TransformObservation):
         return f"<LinearMatrixEncoder seed={self.seed} env={self.env}>"
 
 
-    def __init__(self, env, seed=42, **kwargs):
+    def __init__(self, env, seed=42, eye_coeff=1.0, **kwargs):
         if isinstance(env, str):
             env = gym.make(env)
         self.seed = seed
@@ -93,7 +93,7 @@ class LinearMatrixEncoder(TransformObservation):
 
         # set the seed using gin scopes
         with np_random_seed(seed=seed):
-            self.linear_encoder = np.random.randn(n_obs, n_obs)
+            self.linear_encoder = np.random.randn(n_obs, n_obs) + eye_coeff * np.eye(n_obs)
 
         def code_obs(obs, A=self.linear_encoder):
             return A @ obs

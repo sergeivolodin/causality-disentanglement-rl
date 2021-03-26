@@ -7,6 +7,7 @@ load_env.time_limit = 10
 load_env.wrappers = [@observation_encoder.LinearMatrixEncoder]
 
 LinearMatrixEncoder.seed = 42
+LinearMatrixEncoder.eye_coeff = 2.0
 
 sparsematrix.random_sparse_matrix.n_add_elements_frac = 0.1
 sparsematrix.random_sparse_matrix.elements = (-1, 1)
