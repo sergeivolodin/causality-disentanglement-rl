@@ -198,6 +198,7 @@ class ManyNetworkCombinedModel(Model):
                  input_batchnorm=False,
                  add_linear_transform=False,
                  add_one=False,
+                 predict_change=False,
                  sparse_do_max_mfma=True, **kwargs):
         super(ManyNetworkCombinedModel, self).__init__(**kwargs)
         assert len(self.feature_shape) == 1, f"Features must be scalar: {self.feature_shape}"
@@ -207,7 +208,7 @@ class ManyNetworkCombinedModel(Model):
         self.add_linear_transform = add_linear_transform
         self.input_batchnorm = input_batchnorm
         self.add_one = add_one
-
+        self.predict_change = predict_change
         self.n_features = self.feature_shape[0]
 
         if self.add_one:
@@ -237,6 +238,11 @@ class ManyNetworkCombinedModel(Model):
             self.bn_post = nn.BatchNorm1d(self.n_features)
             # self.fc_post = nn.Linear(in_features=self.n_features,
             #                          out_features=self.n_features)
+
+    def __repr__(self, *args, **kwargs):
+        orig = super(ManyNetworkCombinedModel, self).__repr__(*args, **kwargs)
+        return f"{orig} predict_change={self.predict_change}"
+
 
     def features_rotate(self, f, detach=False):
         W = self.fc_pre.weight
@@ -378,6 +384,9 @@ class ManyNetworkCombinedModel(Model):
         # sanity check for output
         assert f_t1.shape[1] == n_f_out, f"Must return {n_f_out} features add={additional}: {f_t1.shape}"
         assert f_t1.shape[0] == f_t.shape[0], f"Wrong out batches {f_t.shape} {f_t1.shape}"
+
+        if self.predict_change:
+            f_t1 = f_t1 + f_t
 
         return f_t1
 

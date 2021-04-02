@@ -3,7 +3,7 @@
 # the environment
 # add env config separately!
 #include '../../keychest/config/5x5_onlycoord.gin'
-include 'with_secondary_stage_features.gin'
+#include 'with_secondary_stage_features.gin'
 include 'remote_collect.gin'
 #include 'with_additional_features.gin'
 
@@ -13,10 +13,10 @@ N_FEATURES = 11 # player 2, health, keys, key x2, chest x2 food x2 ->
 Config.min_collected_sample_ratio = 0.5
 Config.buffer_steps = 100000
 Config.minibatch_size = 2000
-Config.n_collectors = 5
+Config.n_collectors = 4
 Config.env_steps = 2000
 Config.collect_initial_steps = 100000
-tune_run.resources_per_trial = {'gpu': 0.4, 'cpu': 6}
+tune_run.resources_per_trial = {'gpu': 0.4, 'cpu': 4}
 Config.collect_every = 1
 Config.batch_training = False
 Config.shuffle = False
@@ -28,7 +28,7 @@ Config.feature_shape = (%N_FEATURES, )
 
 # DECODER
 Config.decoder = @ModelDecoder
-decoder/FCCombinedModel.hidden_sizes = [1024]
+decoder/FCCombinedModel.hidden_sizes = [1024, 1024]
 decoder/FCCombinedModel.activation_cls = @ReLU
 decoder/FCCombinedModel.add_input_batchnorm = False
 decoder/FCCombinedModel.input_reshape = True
@@ -39,14 +39,15 @@ ModelDecoder.use_batchnorm = False
 
 # MODEL
 Config.model = @sparse_model/ManyNetworkCombinedModel
-model_gnn/FCCombinedModel.hidden_sizes = [1024, 1024]  # tuning...
-model_gnn/FCCombinedModel.activation_cls = @Tanh
+model_gnn/FCCombinedModel.hidden_sizes = [1024, 1024, 1024]  # tuning...
+model_gnn/FCCombinedModel.activation_cls = @ReLU
 model_gnn/FCCombinedModel.skipconns = None #[False, True, False]
 WithInputSwitch.model_cls = @model_gnn/FCCombinedModel
 sparse_model/ManyNetworkCombinedModel.model_cls = @sparse_model/WithInputSwitch
 ManyNetworkCombinedModel.sparse_do_max = False
 ManyNetworkCombinedModel.sparse_do_max_mfma = False
 ManyNetworkCombinedModel.add_linear_transform = False
+ManyNetworkCombinedModel.predict_change = True
 sparse_model/WithInputSwitch.enable_switch = True
 LearnableSwitchSimple.init_identity_up_to = %N_FEATURES
 
@@ -54,7 +55,7 @@ LearnableSwitchSimple.init_identity_up_to = %N_FEATURES
 Config.reconstructor = @ModelReconstructor
 ModelReconstructor.model_cls = @rec/FCCombinedModel
 ModelReconstructor.unflatten = True
-rec/FCCombinedModel.hidden_sizes = [256, 128]
+rec/FCCombinedModel.hidden_sizes = [256, 128, 128]
 rec/FCCombinedModel.activation_cls = @ReLU
 rec/FCCombinedModel.input_reshape = True
 
