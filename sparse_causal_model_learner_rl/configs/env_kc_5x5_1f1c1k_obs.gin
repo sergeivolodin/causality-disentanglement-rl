@@ -28,8 +28,8 @@ Config.feature_shape = (%N_FEATURES, )
 
 # DECODER
 Config.decoder = @ModelDecoder
-decoder/FCCombinedModel.hidden_sizes = [1024, 1024]
-decoder/FCCombinedModel.activation_cls = @ReLU
+decoder/FCCombinedModel.hidden_sizes = [1024]
+decoder/FCCombinedModel.activation_cls = @Tanh
 decoder/FCCombinedModel.add_input_batchnorm = False
 decoder/FCCombinedModel.input_reshape = True
 ModelDecoder.model_cls = @decoder/FCCombinedModel
@@ -39,8 +39,8 @@ ModelDecoder.use_batchnorm = False
 
 # MODEL
 Config.model = @sparse_model/ManyNetworkCombinedModel
-model_gnn/FCCombinedModel.hidden_sizes = [1024, 1024, 1024]  # tuning...
-model_gnn/FCCombinedModel.activation_cls = @ReLU
+model_gnn/FCCombinedModel.hidden_sizes = [1024, 1024]  # tuning...
+model_gnn/FCCombinedModel.activation_cls = @Tanh
 model_gnn/FCCombinedModel.skipconns = None #[False, True, False]
 WithInputSwitch.model_cls = @model_gnn/FCCombinedModel
 sparse_model/ManyNetworkCombinedModel.model_cls = @sparse_model/WithInputSwitch
@@ -55,8 +55,8 @@ LearnableSwitchSimple.init_identity_up_to = %N_FEATURES
 Config.reconstructor = @ModelReconstructor
 ModelReconstructor.model_cls = @rec/FCCombinedModel
 ModelReconstructor.unflatten = True
-rec/FCCombinedModel.hidden_sizes = [256, 128, 128]
-rec/FCCombinedModel.activation_cls = @ReLU
+rec/FCCombinedModel.hidden_sizes = [256, 128]
+rec/FCCombinedModel.activation_cls = @Tanh
 rec/FCCombinedModel.input_reshape = True
 
 model_gnn/FCCombinedModel.add_input_batchnorm = False
@@ -64,8 +64,8 @@ decoder/FCCombinedModel.add_input_batchnorm = False
 rec/FCCombinedModel.add_input_batchnorm = False
 
 TARGET_REC = 1e-3
-TARGET_FIT_OBS = 0.1
-TARGET_FIT_FEAT = 0.1
+TARGET_FIT_OBS = 1.5 # 0.1
+TARGET_FIT_FEAT = 0.05 # 0.1
 TARGET_FIT_ADD = 1e-3
 
 BURSTS_TIME_SCALES = {'opt1d': 2, 'opt1m': 1, 'opt1r': 2} 
