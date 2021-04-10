@@ -37,14 +37,18 @@ class PolyAct(nn.Module):
 
         if self.orig_act is not None:
             x = self.orig_act(x)
-        x = x.view(x.shape[0], x.shape[1], 1)
-        x = x.tile((1, 1, self.max_degree + 1))
-        powers = torch.arange(start=0, end=self.max_degree + 1, dtype=x.dtype, device=x.device)
-        powers = powers.view(1, 1, self.max_degree + 1)
-        powers = powers.tile((x.shape[0], x.shape[1], 1))
+        #x = x.view(x.shape[0], x.shape[1], 1)
+        #x = x.tile((1, 1, self.max_degree + 1))
+        #powers = torch.arange(start=0, end=self.max_degree + 1, dtype=x.dtype, device=x.device)
+        #powers = powers.view(1, 1, self.max_degree + 1)
+        #powers = powers.tile((x.shape[0], x.shape[1], 1))
 
-        x_powers = torch.pow(x.flatten(), powers.flatten()).view(*x.shape)
+        #x_powers = torch.pow(x.flatten(), powers.flatten()).view(*x.shape)
 
-        out = torch.einsum('bfd,df->bf', x_powers, self.a)
+        #out = torch.einsum('bfd,df->bf', x_powers, self.a)
+
+        assert self.max_degree == 3
+        out = x * self.a[1, :] + x ** 2 * self.a[2, :] + x ** 3 * self.a[3, :] + self.a[0, :]
+
         out = out.view(*xshape)
         return out

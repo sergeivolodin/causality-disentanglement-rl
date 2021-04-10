@@ -14,9 +14,9 @@ N_FEATURES = 11 # player 2, health, keys, key x2, chest x2 food x2 ->
 # DATA COLLECTION PREFS
 Config.min_collected_sample_ratio = 0.5
 Config.buffer_steps = 100000
-Config.minibatch_size = 1000
+Config.minibatch_size = 2000
 Config.n_collectors = 4
-Config.env_steps = 1000
+Config.env_steps = 2000
 Config.collect_initial_steps = 100000
 tune_run.resources_per_trial = {'gpu': 0.4, 'cpu': 4}
 Config.collect_every = 1
@@ -41,8 +41,8 @@ ModelDecoder.use_batchnorm = False
 
 # MODEL
 Config.model = @sparse_model/ManyNetworkCombinedModel
-model_gnn/FCCombinedModel.hidden_sizes = [64, 64]  # tuning...
-model_gnn/FCCombinedModel.activation_cls = [@Tanh, @Tanh, @PolyAct]
+model_gnn/FCCombinedModel.hidden_sizes = [1024, 1024]  # tuning...
+model_gnn/FCCombinedModel.activation_cls = [@PolyAct, @PolyAct, @PolyAct]
 PolyAct.orig_act_cls = @Tanh
 model_gnn/FCCombinedModel.layers = [@CombinedQuadraticLayer, @CombinedLinearLayer, @CombinedLinearLayer]
 model_gnn/FCCombinedModel.skipconns = None #[False, True, False]
@@ -59,9 +59,9 @@ LearnableSwitchSimple.init_identity_up_to = %N_FEATURES
 Config.reconstructor = @ModelReconstructor
 ModelReconstructor.model_cls = @rec/FCCombinedModel
 ModelReconstructor.unflatten = True
-rec/FCCombinedModel.hidden_sizes = [128, 64]
+rec/FCCombinedModel.hidden_sizes = [256, 128]
 rec/FCCombinedModel.layers = @CombinedLinearLayer # @Quadratic #[@CombinedQuadraticLayer, @CombinedQuadraticLayer, @CombinedQuadraticLayer]
-rec/FCCombinedModel.activation_cls = [@Tanh, @PolyAct, @PolyAct]
+rec/FCCombinedModel.activation_cls = [@PolyAct, @PolyAct, @PolyAct]
 rec/FCCombinedModel.input_reshape = True
 PolyAct.orig_act_cls = @Tanh
 
