@@ -20,7 +20,7 @@ class Quadratic(nn.Module):
     def forward(self, x):
         out = torch.einsum('bf,gf->bg', x, self.w)
         out += torch.einsum('bf,be,gfe->bg', x, x, self.W)
-        out += self.b
+        out += self.b.view(1, self.b.shape[0])
         return out
     
     def __repr__(self):

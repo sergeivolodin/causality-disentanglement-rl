@@ -65,28 +65,25 @@ class CombinedLinearLayer(nn.Module):
 
 
 @gin.configurable
-class CombinedQuadraticLayer(nn.Module):
+class CombinedQuadraticLayer(CombinedLinearLayer):
     """Compute many quadratic layers of a single shape in a single pass.
 
     Input shape: [batch_dim, in_features, n_models]
     Output shape: [batch_dim, out_features, n_models]
 
-    Equation (for one model): y = Wx+b
+    Equation (for one model): y = x^TAx+Wx+b
     """
 
-    def __init__(self, in_features, out_features, n_models):
-        super(CombinedLinearLayer, self).__init__()
-        self.in_features = in_features
-        self.out_features = out_features
-        self.n_models = n_models
-        self.weight = nn.Parameter(torch.zeros(self.out_features,
-                                               self.in_features,
-                                               self.n_models))
-        self.bias = nn.Parameter(torch.zeros(self.out_features, self.n_models))
+    def __init__(self, **kwargs):
+        super(CombinedQuadraticLayer, self).__init__(**kwargs)
+        self.qweight = nn.Parameter(torch.zeros(self.out_features,
+                                                self.in_features,
+                                                self.in_features,
+                                                self.n_models))
         self.reset_parameters()
 
     def __repr__(self):
-        return f"CombinedLinearLayer(inf={self.in_features}, outf={self.out_features}, n_models={self.n_models})"
+        return f"CombinedQuadraticLayer(inf={self.in_features}, outf={self.out_features}, n_models={self.n_models})"
 
     def weight_by_model(self, idx):
         return self.weight[:, :, idx]
@@ -94,22 +91,18 @@ class CombinedQuadraticLayer(nn.Module):
     def bias_by_model(self, idx):
         return self.bias[:, idx]
 
-    def reset_parameters(self, apply_fcn=nn.Linear.reset_parameters):
-        class Resetter(nn.Module):
-            def __init__(self, w, b):
-                super(Resetter, self).__init__()
-                self.weight = w
-                self.bias = b
+    def qweight_by_model(self, idx):
+        return self.qweight[:, :, :, idx]
 
-        for m in range(self.n_models):
-            obj = Resetter(self.weight_by_model(m),
-                           self.bias_by_model(m))
-            apply_fcn(obj)
+    def reset_parameters(self, apply_fcn=nn.Linear.reset_parameters, qscaler=0.01):
+        super(CombinedQuadraticLayer, self).reset_parameters(apply_fcn=apply_fcn)
+        if hasattr(self, 'qweight'):
+            self.qweight.data = torch.randn(self.out_features, self.in_features, self.in_features, self.n_models) * qscaler
 
     def forward(self, x):
-        w, b = self.weight, self.bias
-        x = torch.einsum('bim,oim->bom', x, w) + b.view(1, *b.shape)
-        return x
+        out = super(CombinedQuadraticLayer, self).forward(x)
+        out += torch.einsum('bim,bjm,oijm->bom', x, x, self.qweight)
+        return out
 
 
 @gin.configurable
