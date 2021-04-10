@@ -45,7 +45,6 @@ class PolyAct(nn.Module):
 
         x_powers = torch.pow(x.flatten(), powers.flatten()).view(*x.shape)
 
-        p_with_coeff = torch.einsum('bfd,df->bfd', x_powers, self.a)
-        out = p_with_coeff.sum(dim=2)
+        out = torch.einsum('bfd,df->bf', x_powers, self.a)
         out = out.view(*xshape)
         return out

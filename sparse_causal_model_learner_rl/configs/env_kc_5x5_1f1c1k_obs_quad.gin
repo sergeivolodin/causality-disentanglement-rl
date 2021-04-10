@@ -14,9 +14,9 @@ N_FEATURES = 11 # player 2, health, keys, key x2, chest x2 food x2 ->
 # DATA COLLECTION PREFS
 Config.min_collected_sample_ratio = 0.5
 Config.buffer_steps = 100000
-Config.minibatch_size = 2000
+Config.minibatch_size = 1000
 Config.n_collectors = 4
-Config.env_steps = 2000
+Config.env_steps = 1000
 Config.collect_initial_steps = 100000
 tune_run.resources_per_trial = {'gpu': 0.4, 'cpu': 4}
 Config.collect_every = 1
@@ -42,9 +42,9 @@ ModelDecoder.use_batchnorm = False
 # MODEL
 Config.model = @sparse_model/ManyNetworkCombinedModel
 model_gnn/FCCombinedModel.hidden_sizes = [64, 64]  # tuning...
-model_gnn/FCCombinedModel.activation_cls = [@PolyAct, @PolyAct, @PolyAct]
-PolyAct.orig_act_cls = None # @Tanh
-model_gnn/FCCombinedModel.layers = @CombinedQuadraticLayer
+model_gnn/FCCombinedModel.activation_cls = [@Tanh, @Tanh, @PolyAct]
+PolyAct.orig_act_cls = @Tanh
+model_gnn/FCCombinedModel.layers = [@CombinedQuadraticLayer, @CombinedLinearLayer, @CombinedLinearLayer]
 model_gnn/FCCombinedModel.skipconns = None #[False, True, False]
 WithInputSwitch.model_cls = @model_gnn/FCCombinedModel
 sparse_model/ManyNetworkCombinedModel.model_cls = @sparse_model/WithInputSwitch
@@ -57,13 +57,13 @@ LearnableSwitchSimple.init_identity_up_to = %N_FEATURES
 
 # RECONSTRUCTOR
 Config.reconstructor = @ModelReconstructor
-ModelReconstructor.model_cls = @rec/FCNet
+ModelReconstructor.model_cls = @rec/FCCombinedModel
 ModelReconstructor.unflatten = True
-rec/FCNet.hidden_sizes = [256, 256]
-rec/FCNet.layers = @Quadratic #[@CombinedQuadraticLayer, @CombinedQuadraticLayer, @CombinedQuadraticLayer]
-rec/FCNet.activation_cls = [@PolyAct, @PolyAct, @PolyAct]
+rec/FCCombinedModel.hidden_sizes = [128, 64]
+rec/FCCombinedModel.layers = @CombinedLinearLayer # @Quadratic #[@CombinedQuadraticLayer, @CombinedQuadraticLayer, @CombinedQuadraticLayer]
+rec/FCCombinedModel.activation_cls = [@Tanh, @PolyAct, @PolyAct]
 rec/FCCombinedModel.input_reshape = True
-PolyAct.orig_act_cls = None # @Tanh
+PolyAct.orig_act_cls = @Tanh
 
 model_gnn/FCCombinedModel.add_input_batchnorm = False
 decoder/FCCombinedModel.add_input_batchnorm = False
