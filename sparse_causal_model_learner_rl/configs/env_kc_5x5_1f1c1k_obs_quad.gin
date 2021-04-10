@@ -43,7 +43,7 @@ ModelDecoder.use_batchnorm = False
 Config.model = @sparse_model/ManyNetworkCombinedModel
 model_gnn/FCCombinedModel.hidden_sizes = [64, 64]  # tuning...
 model_gnn/FCCombinedModel.activation_cls = [@PolyAct, @PolyAct, @PolyAct]
-PolyAct.orig_act_cls = @Tanh
+PolyAct.orig_act_cls = None # @Tanh
 model_gnn/FCCombinedModel.layers = @CombinedQuadraticLayer
 model_gnn/FCCombinedModel.skipconns = None #[False, True, False]
 WithInputSwitch.model_cls = @model_gnn/FCCombinedModel
@@ -63,7 +63,7 @@ rec/FCNet.hidden_sizes = [256, 256]
 rec/FCNet.layers = @Quadratic #[@CombinedQuadraticLayer, @CombinedQuadraticLayer, @CombinedQuadraticLayer]
 rec/FCNet.activation_cls = [@PolyAct, @PolyAct, @PolyAct]
 rec/FCCombinedModel.input_reshape = True
-PolyAct.orig_act_cls = @Tanh
+PolyAct.orig_act_cls = None # @Tanh
 
 model_gnn/FCCombinedModel.add_input_batchnorm = False
 decoder/FCCombinedModel.add_input_batchnorm = False

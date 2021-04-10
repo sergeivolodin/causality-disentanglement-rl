@@ -21,7 +21,10 @@ class PolyAct(nn.Module):
         if isinstance(features, list) or isinstance(features, tuple):
             features = np.prod(features)
         self.features = features
-        self.orig_act = orig_act_cls()
+        if orig_act_cls is None:
+            self.orig_act = None
+        else:
+            self.orig_act = orig_act_cls()
         init = np.zeros((max_degree + 1, features), dtype=np.float32)
         init[1, :] = 1.0
         init[2, :] = 0.001
@@ -32,7 +35,8 @@ class PolyAct(nn.Module):
         x = x.flatten(start_dim=1)
         assert x.shape[1] == self.features, (x.shape, self.features)
 
-        x = self.orig_act(x)
+        if self.orig_act is not None:
+            x = self.orig_act(x)
         x = x.view(x.shape[0], x.shape[1], 1)
         x = x.tile((1, 1, self.max_degree + 1))
         powers = torch.arange(start=0, end=self.max_degree + 1, dtype=x.dtype, device=x.device)
