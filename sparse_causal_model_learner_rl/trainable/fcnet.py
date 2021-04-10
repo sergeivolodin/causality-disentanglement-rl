@@ -9,6 +9,14 @@ Tanh = gin.external_configurable(nn.Tanh)
 Sigmoid = gin.external_configurable(nn.Sigmoid)
 
 
+def build_activation(cls, features=None):
+    """Build an activation function with parameters."""
+    if hasattr(cls, 'GIVE_N_FEATURES'):
+        return cls(features=features)
+    else:
+        return cls()
+
+
 @gin.configurable
 class Scaler(nn.Module):
     """Scale output with learnable weights."""
@@ -43,6 +51,7 @@ class IdentityNet(nn.Module):
 class FCNet(nn.Module):
     """Fully-connected neural network."""
     def __init__(self, input_shape, output_shape, hidden_sizes, activation_cls,
+                 layers=nn.Linear,
                  add_scaler=False, add_input_batchnorm=False):
         super().__init__()
 
@@ -52,11 +61,14 @@ class FCNet(nn.Module):
         self.input_dim = input_shape[0]
         self.output_dim = output_shape[0]
         self.hidden_sizes = hidden_sizes
+
+        self.act_dims = self.hidden_sizes + [self.output_dim]
         if callable(activation_cls):
-            self.activation = [activation_cls()] * len(self.hidden_sizes) + [None]
+            self.activation = [build_activation(activation_cls, features=f) for f in self.hidden_sizes] + [None]
         elif isinstance(activation_cls, list):
-            self.activation = [act_cls() if act_cls is not None else None
-                               for act_cls in activation_cls]
+            self.activation = [build_activation(act_cls, features=f)
+                               if act_cls is not None else None
+                               for f, act_cls in zip(self.act_dims, activation_cls)]
         elif activation_cls is None:
             self.activation = [None] * (len(self.hidden_sizes) + 1)
         else:
@@ -64,10 +76,19 @@ class FCNet(nn.Module):
 
         assert len(self.activation) == len(self.hidden_sizes) + 1, (self.activation,
                                                                     self.hidden_sizes)
+
+        if callable(layers):
+            layers = [layers] * (len(self.dims) - 1)
+        elif isinstance(layers, list):
+            assert len(layers) == len(self.dims) - 1, (len(layers), self.dims - 1)
+        else:
+            raise NotImplementedError
+        self.layers = layers
+
         self.dims = [self.input_dim] + self.hidden_sizes + [self.output_dim]
         self.fc = []
         for i in range(1, len(self.dims)):
-            self.fc.append(nn.Linear(in_features=self.dims[i - 1], out_features=self.dims[i]))
+            self.fc.append(self.layers[i - 1](in_features=self.dims[i - 1], out_features=self.dims[i]))
 
             # for torch to keep track of variables
             setattr(self, f'fc%02d' % i, self.fc[-1])

@@ -3,6 +3,7 @@ import numpy as np
 import torch
 from torch import nn
 import gin
+from sparse_causal_model_learner_rl.trainable.fcnet import build_activation
 
 
 @gin.configurable
@@ -109,6 +110,7 @@ class CombinedQuadraticLayer(CombinedLinearLayer):
 class FCCombinedModel(AbstractCombinedModel):
     def __init__(self, hidden_sizes, activation_cls=nn.ReLU,
                  input_reshape=False,
+                 layers=CombinedLinearLayer,
                  skipconns=None,
                  add_input_batchnorm=False,
                  **kwargs):
@@ -122,11 +124,14 @@ class FCCombinedModel(AbstractCombinedModel):
 
         super(FCCombinedModel, self).__init__(**kwargs)
 
+        self.act_dims = self.hidden_sizes + [self.output_dim]
         if callable(activation_cls):
-            self.activation = [activation_cls()] * len(self.hidden_sizes) + [None]
+            self.activation = [build_activation(activation_cls, features=f)
+                              for f in self.act_dims[:-1]] + [None]
         elif isinstance(activation_cls, list):
-            self.activation = [act_cls() if act_cls is not None else None
-                               for act_cls in activation_cls]
+            self.activation = [build_activation(act_cls, features=f)
+                               if act_cls is not None else None
+                               for f, act_cls in zip(self.act_dims, activation_cls)]
         elif activation_cls is None:
             self.activation = [None] * (len(self.hidden_sizes) + 1)
         else:
@@ -142,10 +147,22 @@ class FCCombinedModel(AbstractCombinedModel):
         self.dims = [self.input_dim] + self.hidden_sizes + [self.output_dim]
         print(self.dims, self.n_models)
         self.fc = []
+
+        if callable(layers):
+            layers = [layers] * (len(self.dims) - 1)
+
+        if isinstance(layers, list):
+            assert len(layers) == len(self.dims) - 1, (len(layers), len(self.dims))
+        else:
+            raise NotImplementedError
+
+        self.layers = layers
+
         for i in range(1, len(self.dims)):
-            self.fc.append(
-                CombinedLinearLayer(in_features=self.dims[i - 1], out_features=self.dims[i],
-                                    n_models=self.n_models))
+            self.fc.append(self.layers[i - 1](
+                in_features=self.dims[i - 1],
+                out_features=self.dims[i],
+                n_models=self.n_models))
 
             # for torch to keep track of variables
             setattr(self, f'fc%02d' % i, self.fc[-1])
@@ -154,7 +171,7 @@ class FCCombinedModel(AbstractCombinedModel):
 
     def __repr__(self, *args, **kwargs):
         orig = super(FCCombinedModel, self).__repr__(*args, **kwargs)
-        return f"{orig} input_dim={self.input_dim} output_dim={self.output_dim} skips={self.skipconns} act={self.activation} hidden_sizes={self.hidden_sizes}"
+        return f"{orig} input_dim={self.input_dim} output_dim={self.output_dim} skips={self.skipconns} act={self.activation} hidden_sizes={self.hidden_sizes} layers={self.layers}"
 
     def forward(self, x):
         if self.input_reshape:
