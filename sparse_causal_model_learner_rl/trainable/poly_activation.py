@@ -25,7 +25,13 @@ class PolyAct(nn.Module):
 
     def forward(self, x):
         x = self.orig_act(x)
-        powers = [torch.pow(x, i) for i in range(self.max_degree + 1)]
-#         p_with_coeff = [torch.einsum('f,bf->bf', self.a[i, :], powers[i]) for i in range(self.max_degree + 1)]
-        p_with_coeff = [powers[i] * self.a[i, :] for i in range(self.max_degree + 1)]
-        return sum(p_with_coeff)
+        x = x.view(x.shape[0], x.shape[1], 1)
+        x = x.tile((1, 1, self.max_degree + 1))
+        powers = torch.arange(start=0, end=self.max_degree + 1, dtype=x.dtype)
+        powers = powers.view(1, 1, self.max_degree + 1)
+        powers = powers.tile((x.shape[0], x.shape[1], 1))
+
+        x_powers = torch.pow(x.flatten(), powers.flatten()).view(*x.shape)
+
+        p_with_coeff = torch.einsum('bfd,df->bfd', x_powers, self.a)
+        return p_with_coeff.sum(dim=2)

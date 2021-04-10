@@ -19,7 +19,7 @@ class Quadratic(nn.Module):
         self.b = nn.Parameter(torch.from_numpy(binit), requires_grad=True)
     def forward(self, x):
         out = torch.einsum('bf,gf->bg', x, self.w)
-        out += torch.einsum('bf, be, gfe -> bg', x, x, self.W)
+        out += torch.einsum('bf,be,gfe->bg', x, x, self.W)
         out += self.b
         return out
     
