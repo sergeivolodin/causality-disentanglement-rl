@@ -61,7 +61,7 @@ ModelReconstructor.model_cls = @rec/FCCombinedModel
 ModelReconstructor.unflatten = True
 rec/FCCombinedModel.hidden_sizes = [256, 128]
 rec/FCCombinedModel.layers = @CombinedLinearLayer # @Quadratic #[@CombinedQuadraticLayer, @CombinedQuadraticLayer, @CombinedQuadraticLayer]
-rec/FCCombinedModel.activation_cls = [@PolyAct, @PolyAct, @PolyAct]
+rec/FCCombinedModel.activation_cls = [@Tanh, @PolyAct, @PolyAct]
 rec/FCCombinedModel.input_reshape = True
 PolyAct.orig_act_cls = @Tanh
 
