@@ -78,6 +78,10 @@ class FCNet(nn.Module):
         assert len(self.activation) == len(self.hidden_sizes) + 1, (self.activation,
                                                                     self.hidden_sizes)
 
+        for i, act in enumerate(self.activation):
+            if act is not None:
+                setattr(self, 'act%02d' % (i + 1), act)
+
         self.dims = [self.input_dim] + self.hidden_sizes + [self.output_dim]
         if callable(layers):
             layers = [layers] * (len(self.dims) - 1)

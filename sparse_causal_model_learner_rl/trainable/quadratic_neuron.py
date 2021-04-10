@@ -1,8 +1,10 @@
 import numpy as np
 import torch
 from torch import nn
+import gin
 
 
+@gin.configurable
 class Quadratic(nn.Module):
     """Quadratic layer. y_i=x^TW_ix + w_i^Tx + b_i."""
     def __init__(self, in_features=None, out_features=None):

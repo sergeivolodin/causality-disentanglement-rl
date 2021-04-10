@@ -17,7 +17,7 @@ Config.buffer_steps = 100000
 Config.minibatch_size = 2000
 Config.n_collectors = 4
 Config.env_steps = 2000
-Config.collect_initial_steps = 5000 # 100000
+Config.collect_initial_steps = 100000
 tune_run.resources_per_trial = {'gpu': 0.4, 'cpu': 4}
 Config.collect_every = 1
 Config.batch_training = False
@@ -41,7 +41,7 @@ ModelDecoder.use_batchnorm = False
 
 # MODEL
 Config.model = @sparse_model/ManyNetworkCombinedModel
-model_gnn/FCCombinedModel.hidden_sizes = [256, 256]  # tuning...
+model_gnn/FCCombinedModel.hidden_sizes = [64, 64]  # tuning...
 model_gnn/FCCombinedModel.activation_cls = [@PolyAct, @PolyAct, @PolyAct]
 PolyAct.orig_act_cls = @Tanh
 model_gnn/FCCombinedModel.layers = @CombinedQuadraticLayer
@@ -57,11 +57,11 @@ LearnableSwitchSimple.init_identity_up_to = %N_FEATURES
 
 # RECONSTRUCTOR
 Config.reconstructor = @ModelReconstructor
-ModelReconstructor.model_cls = @rec/FCCombinedModel
+ModelReconstructor.model_cls = @rec/FCNet
 ModelReconstructor.unflatten = True
-rec/FCCombinedModel.hidden_sizes = [256, 128]
-rec/FCCombinedModel.layers = [@CombinedQuadraticLayer, @CombinedLinearLayer, @CombinedQuadraticLayer]
-rec/FCCombinedModel.activation_cls = [@PolyAct, @PolyAct, @PolyAct]
+rec/FCNet.hidden_sizes = [256, 256]
+rec/FCNet.layers = @Quadratic #[@CombinedQuadraticLayer, @CombinedQuadraticLayer, @CombinedQuadraticLayer]
+rec/FCNet.activation_cls = [@PolyAct, @PolyAct, @PolyAct]
 rec/FCCombinedModel.input_reshape = True
 PolyAct.orig_act_cls = @Tanh
 

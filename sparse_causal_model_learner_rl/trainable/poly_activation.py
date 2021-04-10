@@ -43,5 +43,5 @@ class PolyAct(nn.Module):
 
         p_with_coeff = torch.einsum('bfd,df->bfd', x_powers, self.a)
         out = p_with_coeff.sum(dim=2)
-        out = out.view(*x.shape)
+        out = out.view(*xshape)
         return out

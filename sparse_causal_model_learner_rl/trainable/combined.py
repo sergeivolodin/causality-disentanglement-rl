@@ -139,7 +139,7 @@ class FCCombinedModel(AbstractCombinedModel):
 
         for i, act in enumerate(self.activation):
             if act is not None:
-                setattr(self, 'act%d' % (i + 1), act)
+                setattr(self, 'act%02d' % (i + 1), act)
 
         if skipconns is None:
             skipconns = [False] * len(self.activation)
