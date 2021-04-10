@@ -20,7 +20,7 @@ tune_run.resources_per_trial = {'gpu': 0.4, 'cpu': 4}
 Config.collect_every = 1
 Config.batch_training = False
 Config.shuffle = False
-Config.train_steps = 1000000
+Config.train_steps = 10000000
 
 
 # FEATURE SPACE
@@ -65,7 +65,7 @@ rec/FCCombinedModel.add_input_batchnorm = False
 
 TARGET_REC = 1e-3
 TARGET_FIT_OBS = 1.5 # 0.1
-TARGET_FIT_FEAT = 0.05 # 0.1
+TARGET_FIT_FEAT = 0.001 # 0.1
 TARGET_FIT_ADD = 1e-3
 
 BURSTS_TIME_SCALES = {'opt1d': 2, 'opt1m': 1, 'opt1r': 2} 
