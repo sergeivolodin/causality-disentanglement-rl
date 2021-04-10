@@ -24,7 +24,7 @@ stable-baselines==2.10.1
 tabulate==0.8.7
 tensorboardx==2.1
 tensorflow==1.15.4
-torch==1.4.0
+torch==1.8.1
 tqdm==4.50.2
 imageio==2.9.0
 gputil==1.4.0
