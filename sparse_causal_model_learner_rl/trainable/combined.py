@@ -126,16 +126,20 @@ class FCCombinedModel(AbstractCombinedModel):
 
         self.act_dims = self.hidden_sizes + [self.output_dim]
         if callable(activation_cls):
-            self.activation = [build_activation(activation_cls, features=f)
+            self.activation = [build_activation(activation_cls, features=f * self.n_models)
                               for f in self.act_dims[:-1]] + [None]
         elif isinstance(activation_cls, list):
-            self.activation = [build_activation(act_cls, features=f)
+            self.activation = [build_activation(act_cls, features=f * self.n_models)
                                if act_cls is not None else None
                                for f, act_cls in zip(self.act_dims, activation_cls)]
         elif activation_cls is None:
             self.activation = [None] * (len(self.hidden_sizes) + 1)
         else:
             raise NotImplementedError
+
+        for i, act in enumerate(self.activation):
+            if act is not None:
+                setattr(self, 'act%d' % (i + 1), act)
 
         if skipconns is None:
             skipconns = [False] * len(self.activation)

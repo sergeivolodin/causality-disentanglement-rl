@@ -7,6 +7,7 @@ ReLU = gin.external_configurable(nn.ReLU)
 LeakyReLU = gin.external_configurable(nn.LeakyReLU)
 Tanh = gin.external_configurable(nn.Tanh)
 Sigmoid = gin.external_configurable(nn.Sigmoid)
+Linear = gin.external_configurable(nn.Linear)
 
 
 def build_activation(cls, features=None):
@@ -77,6 +78,7 @@ class FCNet(nn.Module):
         assert len(self.activation) == len(self.hidden_sizes) + 1, (self.activation,
                                                                     self.hidden_sizes)
 
+        self.dims = [self.input_dim] + self.hidden_sizes + [self.output_dim]
         if callable(layers):
             layers = [layers] * (len(self.dims) - 1)
         elif isinstance(layers, list):
@@ -85,7 +87,6 @@ class FCNet(nn.Module):
             raise NotImplementedError
         self.layers = layers
 
-        self.dims = [self.input_dim] + self.hidden_sizes + [self.output_dim]
         self.fc = []
         for i in range(1, len(self.dims)):
             self.fc.append(self.layers[i - 1](in_features=self.dims[i - 1], out_features=self.dims[i]))

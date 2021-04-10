@@ -57,11 +57,12 @@ LearnableSwitchSimple.init_identity_up_to = %N_FEATURES
 
 # RECONSTRUCTOR
 Config.reconstructor = @ModelReconstructor
-ModelReconstructor.model_cls = @rec/FCNet
+ModelReconstructor.model_cls = @rec/FCCombinedModel
 ModelReconstructor.unflatten = True
-rec/FCNet.hidden_sizes = [256, 128]
-rec/FCNet.layers = @CombinedQuadraticLayer
-rec/FCNet.activation_cls = [@PolyAct, @PolyAct, @PolyAct]
+rec/FCCombinedModel.hidden_sizes = [256, 128]
+rec/FCCombinedModel.layers = [@CombinedQuadraticLayer, @CombinedLinearLayer, @CombinedQuadraticLayer]
+rec/FCCombinedModel.activation_cls = [@PolyAct, @PolyAct, @PolyAct]
+rec/FCCombinedModel.input_reshape = True
 PolyAct.orig_act_cls = @Tanh
 
 model_gnn/FCCombinedModel.add_input_batchnorm = False

@@ -18,6 +18,8 @@ class PolyAct(nn.Module):
         super(PolyAct, self).__init__()
         # order: constant, x, x^2, ...
         self.max_degree = max_degree
+        if isinstance(features, list) or isinstance(features, tuple):
+            features = np.prod(features)
         self.features = features
         self.orig_act = orig_act_cls()
         init = np.zeros((max_degree + 1, features), dtype=np.float32)
@@ -26,14 +28,20 @@ class PolyAct(nn.Module):
         self.a = nn.Parameter(torch.from_numpy(init), requires_grad=True)
 
     def forward(self, x):
+        xshape = x.shape
+        x = x.flatten(start_dim=1)
+        assert x.shape[1] == self.features, (x.shape, self.features)
+
         x = self.orig_act(x)
         x = x.view(x.shape[0], x.shape[1], 1)
         x = x.tile((1, 1, self.max_degree + 1))
-        powers = torch.arange(start=0, end=self.max_degree + 1, dtype=x.dtype)
+        powers = torch.arange(start=0, end=self.max_degree + 1, dtype=x.dtype, device=x.device)
         powers = powers.view(1, 1, self.max_degree + 1)
         powers = powers.tile((x.shape[0], x.shape[1], 1))
 
         x_powers = torch.pow(x.flatten(), powers.flatten()).view(*x.shape)
 
         p_with_coeff = torch.einsum('bfd,df->bfd', x_powers, self.a)
-        return p_with_coeff.sum(dim=2)
+        out = p_with_coeff.sum(dim=2)
+        out = out.view(*x.shape)
+        return out
