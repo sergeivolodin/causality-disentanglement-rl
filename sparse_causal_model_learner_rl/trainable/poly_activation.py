@@ -1,8 +1,10 @@
 import torch
 from torch import nn
 import numpy as np
+import gin
 
 
+@gin.configurable
 class PolyAct(nn.Module):
     """Polynomial activation function. y = poly(x, w), w is learned."""
 
