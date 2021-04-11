@@ -4,7 +4,11 @@
 include 'env_sm5.gin'
 include '../../vectorincrement/config/sm5_linear.gin'
 include 'with_secondary_stage_features.gin'
+import sparse_causal_model_learner_rl.trainable.quadratic_neuron
+import sparse_causal_model_learner_rl.trainable.poly_activation
 
+
+PolyAct.orig_act_cls = @Sin
 
 # DECODER
 decoder/FCCombinedModel.hidden_sizes = []
@@ -16,8 +20,8 @@ ModelDecoder.model_cls = @decoder/FCCombinedModel
 Config.decoder = @ModelDecoder
 
 # RECONSTRUCTOR
-rec/FCCombinedModel.hidden_sizes = [256, 64]
-rec/FCCombinedModel.activation_cls = @ReLU
+rec/FCCombinedModel.hidden_sizes = []
+rec/FCCombinedModel.activation_cls = None
 rec/FCCombinedModel.add_input_batchnorm = False
 rec/FCCombinedModel.input_reshape = True
 
@@ -30,13 +34,13 @@ Config.reconstructor = @ModelReconstructor
 # MODEL
 # MODEL
 Config.model = @sparse_model/ManyNetworkCombinedModel
-model_gnn/FCCombinedModel.hidden_sizes = [128, 128]  # tuning...
-model_gnn/FCCombinedModel.activation_cls = @Tanh
+model_gnn/FCCombinedModel.hidden_sizes = [256, 256, 256]  # tuning...
+model_gnn/FCCombinedModel.activation_cls = [@LeakyReLU, @LeakyReLU, @LeakyReLU, @PolyAct]
 
 
 TARGET_REC = 1e-3
-TARGET_FIT_OBS = 0.015
-TARGET_FIT_FEAT = 0.005
+TARGET_FIT_OBS = 8e-3
+TARGET_FIT_FEAT = 5e-3
 TARGET_FIT_ADD = 1e-3
 
 BURSTS_TIME_SCALES = {'opt1d': 2, 'opt1m': 1, 'opt1r': 2} 

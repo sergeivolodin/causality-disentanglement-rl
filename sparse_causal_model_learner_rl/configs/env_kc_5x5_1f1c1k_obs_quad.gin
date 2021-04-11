@@ -70,8 +70,8 @@ rec/FCCombinedModel.add_input_batchnorm = False
 rec/FCNet.add_input_batchnorm = False
 
 TARGET_REC = 1e-3
-TARGET_FIT_OBS = 1.5 # 0.1
-TARGET_FIT_FEAT = 0.001 # 0.1
+TARGET_FIT_OBS = 0.7 # 0.1
+TARGET_FIT_FEAT = 0.01 # 0.1
 TARGET_FIT_ADD = 1e-3
 
 BURSTS_TIME_SCALES = {'opt1d': 2, 'opt1m': 1, 'opt1r': 2} 
