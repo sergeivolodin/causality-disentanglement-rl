@@ -5,6 +5,7 @@ include 'env_sm5.gin'
 include '../../vectorincrement/config/sm5_linear.gin'
 include 'with_secondary_stage_features.gin'
 
+
 # DECODER
 decoder/FCCombinedModel.hidden_sizes = []
 decoder/FCCombinedModel.activation_cls = None
@@ -34,8 +35,8 @@ model_gnn/FCCombinedModel.activation_cls = @Tanh
 
 
 TARGET_REC = 1e-3
-TARGET_FIT_OBS = 0.02
-TARGET_FIT_FEAT = 0.015
+TARGET_FIT_OBS = 0.015
+TARGET_FIT_FEAT = 0.005
 TARGET_FIT_ADD = 1e-3
 
 BURSTS_TIME_SCALES = {'opt1d': 2, 'opt1m': 1, 'opt1r': 2} 

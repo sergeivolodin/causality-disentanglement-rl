@@ -3,6 +3,11 @@ import torch
 from torch import nn
 import gin
 
+@gin.configurable
+class Sin(nn.Module):
+    def forward(self, x):
+        return torch.sin(x)
+
 ReLU = gin.external_configurable(nn.ReLU)
 LeakyReLU = gin.external_configurable(nn.LeakyReLU)
 Tanh = gin.external_configurable(nn.Tanh)

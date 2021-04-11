@@ -30,8 +30,9 @@ Config.feature_shape = (%N_FEATURES, )
 
 # DECODER
 Config.decoder = @ModelDecoder
-decoder/FCCombinedModel.hidden_sizes = []
-decoder/FCCombinedModel.activation_cls = None
+decoder/FCCombinedModel.hidden_sizes = [1024]
+decoder/FCCombinedModel.activation_cls = [@LeakyReLU, None]
+PolyAct.orig_act_cls = @Sin
 decoder/FCCombinedModel.add_input_batchnorm = False
 decoder/FCCombinedModel.input_reshape = True
 ModelDecoder.model_cls = @decoder/FCCombinedModel
@@ -41,9 +42,8 @@ ModelDecoder.use_batchnorm = False
 
 # MODEL
 Config.model = @sparse_model/ManyNetworkCombinedModel
-model_gnn/FCCombinedModel.hidden_sizes = [1024, 1024]  # tuning...
-model_gnn/FCCombinedModel.activation_cls = [@PolyAct, @PolyAct, @PolyAct]
-PolyAct.orig_act_cls = @Tanh
+model_gnn/FCCombinedModel.hidden_sizes = [512, 1024]  # tuning...
+model_gnn/FCCombinedModel.activation_cls = [@LeakyReLU, @LeakyReLU, @PolyAct]
 model_gnn/FCCombinedModel.layers = [@CombinedQuadraticLayer, @CombinedLinearLayer, @CombinedLinearLayer]
 model_gnn/FCCombinedModel.skipconns = None #[False, True, False]
 WithInputSwitch.model_cls = @model_gnn/FCCombinedModel
@@ -61,9 +61,8 @@ ModelReconstructor.model_cls = @rec/FCCombinedModel
 ModelReconstructor.unflatten = True
 rec/FCCombinedModel.hidden_sizes = [256, 128]
 rec/FCCombinedModel.layers = @CombinedLinearLayer # @Quadratic #[@CombinedQuadraticLayer, @CombinedQuadraticLayer, @CombinedQuadraticLayer]
-rec/FCCombinedModel.activation_cls = [@Tanh, @PolyAct, @PolyAct]
+rec/FCCombinedModel.activation_cls = [@LeakyReLU, @LeakyReLU, @PolyAct]
 rec/FCCombinedModel.input_reshape = True
-PolyAct.orig_act_cls = @Tanh
 
 model_gnn/FCCombinedModel.add_input_batchnorm = False
 decoder/FCCombinedModel.add_input_batchnorm = False
