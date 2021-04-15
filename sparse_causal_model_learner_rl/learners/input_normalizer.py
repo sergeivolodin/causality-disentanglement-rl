@@ -49,12 +49,16 @@ class Normalizer(object):
             self.max = np.max(inp, axis=self.dim)
 
             # if no change was detected, forcing a small value
+            shape = 'scalar'
+            shape_prod = 1
             if isinstance(self.std, np.ndarray):
                 self.std[self.std < self.std_eps] = 1.0
+                shape = self.std.shape
+                shape_prod = np.prod(shape)
             elif self.std < self.std_eps:
                 self.std = 1.0
             self.computed = True
-            logging.warning(f"Computed std for {self.name}: {self.mean} {self.std}")
+            logging.warning(f"Computed std for {self.name} [shape={shape}, components={shape_prod}]: {self.mean} {self.std}")
 
         if self.type_ == 'meanstd':
             return (inp - self.mean) / (self.std_eps + self.std)

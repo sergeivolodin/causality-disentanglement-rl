@@ -1,0 +1,9 @@
+# Adds per-component computation to lagrange sparsity
+include 'with_lagrange_dual_sparsity.gin'
+import sparse_causal_model_learner_rl.loss.losses
+import sparse_causal_model_learner_rl.trainable.lagrange
+
+LagrangeMultipliers.vectorized = True
+LagrangeMultipliers.max_second_dim = %MAX_LOSS_DIM
+fit_loss_obs_space.return_per_component = True
+lagrangian_granular.return_per_component = True

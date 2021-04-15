@@ -9,7 +9,7 @@ include 'remote_collect.gin'
 import sparse_causal_model_learner_rl.trainable.quadratic_neuron
 import sparse_causal_model_learner_rl.trainable.poly_activation
 
-N_FEATURES = 11 # player 2, health, keys, key x2, chest x2 food x2 -> 
+N_FEATURES = 6 # player 2, health, food x2 -> 
 
 # DATA COLLECTION PREFS
 Config.min_collected_sample_ratio = 0.5
@@ -51,7 +51,7 @@ sparse_model/ManyNetworkCombinedModel.model_cls = @sparse_model/WithInputSwitch
 ManyNetworkCombinedModel.sparse_do_max = False
 ManyNetworkCombinedModel.sparse_do_max_mfma = False
 ManyNetworkCombinedModel.add_linear_transform = False
-ManyNetworkCombinedModel.predict_change = True
+#ManyNetworkCombinedModel.predict_change = True
 sparse_model/WithInputSwitch.enable_switch = True
 LearnableSwitchSimple.init_identity_up_to = %N_FEATURES
 
@@ -70,8 +70,8 @@ rec/FCCombinedModel.add_input_batchnorm = False
 rec/FCNet.add_input_batchnorm = False
 
 TARGET_REC = 1e-3
-TARGET_FIT_OBS = 0.7 # 0.1
-TARGET_FIT_FEAT = 0.01 # 0.1
+TARGET_FIT_OBS = 0.015
+TARGET_FIT_FEAT = 0.02
 TARGET_FIT_ADD = 1e-3
 
 BURSTS_TIME_SCALES = {'opt1d': 2, 'opt1m': 1, 'opt1r': 2} 

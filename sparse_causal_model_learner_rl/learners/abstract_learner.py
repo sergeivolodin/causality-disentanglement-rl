@@ -75,8 +75,10 @@ class AbstractLearner(ABC):
         self.config.maybe_start_communicator()
         self.config.update_communicator()
 
+        self.loss_per_run_cache = {}
+
     # attributes to save to pickle files
-    PICKLE_DIRECTLY = ['history', 'epochs', 'epoch_info', 'config', 'normalizers']
+    PICKLE_DIRECTLY = ['history', 'epochs', 'epoch_info', 'config', 'normalizers', 'loss_per_run_cache']
 
 
     def create_trainables(self):
@@ -391,10 +393,16 @@ class AbstractLearner(ABC):
                 total_loss = 0
                 for loss_label in self.config['execution'].get(opt_label, []):
                     loss = self.config['losses'][loss_label]
+
+                    if loss_label not in self.loss_per_run_cache:
+                        self.loss_per_run_cache[loss_label] = {}
+                    loss_per_run_cache = self.loss_per_run_cache[loss_label]
+
                     kwargs = dict(**context, opt_label=opt_label,
                                   loss_local_cache=loss_local_cache,
                                   loss_epoch_cache=loss_epoch_cache,
-                                  loss_coeff=loss['coeff'])
+                                  loss_coeff=loss['coeff'],
+                                  loss_per_run_cache=loss_per_run_cache)
                     value, metrics = get_loss_and_metrics(loss['fcn'], **kwargs)
                     epoch_info['metrics'][loss_label] = metrics
                     coeff = loss['coeff']

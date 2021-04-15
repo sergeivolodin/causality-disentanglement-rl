@@ -62,6 +62,12 @@ TARGET_FIT_OBS = 1e-3
 TARGET_FIT_FEAT = 1e-3
 TARGET_FIT_ADD = 0
 
+TARGET_PER_COMPONENT_REC = 0
+TARGET_PER_COMPONENT_FIT_OBS = 0
+TARGET_PER_COMPONENT_FIT_FEAT = 0
+TARGET_PER_COMPONENT_FIT_ADD = 0
+MAX_LOSS_DIM = 10
+
 BURSTS_TIME_SCALES = {'opt1d': 0, 'opt1m': 10, 'opt1r': 0}
 causal_learner_stopping_condition.edges_Mf = 7
 causal_learner_stopping_condition.edges_Ma = 7

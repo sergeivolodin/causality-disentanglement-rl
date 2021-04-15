@@ -1,0 +1,12 @@
+import gin_tune
+import sparse_causal_model_learner_rl.config
+
+LinearMatrixEncoder.eye_coeff = @eyecoeff/loguniform()
+
+eyecoeff/loguniform.lower = 1e-2
+eyecoeff/loguniform.upper = 1000
+
+tune_run.resources_per_trial = {'gpu': 0.25, 'cpu': 4}
+Config.n_collectors = 3
+Config.train_steps = 25000
+tune_run.num_samples = 200
