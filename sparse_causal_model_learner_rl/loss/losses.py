@@ -133,6 +133,7 @@ def lagrangian_granular(
                return_per_component=False,
                loss_per_run_cache=None,
                print_equation=None,
+               print_components=True,
                **kwargs):
     assert mode in ['PRIMAL', 'DUAL'], mode
     metrics = {}
@@ -240,6 +241,9 @@ def lagrangian_granular(
                 components = current_val_coeff.shape[0]
                 assert lm.shape[0] >= components, f"Too small second dim lm_cmp={lm.shape[0]} loss_cmp={components}"
                 lm = lm[:components]
+                if mode == 'DUAL' and print_components:
+                    for component in range(components):
+                        print(f"{loss_key} comp {component} c={c} lm={lm[component]} loss={current_val_coeff[component]}")
 
             current_constraint = (current_val_coeff - c) * lm
             if return_per_component:
