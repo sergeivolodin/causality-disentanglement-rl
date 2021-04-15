@@ -7,10 +7,12 @@ import torch
 import logging
 import pickle
 import io
+from rich.logging import RichHandler
+
 
 def set_default_logger_level(level):
     """Set the verbosity level of the default logger."""
-    logging.basicConfig()
+    logging.basicConfig(handlers=[RichHandler()])
     logging.getLogger().setLevel(level)
 
 

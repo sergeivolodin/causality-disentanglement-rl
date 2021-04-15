@@ -29,3 +29,4 @@ tqdm==4.50.2
 imageio==2.9.0
 gputil==1.4.0
 inquirer==2.7.0
+rich==10.1.0

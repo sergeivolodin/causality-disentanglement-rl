@@ -14,6 +14,7 @@ from sparse_causal_model_learner_rl.config import Config
 from abc import ABC, abstractmethod, abstractproperty
 from torch.nn.utils.clip_grad import clip_grad_norm_
 from sparse_causal_model_learner_rl.loss.helpers import get_loss_and_metrics
+from causal_util.helpers import set_default_logger_level
 
 
 class AbstractLearner(ABC):
@@ -21,6 +22,9 @@ class AbstractLearner(ABC):
 
     def __init__(self, config, callback=None):
         assert isinstance(config, Config), f"Please supply a valid config: {config}"
+
+        set_default_logger_level(logging.DEBUG)
+
         # configuration
         self.config = config
 
@@ -387,7 +391,7 @@ class AbstractLearner(ABC):
                 if not opt_enabled:
                     continue
 
-            for _ in range(self.config.get('opt_iterations', {}).get(opt_label, 1)):
+            for opt_iteration_i in range(self.config.get('opt_iterations', {}).get(opt_label, 1)):
                 opt.zero_grad()
                 loss_local_cache = {}
                 total_loss = 0
@@ -402,6 +406,7 @@ class AbstractLearner(ABC):
                                   loss_local_cache=loss_local_cache,
                                   loss_epoch_cache=loss_epoch_cache,
                                   loss_coeff=loss['coeff'],
+                                  opt_iteration_i=opt_iteration_i,
                                   loss_per_run_cache=loss_per_run_cache)
                     value, metrics = get_loss_and_metrics(loss['fcn'], **kwargs)
                     epoch_info['metrics'][loss_label] = metrics

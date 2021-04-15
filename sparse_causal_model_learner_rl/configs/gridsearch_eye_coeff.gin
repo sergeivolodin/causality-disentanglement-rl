@@ -10,3 +10,5 @@ tune_run.resources_per_trial = {'gpu': 0.25, 'cpu': 4}
 Config.n_collectors = 3
 Config.train_steps = 25000
 tune_run.num_samples = 200
+
+lagrangian_granular.print_components = False

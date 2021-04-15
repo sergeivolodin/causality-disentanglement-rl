@@ -4,6 +4,9 @@ from sparse_causal_model_learner_rl.loss import loss
 import gin
 import numpy as np
 from .helpers import gather_additional_features, get_loss_and_metrics
+from rich.console import Console
+console = Console(color_system="256")
+
 
 def maybe_item(z):
     if hasattr(z, 'item'):
@@ -134,6 +137,7 @@ def lagrangian_granular(
                loss_per_run_cache=None,
                print_equation=None,
                print_components=True,
+               opt_iteration_i=0,
                **kwargs):
     assert mode in ['PRIMAL', 'DUAL'], mode
     metrics = {}
@@ -208,7 +212,7 @@ def lagrangian_granular(
             total_objective += current_val_coeff
 
             if print_equation:
-                equation.append(f"{loss_key} [shape={current_val_coeff.shape}] -> min")
+                equation.append(f"[bold blue]{loss_key}[/bold blue] [shape={current_val_coeff.shape}] -> min")
         else:
             idx = all_losses_lst.index(loss_key)
             c = config[constraint_val_key]
@@ -241,9 +245,12 @@ def lagrangian_granular(
                 components = current_val_coeff.shape[0]
                 assert lm.shape[0] >= components, f"Too small second dim lm_cmp={lm.shape[0]} loss_cmp={components}"
                 lm = lm[:components]
-                if mode == 'DUAL' and print_components:
+                if mode == 'DUAL' and print_components and opt_iteration_i == 0:
                     for component in range(components):
-                        print(f"{loss_key} comp {component} c={c} lm={lm[component]} loss={current_val_coeff[component]}")
+                        satisfied = current_val_coeff[component] <= c
+                        color = 'green' if satisfied else 'red'
+                        console.print(f"[bold blue]{loss_key}[/bold blue] [bold {color}]comp {component}[/bold {color}] c=[blue]{c}[/blue] lm=[blue]{lm[component]}[/blue] loss=[bold {color}]{current_val_coeff[component]}[/bold {color}]")
+
 
             current_constraint = (current_val_coeff - c) * lm
             if return_per_component:
@@ -255,7 +262,7 @@ def lagrangian_granular(
             if print_equation:
                 shape = current_val_coeff.shape if hasattr(current_val_coeff, 'shape') else None
                 if shape is not None:
-                    equation.append(f"{loss_key} [shape={shape}] <= {c}, lm_index={idx} required={required}")
+                    equation.append(f"[bold blue]{loss_key}[/bold blue] [shape={shape}] <= [blue]{c}[/blue], lm_index=[blue]{idx}[/blue] required=[blue]{required}[/blue]")
 
             if required:
                 
@@ -273,7 +280,7 @@ def lagrangian_granular(
     metrics['constraints_satisfied_frac'] = constraints_satisfied / constraints_total
 
     if print_equation:
-        logging.warning(f"LAGRANGIAN mode={mode}\n" + "\n".join(equation))
+        console.print(f"[bold red]LAGRANGIAN[/bold red] mode={mode}\n" + "\n".join(equation))
 
     # initializing lagrange multipliers
     for loss_key, config in constraints_dict.items():
