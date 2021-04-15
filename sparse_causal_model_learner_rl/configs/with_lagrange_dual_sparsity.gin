@@ -19,6 +19,7 @@ lagrangian_granular.loss_to_lagrange_map = {
 lagrangian_granular.constraints_dict = {
     'sparsity': {  # objective
         'constraint': None,
+        'constraint_per_component': None,
         'controlling': False
     },
 
@@ -103,24 +104,28 @@ lagrangian_granular.constraints_dict = {
 
     'fit_all_half/obs': {  # loss: observation part
         'constraint': 0,
+        'constraint_per_component': 0,
         'controlling': False,
         'take_lm_from': 'fit/obs',
     },
 
     'fit_all_half/feat': {  # fit loss: decoder feature part
         'constraint': 0,
+        'constraint_per_component': 0,
         'controlling': False,
         'take_lm_from': 'fit/feat',
     },
 
     'fit_all_half/feat_model': {  # fit loss: model feature space part
         'constraint': 0,
+        'constraint_per_component': 0,
         'controlling': False,
         'take_lm_from': 'fit/feat_model',
     },
 
     'fit_all_half/additional': {  # fit loss: rew/done part
         'constraint': 0,
+        'constraint_per_component': 0,
         'controlling': False,
         'take_lm_from': 'fit/additional',
     },

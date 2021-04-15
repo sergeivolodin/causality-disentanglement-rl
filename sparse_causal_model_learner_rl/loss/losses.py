@@ -218,10 +218,15 @@ def lagrangian_granular(
                 idx = all_losses_lst.index(config['take_lm_from'])
                 lm = lagrange_multipliers()[idx].detach()
             else:
-                if return_per_component and hasattr(current_val_coeff, 'shape'):
+                if return_per_component and hasattr(current_val_coeff, 'shape') and len(current_val_coeff.shape):
+                    assert len(current_val_coeff.shape) == 1, (loss_key, current_val_coeff.shape)
                     n_cmp = current_val_coeff.shape[0]
+                    arr = []
                     for component in range(n_cmp):
-                        metrics[f'lagrange_multiplier/{loss_key}/{component}'] = maybe_item(lm[component])
+                        lm_item = maybe_item(lm[component])
+                        metrics[f'lagrange_multiplier/{loss_key}/{component}'] = lm_item
+                        arr.append(lm_item)
+                    metrics[f'lagrange_multiplier/{loss_key}/hist'] = arr
                 metrics['lagrange_multiplier/' + loss_key] = maybe_item(maybe_sum(lm))
 
             if mode == 'PRIMAL':
@@ -231,7 +236,7 @@ def lagrangian_granular(
                 current_val_coeff = loss_dct['computed']['loss'] * loss_dct['original']['coeff']
                 current_val_coeff = maybe_detach(current_val_coeff)
 
-            if return_per_component and hasattr(current_val_coeff, 'shape'):
+            if return_per_component and hasattr(current_val_coeff, 'shape') and len(current_val_coeff.shape):
                 components = current_val_coeff.shape[0]
                 assert lm.shape[0] >= components, f"Too small second dim lm_cmp={lm.shape[0]} loss_cmp={components}"
                 lm = lm[:components]
@@ -279,7 +284,7 @@ def lagrangian_granular(
             current_delta = current_val_coeff - config[constraint_val_key]
 
             if return_per_component:
-                if hasattr(current_val_coeff, 'shape'):
+                if hasattr(current_val_coeff, 'shape') and len(current_val_coeff.shape):
                     n_components = current_val_coeff.shape[0]
                     for component in range(n_components):
                         if lagrange_multipliers.initialized[idx, component] is False and current_delta[component] > 0:
