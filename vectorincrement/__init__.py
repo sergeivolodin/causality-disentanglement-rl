@@ -5,6 +5,7 @@ from vectorincrement.line import LineEnvironment
 from vectorincrement.sparsematrix import SparseMatrixEnvironment
 from vectorincrement.bounce import BounceEnv
 from vectorincrement.gridworld import GridWorldNavigationEnv
+from vectorincrement.epicycles import RocketEpicycleEnvironment
 
 
 gym.envs.register(
@@ -30,4 +31,9 @@ gym.envs.register(
 gym.envs.register(
     id='GridWorldNavigation-v0',
     entry_point=GridWorldNavigationEnv
+)
+
+gym.envs.register(
+    id='Epicycles-v0',
+    entry_point=RocketEpicycleEnvironment
 )
