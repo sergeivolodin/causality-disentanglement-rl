@@ -23,6 +23,22 @@ class CPU_Unpickler(pickle.Unpickler):
             return lambda b: torch.load(io.BytesIO(b), map_location='cpu')
         else: return super().find_class(module, name)
 
+def unpickle(f, force_cpu=False):
+    """"Unpickle a learner, possibly with forcing CPU tensors."""
+
+    if isinstance(f, str):
+        with open(f, 'rb') as f_file:
+            return unpickle(f_file, force_cpu=force_cpu)
+
+    elif hasattr(f, 'read'):
+        if force_cpu:
+            return CPU_Unpickler(f).load()
+        else:
+            return pickle.load(f)
+    else:
+        raise NotImplementedError(f"Please either give a path or a file: {f}")
+
+
 def one_hot_encode(n, value):
     """Get a one-hot encoding of length n with a given value."""
     result = np.zeros(n, dtype=np.float32)
