@@ -1,24 +1,21 @@
-# VectorIncrement 2 DIGITS CONFIG
-
-# the environment
-# add env config separately!
-#include '../../keychest/config/5x5_onlycoord.gin'
-#include 'with_secondary_stage_features.gin'
+# EPICYCLES
+include '../../vectorincrement/config/epicycles.gin'
+include 'with_secondary_stage_features.gin'
 include 'remote_collect.gin'
 #include 'with_additional_features.gin'
 import sparse_causal_model_learner_rl.trainable.quadratic_neuron
 import sparse_causal_model_learner_rl.trainable.poly_activation
 
-N_FEATURES = 6 # player 2, health, food x2 -> 
+N_FEATURES = 3 # rocket phi, planet phi, rocket radius
 
 # DATA COLLECTION PREFS
 Config.min_collected_sample_ratio = 0.5
 Config.buffer_steps = 100000
 Config.minibatch_size = 2000
-Config.n_collectors = 4
+Config.n_collectors = 11
 Config.env_steps = 2000
 Config.collect_initial_steps = 100000
-tune_run.resources_per_trial = {'gpu': 0.4, 'cpu': 4}
+tune_run.resources_per_trial = {'gpu': 0.4, 'cpu': 10}
 Config.collect_every = 1
 Config.batch_training = False
 Config.shuffle = False
@@ -51,7 +48,7 @@ sparse_model/ManyNetworkCombinedModel.model_cls = @sparse_model/WithInputSwitch
 ManyNetworkCombinedModel.sparse_do_max = False
 ManyNetworkCombinedModel.sparse_do_max_mfma = False
 ManyNetworkCombinedModel.add_linear_transform = False
-#ManyNetworkCombinedModel.predict_change = True
+ManyNetworkCombinedModel.predict_change = False
 sparse_model/WithInputSwitch.enable_switch = True
 LearnableSwitchSimple.init_identity_up_to = %N_FEATURES
 
@@ -75,11 +72,11 @@ TARGET_FIT_FEAT = 0.02
 TARGET_FIT_ADD = 1e-3
 
 TARGET_PER_COMPONENT_REC = 0
-TARGET_PER_COMPONENT_FIT_OBS = 2e-3
-TARGET_PER_COMPONENT_FIT_FEAT = 2e-3
-TARGET_PER_COMPONENT_FIT_ADD = 2e-3
+TARGET_PER_COMPONENT_FIT_OBS = 0
+TARGET_PER_COMPONENT_FIT_FEAT = 0
+TARGET_PER_COMPONENT_FIT_ADD = 0
 
-MAX_LOSS_DIM = 210
+MAX_LOSS_DIM = 300
 
 BURSTS_TIME_SCALES = {'opt1d': 2, 'opt1m': 1, 'opt1r': 2} 
 

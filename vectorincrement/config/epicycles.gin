@@ -1,0 +1,9 @@
+import vectorincrement
+import causal_util.helpers
+
+load_env.env_name = "Epicycles-v0"
+load_env.time_limit = 10
+
+RocketEpicycleEnvironment.epicycles = True
+RocketEpicycleEnvironment.h = 10
+RocketEpicycleEnvironment.w = 10

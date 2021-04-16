@@ -6,7 +6,8 @@ import logging
 @gin.configurable
 class Normalizer(object):
     """"Normalize numpy data."""
-    def __init__(self, name=None, once=True, dim=0, type_='minmax'):
+    def __init__(self, name=None, once=True, dim=0, type_='minmax', uniform=False):
+        self.uniform = uniform
         self.name = name
         self.mean = None
         self.std = None
@@ -19,6 +20,8 @@ class Normalizer(object):
 
         self.std_eps = 1e-8
         self.minmax_eps = 1e-3
+        if self.uniform:
+            self.dim = None
 
     def unnormalize(self, outp):
         if hasattr(outp, 'clone'):  # torch tensor
@@ -58,7 +61,7 @@ class Normalizer(object):
             elif self.std < self.std_eps:
                 self.std = 1.0
             self.computed = True
-            logging.warning(f"Computed std for {self.name} [shape={shape}, components={shape_prod}]: {self.mean} {self.std}")
+            logging.warning(f"Computed std for {self.name} [shape={shape}, components={shape_prod}]: {self.mean} {self.std} uniform={self.uniform}")
 
         if self.type_ == 'meanstd':
             return (inp - self.mean) / (self.std_eps + self.std)
@@ -73,8 +76,11 @@ class Normalizer(object):
 
 
 @gin.configurable
-def normalize_context_transform(self, context, normalize_context_dct=None):
+def normalize_context_transform(self, context, normalize_context_dct=None, n_kwargs=None):
     """Normalize context variables"""
+
+    if n_kwargs is None:
+        n_kwargs = {}
 
     if normalize_context_dct is None:
         normalize_context_dct = {}
@@ -90,7 +96,7 @@ def normalize_context_transform(self, context, normalize_context_dct=None):
         assert isinstance(norm_whiches, list), f"norm_whiches must be a list {norm_whiches} for key {norm_with}"
 
         if norm_with not in self.normalizers:
-            self.normalizers[norm_with] = Normalizer(name=norm_with)
+            self.normalizers[norm_with] = Normalizer(name=norm_with, **n_kwargs.get(norm_with, {}))
 
             # computing the first statistics
             self.normalizers[norm_with].maybe_normalize(context[norm_with])
