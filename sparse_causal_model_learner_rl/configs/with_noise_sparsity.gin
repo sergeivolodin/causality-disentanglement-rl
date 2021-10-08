@@ -1,0 +1,6 @@
+include 'global_sparsity_config.gin'
+
+WithInputSwitch.switch_cls = @NoiseSwitch
+
+NoiseSwitch.s_init = 1.0
+NoiseSwitch.noise_add_coeff = 0.5

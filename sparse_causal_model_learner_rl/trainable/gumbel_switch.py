@@ -120,6 +120,30 @@ class LearnableSwitchSimple(Switch):
 
 
 @gin.configurable
+class NoiseSwitch(Switch):
+    """Add noise to the inputs, output 1 - sigma as the pseudo-probability."""
+
+    def __init__(self, s_init=1.0, noise_add_coeff=0.5, **kwargs):
+        super(NoiseSwitch, self).__init__(**kwargs)
+        self.noise_add_coeff = noise_add_coeff
+        init_val = np.full(s_init, shape=self.shape, dtype=np.float32)
+        self.sigmas = nn.Parameter(torch.tensor(init_val, requires_grad=True))
+        
+    def sparsify_me(self):
+        pseudo_proba = (self.sigmas - 1.0).pow(2)
+        return [('pseudo_proba', pseudo_proba)]
+
+    def forward(self, x):
+        bs = x.shape[0]
+        rest_shape = x.shape[1:]
+        assert rest_shape == self.shape
+
+        prep = self.sigmas.unsqueese(0).repeat(bs).view(bs, *self.shape)
+        noise = torch.normal(torch.zeros_like(x), torch.ones_like(x)) * prep
+        return x + noise * torch.std(x, axis=0, keepdim=True).repeat(x.shape[0], 1) * self.noise_add_coeff
+
+
+@gin.configurable
 class LearnableSwitch(Switch):
     """Learn binary probabilistic variables.
 
