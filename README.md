@@ -32,7 +32,7 @@ We use [pytorch](https://pytorch.org/) to learn the sparse model and [stable bas
 2. Install requirements: `pip install -r requirements.txt`
 3. Install gin_tune: `pip install -e gin_tune`
 3. Set up a MongoDB database `test` on port `27017` on local machine
-4. Having ray installed, run `python ray/python/ray/setup-dev.py -y` to patch your ray installation
+4. Having ray installed, run `python ray/python/ray/setup-dev.py` to patch your ray installation
 4. `pip install -e .`
 
 ### Performance of envs
