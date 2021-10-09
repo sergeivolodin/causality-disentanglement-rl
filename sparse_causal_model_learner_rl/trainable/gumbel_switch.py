@@ -126,21 +126,46 @@ class NoiseSwitch(Switch):
     def __init__(self, s_init=1.0, noise_add_coeff=0.5, **kwargs):
         super(NoiseSwitch, self).__init__(**kwargs)
         self.noise_add_coeff = noise_add_coeff
-        init_val = np.full(s_init, shape=self.shape, dtype=np.float32)
+        init_val = np.full(fill_value=s_init, shape=self.shape, dtype=np.float32)
         self.sigmas = nn.Parameter(torch.tensor(init_val, requires_grad=True))
         
-    def sparsify_me(self):
-        pseudo_proba = (self.sigmas - 1.0).pow(2)
-        return [('pseudo_proba', pseudo_proba)]
+    @property
+    def probas(self):
+        return (self.sigmas - 1.0).abs()
 
-    def forward(self, x):
+    def sparsify_me(self):
+        return [('pseudo_proba', self.probas)]
+
+    def forward(self, x, return_mask=False, return_x_and_mask=False, force_proba=None):
         bs = x.shape[0]
         rest_shape = x.shape[1:]
+        rest_shape_ones = [1] * len(rest_shape)
         assert rest_shape == self.shape
 
-        prep = self.sigmas.unsqueese(0).repeat(bs).view(bs, *self.shape)
-        noise = torch.normal(torch.zeros_like(x), torch.ones_like(x)) * prep
-        return x + noise * torch.std(x, axis=0, keepdim=True).repeat(x.shape[0], 1) * self.noise_add_coeff
+        # standard deviation repeated to fit the batch size
+        sigmas = self.sigmas.unsqueeze(0).repeat(bs, *rest_shape_ones).view(bs, *self.shape)
+        if force_proba is not None:
+            if isinstance(force_proba, tuple):
+                assert len(force_proba) == 2, force_proba
+                sigmas = torch.clamp(sigmas, max=(1 - force_proba[0]), min=(1 - force_proba[1]))
+            elif isinstance(force_proba, (int, float)):
+                sigmas = torch.full(size=sigmas.shape, fill_value=(1 - force_proba), device=sigmas.device,
+                                    dtype=torch.float32)
+            else:
+                raise ValueError(f"force_proba must be either a float or a tuple for clamp {force_proba}")
+
+        noise = torch.normal(torch.zeros_like(x), torch.ones_like(x))
+        x_std = torch.std(x, axis=0, keepdim=True).repeat(bs, *rest_shape_ones)
+        noise_scaler = sigmas * x_std * self.noise_add_coeff
+        noise_scaled = noise * noise_scaler
+        # print(sigmas.mean(), x_std.mean(), self.noise_add_coeff)
+        x_with_noise = x + noise_scaled
+
+        if return_mask:
+            return noise_scaled
+        if return_x_and_mask:
+            return x_with_noise, sigmas.detach()
+        return x_with_noise
 
 
 @gin.configurable
