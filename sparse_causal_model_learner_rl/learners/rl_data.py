@@ -383,6 +383,7 @@ class ParallelContextCollector():
     def collect_initial(self, do_tqdm=True):
 
         do_ascii = tune.get_trial_name() is not None
+        colour = 'green'
 
         if self.n_collectors == 0:
             # resetting the local buffer
@@ -391,7 +392,7 @@ class ParallelContextCollector():
 
             for _ in tqdm(range(self.future_batch_size),
                           disable=not do_tqdm, desc="Initial buffer fill [local]",
-                          ascii=do_ascii, colour='red'):
+                          ascii=do_ascii, colour=colour):
                 self.replay_buffer.collect_local(self.rl_context)
         else:
             # resetting the remote buffer
@@ -401,7 +402,7 @@ class ParallelContextCollector():
             target = self.config.get('collect_initial_steps', 1000)
             collected = 0
 
-            with tqdm(initial=collected, total=target, disable=not do_tqdm, desc="Initial buffer fill", ascii=do_ascii, colour='red') as pbar:
+            with tqdm(initial=collected, total=target, disable=not do_tqdm, desc="Initial buffer fill", ascii=do_ascii, colour=colour) as pbar:
                 while collected < target:
                     stats = ray.get(self.replay_buffer.collect.remote(
                         min_batches=0, enable_wait=False))

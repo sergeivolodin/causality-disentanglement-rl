@@ -1,0 +1,25 @@
+import sparse_causal_model_learner_rl.metrics.save_data
+import sparse_causal_model_learner_rl.config
+import gin_tune
+
+
+Config.optimizers = {}
+Config.metrics = {'save_data': @save_data}
+Config.losses = {}
+Config.opt_iterations = {}
+Config.execution = {}
+
+Config.model = None
+Config.decoder = None
+Config.reconstructor = None
+Config.rot_pre = None
+Config.rot_post = None
+Config.lagrange_multipliers = None
+
+# OTHER
+Config._update_function = []
+Config.optim_params = {}
+Config.context_transforms = []
+Config.metrics_every = 1
+
+tune_run.resources_per_trial = {'gpu': 0, 'cpu': 4}
