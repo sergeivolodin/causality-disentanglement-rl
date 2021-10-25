@@ -6,6 +6,7 @@ from vectorincrement.sparsematrix import SparseMatrixEnvironment
 from vectorincrement.bounce import BounceEnv
 from vectorincrement.gridworld import GridWorldNavigationEnv
 from vectorincrement.epicycles import RocketEpicycleEnvironment
+from vectorincrement.idx_env import IdxEnv
 
 
 gym.envs.register(
@@ -36,4 +37,9 @@ gym.envs.register(
 gym.envs.register(
     id='Epicycles-v0',
     entry_point=RocketEpicycleEnvironment
+)
+
+gym.envs.register(
+    id='IdxEnv-v0',
+    entry_point=IdxEnv
 )
