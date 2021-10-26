@@ -31,7 +31,6 @@ Config.decoder = @ModelDecoder
 decoder/FCNet.hidden_sizes = []
 decoder/FCNet.activation_cls = @Sin
 decoder/FCNet.add_input_batchnorm = False
-decoder/FCNet.input_reshape = True
 ModelDecoder.model_cls = @decoder/FCNet
 ModelDecoder.flatten = True
 ModelDecoder.use_batchnorm = False
@@ -57,7 +56,6 @@ ModelReconstructor.model_cls = @rec/FCNet
 ModelReconstructor.unflatten = True
 rec/FCNet.hidden_sizes = [8092, 1024]
 rec/FCNet.activation_cls = [@ReLU, @ReLU, None]
-rec/FCNet.input_reshape = True
 
 model_gnn/FCCombinedModel.add_input_batchnorm = False
 decoder/FCCombinedModel.add_input_batchnorm = False
