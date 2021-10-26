@@ -576,3 +576,29 @@ def unsplit_images_np(engine, top, bot):
     obss[:, :top_n] = top
     obss[:, top_n + 1:-1, 1:-1] = bot
     return obss
+
+
+@gin.configurable
+def obss_to_rgb_select(obss, engine):
+    """Convert an array with observations to RGB, supporting multiple items per pixel."""
+
+    obss = np.array(obss)
+    assert engine.OBJECTS[0] == 'empty', "First object must be empty."
+
+    howmany = (1e-10 + np.sum(obss, axis=3)[:, :, :, np.newaxis])
+    # print(np.max(howmany))
+    obss = obss / howmany
+    colors_to_rgb = np.array([engine.COLORS[engine.OBJECTS[o]] for o in engine.select_output_indices]) / 255.
+    obss_rgb = obss @ colors_to_rgb
+    return obss_rgb
+
+
+def upscale_channels_obs(obs, env):
+    """Given an observation with less channels, add all channels."""
+    select_outputs = env.engine.select_outputs
+    h, w, c = obs.shape
+    output = np.zeros((h, w, len(env.engine.OBJECTS)))
+    for i, obj in enumerate(select_outputs):
+        out_i = env.engine.OBJECTS.index(obj)
+        output[:, :, out_i] = obs[:, :, i]
+    return output
