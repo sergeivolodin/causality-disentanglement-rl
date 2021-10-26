@@ -1,0 +1,25 @@
+import sparse_causal_model_learner_rl.config
+
+Config.optimizers = {
+    'opt1': @opt1/Optimizer,
+    'opt2': @opt2/Optimizer,
+}
+
+opt1/Optimizer.lr = 1e-4
+opt1/Optimizer.name = 'Adam'
+
+opt2/Optimizer.lr = 1e-4
+opt2/Optimizer.name = 'Adam'
+
+Config.execution = {
+    'opt1': ['primal'],
+
+    'opt2': ['dual'],
+}
+
+Config.optim_params = {
+    'opt1m': ['decoder', 'reconstructor', 'model', 'rot_pre', 'rot_post'],
+    'opt2': ['lagrange_multipliers']
+}
+
+Config.opt_enabled_fcn = None
