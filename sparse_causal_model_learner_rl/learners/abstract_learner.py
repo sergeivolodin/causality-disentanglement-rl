@@ -18,11 +18,13 @@ from causal_util.helpers import set_default_logger_level
 from time import time
 
 
+@gin.configurable
 class TimeProfiler(object):
     """Profile execution."""
-    def __init__(self):
+    def __init__(self, enable=False):
         self.time_start = {}
         self.time_end = {}
+        self.enable = enable
         self.start('profiler')
 
     def start(self, name):
@@ -32,13 +34,17 @@ class TimeProfiler(object):
         self.time_end[name] = time()
 
     def delta(self, name):
-        return self.time_end.get(name, 0) - self.time_start(name, 0)
+        return self.time_end.get(name, 0) - self.time_start.get(name, 0)
 
-    def report():
+    def report(self):
+        if not self.enable:
+            return
         self.end('profiler')
+        print("==== PROFILE ====")
         for key in sorted(self.time_end.keys(), key=lambda k: self.delta(k)):
             percent = self.delta(key) / self.delta('profiler') * 100
             print("PROFILE %s: %s, %d %%" % (key, round(self.delta(key), 3), round(percent, 2)))
+        print("\n\n")
 
 
 class AbstractLearner(ABC):
@@ -412,6 +418,7 @@ class AbstractLearner(ABC):
             epoch_info['metrics'][stats_key] = context[stats_key]
 
         self.epoch_profiler.end('batches')
+        context['epoch_profiler'] = self.epoch_profiler
 
         # train using losses
         loss_epoch_cache = {}
@@ -430,6 +437,7 @@ class AbstractLearner(ABC):
                 opt.zero_grad()
                 loss_local_cache = {}
                 total_loss = 0
+                self.epoch_profiler.start(f"opt_{opt_label}_{opt_iteration_i}_forward")
                 for loss_label in self.config['execution'].get(opt_label, []):
                     loss = self.config['losses'][loss_label]
 
@@ -449,6 +457,8 @@ class AbstractLearner(ABC):
                     epoch_info['losses'][f"{opt_label}/{loss_label}/coeff"] = coeff
                     epoch_info['losses'][f"{opt_label}/{loss_label}/value"] = value
                     total_loss += coeff * value
+                self.epoch_profiler.end(f"opt_{opt_label}_{opt_iteration_i}_forward")
+                self.epoch_profiler.start(f"opt_{opt_label}_{opt_iteration_i}_backward")
                 if hasattr(total_loss, 'backward'):
                     total_loss.backward()
 
@@ -478,6 +488,7 @@ class AbstractLearner(ABC):
                 if hasattr(total_loss, 'backward') and opt_label in self.scheduler_objects:
                     self.scheduler_objects[opt_label].step(total_loss)
                     epoch_info['metrics'][f"{opt_label}/scheduler_lr"] = self.scheduler_objects[opt_label]._last_lr[0]
+                self.epoch_profiler.end(f"opt_{opt_label}_{opt_iteration_i}_backward")
             self.epoch_profiler.end('opt_' + opt_label)
 
         self.epoch_profiler.start('metrics')

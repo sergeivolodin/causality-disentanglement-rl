@@ -6,6 +6,7 @@ import numpy as np
 from .helpers import gather_additional_features, get_loss_and_metrics
 from rich.console import Console
 console = Console(color_system="256")
+from time import time
 
 
 def maybe_item(z):
@@ -608,6 +609,7 @@ def delta_pow2_sum1(true, pred, std_from=None, divide_by_std=False, return_per_c
 @gin.configurable
 def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_feature_keys,
              reconstructor,
+             epoch_profiler,
              model_forward_kwargs=None,
              fill_switch_grad=False,
              opt_label=None,
@@ -632,6 +634,10 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
     # f_yp_f_model ~ f_y_model [loss_fcons_model]
     # f_yp_f ~ f_y
 
+    time_start = str(time())
+    epoch_profiler.start('fit_loss_obs_space_' + time_start)
+
+
     if rot_pre is None:
         rot_pre = lambda x: x
     if rot_post is None:
@@ -639,6 +645,7 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
 
     if model_forward_kwargs is None:
         model_forward_kwargs = {}
+    epoch_profiler.start('fit_loss_obs_space_' + time_start + 'decoder')
 
     f_x = cache_get(loss_local_cache, 'dec_obs_x',  lambda: decoder(obs_x))
 
@@ -648,10 +655,16 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
     with torch.set_grad_enabled(not detach_rotation):
         f_x_model = rot_pre(f_x)
 
+    epoch_profiler.end('fit_loss_obs_space_' + time_start + 'decoder')
+
+    epoch_profiler.start('fit_loss_obs_space_' + time_start + 'model')
     f_yp_model = model(f_x_model, action_x, all=True, **model_forward_kwargs)
     f_yp_f_model = f_yp_model[:, :model.n_features]
     f_yp_f = rot_post(f_yp_f_model)
+    epoch_profiler.end('fit_loss_obs_space_' + time_start + 'model')
+    epoch_profiler.start('fit_loss_obs_space_' + time_start + 'rec')
     obs_yp = reconstructor(f_yp_f)
+    epoch_profiler.end('fit_loss_obs_space_' + time_start + 'rec')
 
     loss_rec = delta_pow2_sum1(obs_y.flatten(start_dim=1),
                                obs_yp.flatten(start_dim=1),
@@ -684,6 +697,7 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
         loss_additional_discrete = 0.0
 
     if add_fcons:
+        epoch_profiler.start('fit_loss_obs_space_' + time_start + 'fcons')
         f_y = cache_get(loss_local_cache, 'dec_obs_y', lambda: decoder(obs_y))
 
         if detach_features:
@@ -709,6 +723,7 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
         loss_fcons_model, loss_fcons_model_orig = loss_fcons_model + loss_fcons_model_discrete, loss_fcons_model
 
         loss += loss_fcons_model.sum(1) if return_per_component else loss_fcons_model
+        epoch_profiler.end('fit_loss_obs_space_' + time_start + 'fcons')
     else:
         loss_fcons = None
         loss_fcons_model = None
@@ -742,6 +757,7 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
     
     #print(loss.mean(0).item())
 
+    epoch_profiler.start('fit_loss_obs_space_' + time_start + 'metrics')
 
     metrics = {'mean_feature': f_x.mean(0).detach().cpu().numpy(),
                'std_feature': f_x.std(0).detach().cpu().numpy(),
@@ -755,11 +771,13 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
                'loss_discrete': discrete_total,
                'loss_orig': loss.mean(0).item() - discrete_total,
                }
+    epoch_profiler.end('fit_loss_obs_space_' + time_start + 'metrics')
 
     def l_out(l):
         if hasattr(l, 'mean'):
             return l.mean(0)
         return 0.0
+    epoch_profiler.end('fit_loss_obs_space_' + time_start)
 
     return {'loss': loss.mean(0),
             'losses': {
