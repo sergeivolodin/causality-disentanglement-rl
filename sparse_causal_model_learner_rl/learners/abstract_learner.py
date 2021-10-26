@@ -15,6 +15,30 @@ from abc import ABC, abstractmethod, abstractproperty
 from torch.nn.utils.clip_grad import clip_grad_norm_
 from sparse_causal_model_learner_rl.loss.helpers import get_loss_and_metrics
 from causal_util.helpers import set_default_logger_level
+from time import time
+
+
+class TimeProfiler(object):
+    """Profile execution."""
+    def __init__(self):
+        self.time_start = {}
+        self.time_end = {}
+        self.start('profiler')
+
+    def start(self, name):
+        self.time_start[name] = time()
+
+    def end(self, name):
+        self.time_end[name] = time()
+
+    def delta(self, name):
+        return self.time_end.get(name, 0) - self.time_start(name, 0)
+
+    def report():
+        self.end('profiler')
+        for key in sorted(self.time_end.keys(), key=lambda k: self.delta(k)):
+            percent = self.delta(key) / self.delta('profiler') * 100
+            print("PROFILE %s: %s, %d %%" % (key, round(self.delta(key), 3), round(percent, 2)))
 
 
 class AbstractLearner(ABC):
@@ -80,6 +104,7 @@ class AbstractLearner(ABC):
         self.config.update_communicator()
 
         self.loss_per_run_cache = {}
+        self.epoch_profiler = TimeProfiler()
 
     # attributes to save to pickle files
     PICKLE_DIRECTLY = ['history', 'epochs', 'epoch_info', 'config', 'normalizers', 'loss_per_run_cache']
@@ -180,12 +205,18 @@ class AbstractLearner(ABC):
         self.create_trainables()
         tqdm_ = tqdm if do_tqdm else (lambda x: x)
         for _ in tqdm_(range(self.epochs, self.config['train_steps'])):
+            self.epoch_profiler = TimeProfiler()
             if self.config.get('detect_anomaly', False):
                 with torch.autograd.detect_anomaly():
                     self._epoch()
             else:
                 self._epoch()
+
+            self.epoch_profiler.start('communicator')
             self.config.update_communicator()
+            self.epoch_profiler.end('communicator')
+
+            self.epoch_profiler.report()
             f = self.config.get('stopping_condition', None)
             if callable(f) and f(self) is True:
                 logging.warning(f"Stopping via the stopping condition")
@@ -337,6 +368,7 @@ class AbstractLearner(ABC):
 
         # obtain data from environment
         n_batches = collect_every = self.config.get('collect_every', 1)
+        self.epoch_profiler.start('batches')
 
         if (self.epochs % collect_every == 0) or self._context_cache is None:
             # self.collect_steps()
@@ -379,9 +411,12 @@ class AbstractLearner(ABC):
         for stats_key in filter(lambda x: x.startswith('context_stats_'), context.keys()):
             epoch_info['metrics'][stats_key] = context[stats_key]
 
+        self.epoch_profiler.end('batches')
+
         # train using losses
         loss_epoch_cache = {}
         for opt_label in sorted(self.optimizer_objects.keys()):
+            self.epoch_profiler.start('opt_' + opt_label)
             opt = self.optimizer_objects[opt_label]
 
             # disabling and enabling optimizers
@@ -443,7 +478,9 @@ class AbstractLearner(ABC):
                 if hasattr(total_loss, 'backward') and opt_label in self.scheduler_objects:
                     self.scheduler_objects[opt_label].step(total_loss)
                     epoch_info['metrics'][f"{opt_label}/scheduler_lr"] = self.scheduler_objects[opt_label]._last_lr[0]
+            self.epoch_profiler.end('opt_' + opt_label)
 
+        self.epoch_profiler.start('metrics')
         if self.epochs % self.config.get('metrics_every', 1) == 0:
             # compute metrics
             for metric_label in sorted(self.config['metrics'].keys()):
@@ -485,6 +522,7 @@ class AbstractLearner(ABC):
         self.epochs += 1
 
         self.epoch_info = epoch_info
+        self.epoch_profiler.end('metrics')
 
         return epoch_info
 

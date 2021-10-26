@@ -76,3 +76,5 @@ causal_learner_stopping_condition.edges_Ma = 4
 
 # does not decrease the obs loss significantly
 #fit_loss_obs_space.divide_by_std = False
+#
+BURSTS_TIME_SCALES = {}
