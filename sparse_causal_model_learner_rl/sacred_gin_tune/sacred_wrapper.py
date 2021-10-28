@@ -158,8 +158,6 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
 
         # pass metrics to sacred
         if self.epochs % self.config.get('report_every', 1) == 0:
-            if do_sacred:
-                dict_to_sacred(ex, epoch_info, epoch_info['epochs'])
             if do_tune:
                 tune.report(**epoch_info)
             if not do_sacred and not do_tune:
@@ -167,6 +165,8 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
         else:
             if do_tune and not self.config.get('tune_no_empty_report', False):
                 tune.report()
+        if do_sacred and self.epochs % self.config.get('sacred_every', 1) == 0:
+            dict_to_sacred(ex, epoch_info, epoch_info['epochs'])
 
     if checkpoint_dir:
         learner = pickle.load(open(os.path.join(checkpoint_dir, "checkpoint"), 'rb'))
