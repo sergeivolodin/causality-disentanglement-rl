@@ -35,6 +35,7 @@ Config.loss_every = 500
 Config.graph_every = 500
 Config.checkpoint_every = 5000
 Config.report_every = 20
+Config.sacred_every = 20
 Config.metrics_every = 20
 Config.collect_every = 500
 Config.shuffle = False
