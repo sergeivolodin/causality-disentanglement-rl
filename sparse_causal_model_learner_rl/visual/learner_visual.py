@@ -40,7 +40,7 @@ def image_resize(path, max_size=1000):
     return out_path
 
 
-def add_artifact(fn, ex, do_sacred, epochs, epoch_info, max_sacred_filesize=1*1024*2014):
+def add_artifact(fn, ex, do_sacred, epochs, epoch_info, max_sacred_filesize=256*2014):
     if do_sacred:
         fn_sacred = fn
         if os.path.getsize(fn) >= max_sacred_filesize:
