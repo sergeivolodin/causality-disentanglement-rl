@@ -149,7 +149,7 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
 
         def add_artifact_local(fn):
             if not os.path.isfile(fn):
-                print("Can't add artifact because file does not exist", fn)
+                logging.warning("Can't add artifact because file does not exist " + fn)
                 return
             return add_artifact(fn, ex, do_sacred, self.epochs, epoch_info)
 

@@ -16,15 +16,36 @@ from causal_util.helpers import lstdct2dctlst
 from sparse_causal_model_learner_rl.trainable.helpers import params_shape, flatten_params
 from sparse_causal_model_learner_rl.trainable.helpers import unflatten_params
 import logging
+from PIL import Image
 import os
 from imageio import imread
 import cv2
 
 
+def image_resize(path, max_size=1000):
+    """Reduce the size of an image to have maximal side of max_size."""
+    try:
+        image = Image.open(path)
+        size = (image.width, image.height)
+        scale = (1.0 * max_size / s for s in size)
+        scale = min(scale)
+        size = (int(t * scale) for t in size)
+        image = image.resize(size, Image.ANTIALIAS)
+        out_path = path + '.downsized.png'
+        image.save(out_path, quality=20, optimize=True)
+        del image
+    except Exception as e:
+        logging.warning(f"Can't resize: {e}")
+        out_path = path
+    return out_path
+
+
 def add_artifact(fn, ex, do_sacred, epochs, epoch_info, max_sacred_filesize=1*1024*2014):
     if do_sacred:
-        if os.path.getsize(fn) <= max_sacred_filesize:
-            ex.add_artifact(fn, name=("epoch_%05d_" % epochs) + os.path.basename(fn))
+        fn_sacred = fn
+        if os.path.getsize(fn) >= max_sacred_filesize:
+            fn_sacred = image_resize(fn)
+        ex.add_artifact(fn_sacred, name=("epoch_%05d_" % epochs) + os.path.basename(fn_sacred))
     else:
         logging.info(f"Artifact available: {fn}")
 
