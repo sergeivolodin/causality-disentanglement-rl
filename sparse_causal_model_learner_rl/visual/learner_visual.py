@@ -21,9 +21,10 @@ from imageio import imread
 import cv2
 
 
-def add_artifact(fn, ex, do_sacred, epochs, epoch_info):
+def add_artifact(fn, ex, do_sacred, epochs, epoch_info, max_sacred_filesize=1*1024*2014):
     if do_sacred:
-        ex.add_artifact(fn, name=("epoch_%05d_" % epochs) + os.path.basename(fn))
+        if os.path.getsize(fn) <= max_sacred_filesize:
+            ex.add_artifact(fn, name=("epoch_%05d_" % epochs) + os.path.basename(fn))
     else:
         logging.info(f"Artifact available: {fn}")
 

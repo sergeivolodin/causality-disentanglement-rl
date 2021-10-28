@@ -12,7 +12,7 @@ import gin
 from gin_tune import tune_gin
 from path import Path
 from ray import tune
-from sacred.observers import MongoObserver
+from sacred.observers import QueuedMongoObserver
 
 from causal_util.helpers import dict_to_sacred
 from sparse_causal_model_learner_rl.config import Config
@@ -46,7 +46,7 @@ def sacred_experiment_with_config(config, name, main_fcn, db_name, base_dir, che
     SETTINGS.CONFIG.READ_ONLY_CONFIG = False
 
     ex = Experiment(name, base_dir=base_dir)
-    ex.observers.append(MongoObserver(db_name=db_name))
+    ex.observers.append(QueuedMongoObserver(db_name=db_name))
 
     for f in sources:
         if isinstance(f, str):
@@ -148,6 +148,9 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
         path_epoch = Path(base_dir) / ("epoch%05d" % self.epochs)
 
         def add_artifact_local(fn):
+            if not os.path.isfile(fn):
+                print("Can't add artifact because file does not exist", fn)
+                return
             return add_artifact(fn, ex, do_sacred, self.epochs, epoch_info)
 
         self.maybe_write_artifacts(path_epoch, add_artifact_local)
