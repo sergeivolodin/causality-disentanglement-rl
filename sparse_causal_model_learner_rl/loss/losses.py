@@ -398,7 +398,7 @@ def reconstruction_loss(obs, decoder, reconstructor, relative=False,
     loss = mse(rec_dec_obs, obs)
     
     if report_01:
-        metrics['rec_acc_loss_01_agg'] = 2 - delta_01_obs(obs, rec_dec_obs).item()
+        metrics['rec_acc_loss_01_agg'] = 1 - delta_01_obs(obs, rec_dec_obs).item()
         
     return {'loss': loss,
             'losses': {'reconstruction': loss},
@@ -588,7 +588,7 @@ def fit_loss(obs_x, obs_y, action_x, decoder, model, additional_feature_keys,
         if f_t1_std is not None:
             loss_rec_y = loss_rec_y / f_t1_std.pow(2)
         loss_rec_y = loss_rec_y.sum(1).mean()
-        metrics['rec_fit_y_acc_loss'] = 2 - metric_01.item()
+        metrics['rec_fit_y_acc_loss'] = 1 - metric_01.item()
         metrics['rec_fit_y'] = loss_rec_y.item()
 
 
@@ -767,7 +767,7 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
                'loss_add': return_metric(loss_additional_orig),
                'loss_rec': return_metric(loss_rec_orig),
                'loss_fcons_pre': return_metric(loss_fcons_model_orig),
-               'rec_fit_acc_loss_01_agg': 2 - delta_01_obs(obs_y, obs_yp).item(),
+               'rec_fit_acc_loss_01_agg': 1 - delta_01_obs(obs_y, obs_yp).item(),
                'loss_discrete': discrete_total,
                'loss_orig': loss.mean(0).item() - discrete_total,
                }
