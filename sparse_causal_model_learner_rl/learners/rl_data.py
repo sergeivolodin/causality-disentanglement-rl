@@ -14,6 +14,7 @@ from causal_util.collect_data import EnvDataCollector, compute_reward_to_go
 from causal_util.helpers import one_hot_encode
 from .rl_data_multi_step import get_multi_step_rl_context
 from causal_util.helpers import one_hot_encode_vectorized
+from sparse_causal_model_learner_rl.time_profiler.profiler import TimeProfiler
 
 
 def get_shuffle_together(config):
@@ -58,6 +59,7 @@ class RLContext():
         self.collector = EnvDataCollector(self.env)
         self.vf_gamma = self.config.get('vf_gamma', 1.0)
         self.data_multistep = self.config.get('rl_multistep', [])
+        self.profiler = None
 
         # Discrete action -> one-hot encoding
         if isinstance(self.env.action_space, gym.spaces.Discrete):
@@ -100,11 +102,22 @@ class RLContext():
         self.collector.flush()
 
     def collect_get_context(self):
+        self.profiler = TimeProfiler()
+        profiler = self.profiler
+        profiler.start('collect_steps')
         self.collect_steps()
-        return self.get_context()
+        profiler.end('collect_steps')
+        profiler.start('get_context')
+        context = self.get_context()
+        profiler.end('get_context')
+        profiler.report()
+        return context
 
     def get_context(self):
         # x: pre time-step, y: post time-step
+
+        profiler = self.profiler
+        profiler.start('episodes')
 
         # observations, actions, rewards-to-go, total rewards
         obs_x, obs_y, obs, act_x, reward_to_go, episode_sum_rewards = [], [], [], [], [], []
@@ -150,6 +163,8 @@ class RLContext():
 
         # for reconstruction
         assert len(obs_x) == len(obs_y)
+        profiler.end('episodes')
+        profiler.start('convert')
 
         obs_x = np.array(obs_x)
         obs_y = np.array(obs_y)
@@ -159,12 +174,15 @@ class RLContext():
         done_y = np.array(done_y)
         rew_y = np.array(rew_y)
         episode_sum_rewards = np.array(episode_sum_rewards)
+        profiler.end('convert')
 
         context = {'obs_x': obs_x, 'obs_y': obs_y, 'action_x': act_x,
                    'rew_y': rew_y, 'done_y': done_y,
                    'obs': obs,
                    'reward_to_go': reward_to_go,
                    'episode_sum_rewards': episode_sum_rewards}
+
+        profiler.start('multistep')
 
         for steps in self.data_multistep:
             n_step_ctx = get_multi_step_rl_context(self.collector, n_steps_forward=steps,
@@ -178,6 +196,7 @@ class RLContext():
                     val = one_hot_encode_vectorized(n=self.action_shape[0],
                                                     values=val)
                 context[new_key_name] = val
+        profiler.end('multistep')
 
         return context
 
