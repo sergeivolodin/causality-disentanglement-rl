@@ -69,17 +69,17 @@ Config._update_function = []
 
 ## Frequency
 Config.checkpoint_every = 1000
-Config.graph_every = 200
+Config.graph_every = 500
 Config.report_weights = False
 Config.report_weights_every = 1000
 
 # tune takes ~2-10ms to report data
-Config.report_every = 80
+Config.report_every = 200
 
 # sacred does it in a background process
-Config.sacred_every = 40
+Config.sacred_every = 50
 
-Config.metrics_every = 40
+Config.metrics_every = 50
 Config.keep_history = False
 Config.max_history_size = 100
 Config.loss_every = 1000000000000000

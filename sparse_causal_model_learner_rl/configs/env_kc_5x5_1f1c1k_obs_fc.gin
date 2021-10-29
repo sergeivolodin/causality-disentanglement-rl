@@ -10,7 +10,7 @@ include 'remote_collect.gin'
 N_FEATURES = 11 # player 2, health, keys, key x2, chest x2 food x2 -> 
 
 # DATA COLLECTION PREFS
-Config.min_collected_sample_ratio = 0.25
+Config.min_collected_sample_ratio = 0.1
 Config.buffer_steps = 100000
 Config.minibatch_size = 2000
 Config.n_collectors = 4
