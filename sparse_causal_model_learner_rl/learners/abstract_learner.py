@@ -90,6 +90,7 @@ class AbstractLearner(ABC):
 
         self.loss_per_run_cache = {}
         self.epoch_profiler = TimeProfiler()
+        self.epoch_times_unreported = []
 
     # attributes to save to pickle files
     PICKLE_DIRECTLY = ['history', 'epochs', 'epoch_info', 'config', 'normalizers', 'loss_per_run_cache']
@@ -202,6 +203,7 @@ class AbstractLearner(ABC):
             self.epoch_profiler.end('communicator')
 
             self.epoch_profiler.report()
+            self.epoch_times_unreported.append(self.epoch_profiler.delta('profiler'))
             f = self.config.get('stopping_condition', None)
             if callable(f) and f(self) is True:
                 logging.warning(f"Stopping via the stopping condition")
@@ -499,6 +501,13 @@ class AbstractLearner(ABC):
         self.epoch_profiler.start('metrics')
         if compute_metrics:
             # compute metrics
+            # epoch execution time
+            epoch_info['metrics']['epoch_time_n'] = len(self.epoch_times_unreported)
+            epoch_info['metrics']['epoch_time_mean'] = np.mean(self.epoch_times_unreported)
+            epoch_info['metrics']['epoch_time_median'] = np.median(self.epoch_times_unreported)
+            epoch_info['metrics']['epoch_time_std'] = np.std(self.epoch_times_unreported)
+            self.epoch_times_unreported = []
+
             for metric_label in sorted(self.config['metrics'].keys()):
                 self.epoch_profiler.start(f'metrics_{metric_label}')
                 self.epoch_profiler.start(f'metrics_{metric_label}_now_epoch_info')
