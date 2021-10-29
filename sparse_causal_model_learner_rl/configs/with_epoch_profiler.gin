@@ -1,3 +1,4 @@
-import sparse_causal_model_learner_rl.learners.abstract_learner
+import sparse_causal_model_learner_rl.time_profiler.profiler
+
 
 TimeProfiler.enable = True
