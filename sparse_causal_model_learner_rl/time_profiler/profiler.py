@@ -97,9 +97,9 @@ class TimeProfiler(object):
         return root_item
 
     def report(self):
+        self.end('profiler')
         if not self.enable:
             return
-        self.end('profiler')
         print("==== PROFILE ====")
         self.nested().describe()
         print("\n\n")
