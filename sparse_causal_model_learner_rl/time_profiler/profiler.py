@@ -18,6 +18,16 @@ class ProfilerItem:
     def delta(self):
         return self.t_end - self.t_start
 
+    def print_delta(self):
+        delta = self.delta()
+        if delta >= 1.0:
+            return '%.2f' % delta + 's'
+        elif delta >= 0.001:
+            return '%.2f' % (delta * 1000) + 'ms'
+        elif delta >= 0.000001:
+            return '%.2f' % (delta * 1000000) + 'mcs'
+        else: return str(delta)
+
     def describe(self, offset=0):
         if self.parent:
             percent = self.delta() / self.parent.delta()
@@ -25,7 +35,7 @@ class ProfilerItem:
             percent = 1.0
         percent = round(percent * 100, 2)
         indent = "    " * offset
-        print(f"{indent}- {self.name} {percent}% of {self.parent}")
+        print(f"{indent}- {self.name} {percent}% of {self.parent} // {self.print_delta()}")
         for item in self.children:
             item.describe(offset=offset + 1)
 
@@ -44,11 +54,15 @@ class TimeProfiler(object):
         self.start('profiler')
 
     def start(self, name):
+        if name in self.time_start:
+            raise ValueError(f"{name} already started")
         t = time()
         self.time_start[name] = t
         self.events.append(('start', name, t))
 
     def end(self, name):
+        if name not in self.time_start:
+            raise ValueError(f"{name} was not started yet")
         t = time()
         self.time_end[name] = t
         self.events.append(('end', name, t))

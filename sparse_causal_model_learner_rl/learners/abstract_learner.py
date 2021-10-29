@@ -19,6 +19,13 @@ from time import time
 from sparse_causal_model_learner_rl.time_profiler.profiler import TimeProfiler
 
 
+def maybe_item(t):
+    """If t.item() exists, call it."""
+    if hasattr(t, 'item'):
+        return t.item()
+    return t
+
+
 class AbstractLearner(ABC):
     """Train something."""
 
@@ -433,7 +440,7 @@ class AbstractLearner(ABC):
                     epoch_info['metrics'][loss_label] = metrics
                     coeff = loss['coeff']
                     epoch_info['losses'][f"{opt_label}/{loss_label}/coeff"] = coeff
-                    epoch_info['losses'][f"{opt_label}/{loss_label}/value"] = value
+                    epoch_info['losses'][f"{opt_label}/{loss_label}/value"] = maybe_item(value)
                     total_loss += coeff * value
                 self.epoch_profiler.end(f"opt_{opt_label}_{opt_iteration_i}_forward")
                 self.epoch_profiler.start(f"opt_{opt_label}_{opt_iteration_i}_backward")
@@ -471,7 +478,7 @@ class AbstractLearner(ABC):
 
                 else:
                     logging.warning(f"Warning: no losses for optimizer {opt_label}")
-                epoch_info['losses'][f"{opt_label}/value"] = total_loss
+                epoch_info['losses'][f"{opt_label}/value"] = maybe_item(total_loss)
                 self.epoch_profiler.start(f"opt_{opt_label}_{opt_iteration_i}_opt_step")
                 opt.step()
                 self.epoch_profiler.end(f"opt_{opt_label}_{opt_iteration_i}_opt_step")
