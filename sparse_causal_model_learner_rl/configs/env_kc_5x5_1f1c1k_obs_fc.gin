@@ -78,3 +78,7 @@ causal_learner_stopping_condition.edges_Ma = 4
 #fit_loss_obs_space.divide_by_std = False
 #
 BURSTS_TIME_SCALES = {}
+
+
+Config.checkpoint_every = 50000000
+Config.graph_every = 5000000
