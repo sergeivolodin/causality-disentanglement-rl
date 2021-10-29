@@ -525,7 +525,7 @@ class AbstractLearner(ABC):
         # send information downstream
         if self.callback:
             self.epoch_profiler.start('callback')
-            self.callback(self, epoch_info)
+            self.callback(self, epoch_info, epoch_profiler=self.epoch_profiler)
             self.epoch_profiler.end('callback')
 
         if self.config.get('keep_history'):

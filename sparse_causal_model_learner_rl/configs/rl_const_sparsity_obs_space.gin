@@ -72,7 +72,13 @@ Config.checkpoint_every = 1000
 Config.graph_every = 200
 Config.report_weights = False
 Config.report_weights_every = 1000
-Config.report_every = 5
+
+# tune takes ~2-10ms to report data
+Config.report_every = 80
+
+# sacred does it in a background process
+Config.sacred_every = 40
+
 Config.metrics_every = 5
 Config.keep_history = False
 Config.max_history_size = 100
@@ -87,3 +93,7 @@ MAX_LOSS_DIM = 1
 
 # takes ~80% time of backward pass
 Config.metric_grad_norm = False
+
+
+# takes ~2-10ms on every run
+Config.tune_no_empty_report = True

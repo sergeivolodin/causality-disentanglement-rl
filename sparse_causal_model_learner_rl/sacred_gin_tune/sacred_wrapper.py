@@ -139,8 +139,10 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
 
     mpl.use('Agg')
 
-    def callback(self, epoch_info):
+    def callback(self, epoch_info, epoch_profiler):
         """Callback for Learner."""
+
+        epoch_profiler.start('callback_pre')
 
         epoch_info = dict(epoch_info)
 
@@ -153,23 +155,36 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
                 return
             return add_artifact(fn, ex, do_sacred, self.epochs, epoch_info)
 
+        epoch_profiler.end('callback_pre')
+        epoch_profiler.start('artifacts')
         self.maybe_write_artifacts(path_epoch, add_artifact_local)
+        epoch_profiler.end('artifacts')
 
+        epoch_profiler.start('checkpoint')
         epoch_info['checkpoint_tune'] = None
         if self.epochs % self.checkpoint_every == 0:
             checkpoint_tune(self, epoch_info)
+        epoch_profiler.end('checkpoint')
 
-        # pass metrics to sacred
+        # pass metrics to tune
+        epoch_profiler.start('report_tune')
         if self.epochs % self.config.get('report_every', 1) == 0:
             if do_tune:
+                epoch_profiler.start('report_tune_data')
                 tune.report(**epoch_info)
+                epoch_profiler.end('report_tune_data')
             if not do_sacred and not do_tune:
                 logging.info(f"Report ready, len={len(epoch_info)}")
         else:
             if do_tune and not self.config.get('tune_no_empty_report', False):
+                epoch_profiler.start('report_tune_empty')
                 tune.report()
+                epoch_profiler.end('report_tune_empty')
+        epoch_profiler.end('report_tune')
+        epoch_profiler.start('report_sacred')
         if do_sacred and self.epochs % self.config.get('sacred_every', 1) == 0:
             dict_to_sacred(ex, epoch_info, epoch_info['epochs'])
+        epoch_profiler.end('report_sacred')
 
     if checkpoint_dir:
         learner = pickle.load(open(os.path.join(checkpoint_dir, "checkpoint"), 'rb'))
