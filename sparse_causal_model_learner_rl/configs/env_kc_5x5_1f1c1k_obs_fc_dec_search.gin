@@ -1,0 +1,11 @@
+include 'env_kc_5x5_1f1c1k_obs_fc.gin'
+import gin_tune
+
+Config.train_steps = 100000
+
+dec_act/grid_search.values = [@Sin, @Tanh, None]
+dec_hidden/grid_search.values = [[], [1024]]
+
+# DECODER
+decoder/FCNet.hidden_sizes = @dec_hidden/grid_search()
+decoder/FCNet.activation_cls = @dec_act/grid_search()
