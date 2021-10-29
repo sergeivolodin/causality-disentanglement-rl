@@ -16,35 +16,7 @@ from torch.nn.utils.clip_grad import clip_grad_norm_
 from sparse_causal_model_learner_rl.loss.helpers import get_loss_and_metrics
 from causal_util.helpers import set_default_logger_level
 from time import time
-
-
-@gin.configurable
-class TimeProfiler(object):
-    """Profile execution."""
-    def __init__(self, enable=False):
-        self.time_start = {}
-        self.time_end = {}
-        self.enable = enable
-        self.start('profiler')
-
-    def start(self, name):
-        self.time_start[name] = time()
-
-    def end(self, name):
-        self.time_end[name] = time()
-
-    def delta(self, name):
-        return self.time_end.get(name, 0) - self.time_start.get(name, 0)
-
-    def report(self):
-        if not self.enable:
-            return
-        self.end('profiler')
-        print("==== PROFILE ====")
-        for key in sorted(self.time_end.keys(), key=lambda k: self.delta(k)):
-            percent = self.delta(key) / self.delta('profiler') * 100
-            print("PROFILE %s: %s, %d %%" % (key, round(self.delta(key), 3), round(percent, 2)))
-        print("\n\n")
+from sparse_causal_model_learner_rl.time_profiler.profiler import TimeProfiler
 
 
 class AbstractLearner(ABC):
