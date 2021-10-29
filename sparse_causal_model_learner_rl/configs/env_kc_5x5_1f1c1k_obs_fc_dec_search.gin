@@ -1,4 +1,5 @@
 include 'env_kc_5x5_1f1c1k_obs_fc.gin'
+import sparse_causal_model_learner_rl.trainable.fcnet
 import gin_tune
 
 Config.train_steps = 100000
@@ -9,3 +10,6 @@ dec_hidden/grid_search.values = [[], [1024]]
 # DECODER
 decoder/FCNet.hidden_sizes = @dec_hidden/grid_search()
 decoder/FCNet.activation_cls = @dec_act/grid_search()
+
+tune_run.resources_per_trial = {'gpu': 1, 'cpu': 4}
+tune_run.queue_trials = False
