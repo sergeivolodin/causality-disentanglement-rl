@@ -402,6 +402,9 @@ class AbstractLearner(ABC):
         self.epoch_profiler.end('compute_stats')
         self.epoch_profiler.end('batches')
         context['epoch_profiler'] = self.epoch_profiler
+        
+        compute_metrics = self.epochs % self.config.get('metrics_every', 1) == 0
+        context['compute_metrics'] = compute_metrics
 
         # train using losses
         loss_epoch_cache = {}
@@ -422,7 +425,6 @@ class AbstractLearner(ABC):
                 self.epoch_profiler.end(f"opt_{opt_label}_{opt_iteration_i}_zero_grad")
                 loss_local_cache = {}
                 total_loss = 0
-                total_loss_float = 0
                 self.epoch_profiler.start(f"opt_{opt_label}_{opt_iteration_i}_forward")
                 for loss_label in self.config['execution'].get(opt_label, []):
                     loss = self.config['losses'][loss_label]
@@ -443,12 +445,8 @@ class AbstractLearner(ABC):
                     epoch_info['metrics'][loss_label] = metrics
                     coeff = loss['coeff']
                     epoch_info['losses'][f"{opt_label}/{loss_label}/coeff"] = coeff
-                    self.epoch_profiler.start(f"opt_{opt_label}_{opt_iteration_i}_forward_loss_item")
-                    value_float = maybe_item(value)
-                    epoch_info['losses'][f"{opt_label}/{loss_label}/value"] = value_float
-                    self.epoch_profiler.end(f"opt_{opt_label}_{opt_iteration_i}_forward_loss_item")
+                    epoch_info['losses'][f"{opt_label}/{loss_label}/value"] = value
                     total_loss += coeff * value
-                    total_loss_float += coeff * value_float
                 self.epoch_profiler.end(f"opt_{opt_label}_{opt_iteration_i}_forward")
                 self.epoch_profiler.start(f"opt_{opt_label}_{opt_iteration_i}_backward")
                 if hasattr(total_loss, 'backward'):
@@ -486,7 +484,7 @@ class AbstractLearner(ABC):
                 else:
                     logging.warning(f"Warning: no losses for optimizer {opt_label}")
                 self.epoch_profiler.start(f"opt_{opt_label}_{opt_iteration_i}_loss_item")
-                epoch_info['losses'][f"{opt_label}/value"] = total_loss_float
+                epoch_info['losses'][f"{opt_label}/value"] = total_loss
                 self.epoch_profiler.end(f"opt_{opt_label}_{opt_iteration_i}_loss_item")
                 self.epoch_profiler.start(f"opt_{opt_label}_{opt_iteration_i}_opt_step")
                 opt.step()
@@ -499,7 +497,7 @@ class AbstractLearner(ABC):
             self.epoch_profiler.end('opt_' + opt_label)
 
         self.epoch_profiler.start('metrics')
-        if self.epochs % self.config.get('metrics_every', 1) == 0:
+        if compute_metrics:
             # compute metrics
             for metric_label in sorted(self.config['metrics'].keys()):
                 self.epoch_profiler.start(f'metrics_{metric_label}')
@@ -528,7 +526,7 @@ class AbstractLearner(ABC):
 
         # process epoch information
         self.epoch_profiler.start('postprocess_info')
-        epoch_info = postprocess_info(epoch_info)
+        epoch_info = postprocess_info(epoch_info, only_rearrange=not compute_metrics)
         self.epoch_profiler.end('postprocess_info')
 
         # send information downstream

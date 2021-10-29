@@ -79,7 +79,7 @@ Config.report_every = 80
 # sacred does it in a background process
 Config.sacred_every = 40
 
-Config.metrics_every = 5
+Config.metrics_every = 40
 Config.keep_history = False
 Config.max_history_size = 100
 Config.loss_every = 1000000000000000

@@ -84,9 +84,11 @@ def torch_to_numpy(x):
         x = int(x)
     return x
 
-def postprocess_info(d):
+def postprocess_info(d, only_rearrange=False):
     """Prepare the info before exporting to Sacred."""
     d = flatten_dict_keys(d)
+    if only_rearrange:
+        return d
     d = {x: torch_to_numpy(y) for x, y in d.items()}
     return d
 

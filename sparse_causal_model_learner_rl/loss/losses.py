@@ -381,6 +381,8 @@ def delta_01_obs(obs, rec_dec_obs):
     
 @gin.configurable
 def reconstruction_loss(obs, decoder, reconstructor, relative=False,
+                        epoch_profiler=None,
+                        compute_metrics=None,
                         disable=False,
                         report_01=True,
                         **kwargs):
@@ -392,13 +394,26 @@ def reconstruction_loss(obs, decoder, reconstructor, relative=False,
         mse = MSERelative
     else:
         mse = lambda x, y: (x - y).flatten(start_dim=1).pow(2).sum(1).mean(0)
-        
-    rec_dec_obs = reconstructor(decoder(obs), source_index=1)
-    metrics = {}
-    loss = mse(rec_dec_obs, obs)
     
-    if report_01:
+    epoch_profiler.start('reconstruction_loss/decode')
+    decoded = decoder(obs)
+    epoch_profiler.end('reconstruction_loss/decode')
+
+    epoch_profiler.start('reconstruction_loss/reconstruct')
+    rec_dec_obs = reconstructor(decoded, source_index=1)
+    epoch_profiler.end('reconstruction_loss/reconstruct')
+
+    metrics = {}
+
+
+    epoch_profiler.start('reconstruction_loss/mse')
+    loss = mse(rec_dec_obs, obs)
+    epoch_profiler.end('reconstruction_loss/mse')
+    
+    if report_01 and compute_metrics:
+        epoch_profiler.start('reconstruction_loss/accuracy')
         metrics['rec_acc_loss_01_agg'] = 1 - delta_01_obs(obs, rec_dec_obs).item()
+        epoch_profiler.end('reconstruction_loss/accuracy')
         
     return {'loss': loss,
             'losses': {'reconstruction': loss},
