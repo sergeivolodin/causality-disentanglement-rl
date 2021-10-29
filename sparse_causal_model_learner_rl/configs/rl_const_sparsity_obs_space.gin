@@ -13,7 +13,10 @@ import sparse_causal_model_learner_rl.metrics.context_rewrite
 import sparse_causal_model_learner_rl.visual.learner_visual
 import sparse_causal_model_learner_rl.trainable.combined
 include 'common.gin'
-include 'with_communicator.gin'
+
+# takes ~+10% time because of reporting
+# include 'with_communicator.gin'
+
 include 'with_rl_normalizer.gin'
 include 'relative_obs_mse_losses.gin'
 include 'global_sparsity_config.gin'
@@ -81,3 +84,6 @@ TARGET_PER_COMPONENT_FIT_OBS = 0
 TARGET_PER_COMPONENT_FIT_FEAT = 0
 TARGET_PER_COMPONENT_FIT_ADD = 0
 MAX_LOSS_DIM = 1
+
+# takes ~80% time of backward pass
+Config.metric_grad_norm = False

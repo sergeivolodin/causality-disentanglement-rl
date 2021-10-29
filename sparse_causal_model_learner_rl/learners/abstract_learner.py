@@ -452,7 +452,7 @@ class AbstractLearner(ABC):
                         # computing gradient values
                         self.epoch_profiler.start(f"opt_{opt_label}_{opt_iteration_i}_backward_grad_norm")
                         self.epoch_profiler.start(f"opt_{opt_label}_{opt_iteration_i}_backward_grad_norm_1")
-                        grad_norms1 = [torch.mean(torch.abs(p.grad)).item()
+                        grad_norms1 = [p.grad.data.norm(1).item()
                                       for p in self.params_for_optimizers[opt_label]
                                       if p.grad is not None]
                         epoch_info['grads'][f"{opt_label}/grad_total_l1mean"] = np.mean(grad_norms1)
