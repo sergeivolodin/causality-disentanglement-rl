@@ -102,7 +102,7 @@ class RLContext():
         self.collector.flush()
 
     def collect_get_context(self):
-        self.profiler = TimeProfiler()
+        self.profiler = TimeProfiler(enable=False)
         profiler = self.profiler
         profiler.start('collect_steps')
         self.collect_steps()
@@ -305,6 +305,8 @@ class ExperienceReplayBuffer():
         assert not left_keys, f"Some keys were not used: {left_keys} {self.shuffle_together}"
 
     def sample_batch(self, max_size=None):
+        p = TimeProfiler(enable=False)
+        p.start('sample_batch')
         if max_size is None:
             max_size = self.minibatch_size
         elif max_size == -1:  # the whole buffer
@@ -312,17 +314,23 @@ class ExperienceReplayBuffer():
         self.check_keys()
         pre_context_return = {}
         for group in self.shuffle_together:
+            p.start(f'{group}_sample_idx')
             group_len = self.buffer_n[group[0]]
             if group_len > max_size:
                 idxes_return = np.random.choice(a=group_len,
                                                 size=max_size, replace=False)
             else:
                 idxes_return = slice(-1)
+            p.end(f'{group}_sample_idx')
 
+            p.start(f'{group}_sample')
             for key in group:
                 pre_context_return[key] = self.buffer[key][idxes_return]
+            p.end(f'{group}_sample')
 
         self.steps_sampled += len(pre_context_return[self.shuffle_together[0][0]])
+        p.end('sample_batch')
+        p.report()
         return pre_context_return
 
     def observe(self, pre_context):
