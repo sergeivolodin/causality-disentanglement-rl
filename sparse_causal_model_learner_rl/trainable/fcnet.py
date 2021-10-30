@@ -8,7 +8,7 @@ class Sin(nn.Module):
     def forward(self, x):
         return torch.sin(x)
 
-ReLU = gin.external_configurable(nn.ReLU)
+ReLU = gin.configurable(nn.ReLU)
 LeakyReLU = gin.external_configurable(nn.LeakyReLU)
 Tanh = gin.configurable(nn.Tanh)
 Sigmoid = gin.external_configurable(nn.Sigmoid)
