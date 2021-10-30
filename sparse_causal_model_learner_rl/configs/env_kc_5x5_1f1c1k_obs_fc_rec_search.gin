@@ -40,7 +40,7 @@ all/grid_search.values = [
     },
 ]
 
-FULL = @full/grid_search()
+FULL = @all/grid_search()
 part.item = %FULL
 hid/part.key = 'hidden'
 act/part.key = 'act'
