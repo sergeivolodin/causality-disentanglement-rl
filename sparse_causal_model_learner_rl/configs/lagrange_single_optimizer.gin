@@ -18,7 +18,7 @@ Config.execution = {
 }
 
 Config.optim_params = {
-    'opt1m': ['decoder', 'reconstructor', 'model', 'rot_pre', 'rot_post'],
+    'opt1': ['decoder', 'reconstructor', 'model', 'rot_pre', 'rot_post'],
     'opt2': ['lagrange_multipliers']
 }
 
