@@ -1,0 +1,52 @@
+include 'env_kc_5x5_1f1c1k_obs_fc.gin'
+import sparse_causal_model_learner_rl.trainable.fcnet
+import sparse_causal_model_learner_rl.configs.search_helpers.attr
+import gin_tune
+
+Config.train_steps = 100000
+
+all/grid_search.values = [
+    {
+        'hidden': [8092, 1024],
+        'act': [@ReLU, @ReLU, None]
+    },
+    {
+        'hidden': [8092, 1024],
+        'act': [@Tanh, @Tanh, None]
+    },
+    {
+        'hidden': [8092, 1024],
+        'act': [@Sin, @Sin, None]
+    },
+    {
+        'hidden': [4096, 1024],
+        'act': [@ReLU, @ReLU, None]
+    },
+    {
+        'hidden': [8092],
+        'act': [@ReLU, None]
+    },
+    {
+        'hidden': [8092],
+        'act': [@Sin, None]
+    },
+    {
+        'hidden': [8092, 4096, 1024],
+        'act': [@ReLU, @ReLU, @ReLU, None]
+    },
+    {
+        'hidden': [8092, 4096, 1024],
+        'act': [@Sin, @Sin, @Sin, None]
+    },
+]
+
+FULL = @full/grid_search()
+part.item = %FULL
+hid/part.key = 'hidden'
+act/part.key = 'act'
+
+rec/FCNet.hidden_sizes = @hid/part()
+rec/FCNet.activation_cls = @act/part()
+
+tune_run.resources_per_trial = {'gpu': 1, 'cpu': 4}
+tune_run.queue_trials = False

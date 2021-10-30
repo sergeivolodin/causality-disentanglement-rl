@@ -29,7 +29,7 @@ Config.feature_shape = (%N_FEATURES, )
 # DECODER
 Config.decoder = @ModelDecoder
 decoder/FCNet.hidden_sizes = []
-decoder/FCNet.activation_cls = @Sin
+decoder/FCNet.activation_cls = None
 decoder/FCNet.add_input_batchnorm = False
 ModelDecoder.model_cls = @decoder/FCNet
 ModelDecoder.flatten = True
