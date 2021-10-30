@@ -39,7 +39,7 @@ ModelDecoder.use_batchnorm = False
 # MODEL
 Config.model = @sparse_model/ManyNetworkCombinedModel
 model_gnn/FCCombinedModel.hidden_sizes = [256, 256]  # tuning...
-model_gnn/FCCombinedModel.activation_cls = [@ReLU, @ReLU, @Sin]
+model_gnn/FCCombinedModel.activation_cls = [@Sin, @Sin, @Sin]
 model_gnn/FCCombinedModel.skipconns = None
 WithInputSwitch.model_cls = @model_gnn/FCCombinedModel
 sparse_model/ManyNetworkCombinedModel.model_cls = @sparse_model/WithInputSwitch
@@ -54,15 +54,15 @@ LearnableSwitchSimple.init_identity_up_to = %N_FEATURES
 Config.reconstructor = @ModelReconstructor
 ModelReconstructor.model_cls = @rec/FCNet
 ModelReconstructor.unflatten = True
-rec/FCNet.hidden_sizes = [8092, 1024]
-rec/FCNet.activation_cls = [@ReLU, @ReLU, None]
+rec/FCNet.hidden_sizes = [8092]
+rec/FCNet.activation_cls = [@Sin, None]
 
 model_gnn/FCCombinedModel.add_input_batchnorm = False
 decoder/FCCombinedModel.add_input_batchnorm = False
 rec/FCCombinedModel.add_input_batchnorm = False
 
-TARGET_REC = 0
-TARGET_FIT_OBS = 0
+TARGET_REC = 0.1
+TARGET_FIT_OBS = 0.1
 TARGET_FIT_FEAT = 0
 TARGET_FIT_ADD = 0
 
@@ -75,10 +75,10 @@ causal_learner_stopping_condition.edges_Mf = 2
 causal_learner_stopping_condition.edges_Ma = 4
 
 # does not decrease the obs loss significantly
-#fit_loss_obs_space.divide_by_std = False
+fit_loss_obs_space.divide_by_std = True
 #
 BURSTS_TIME_SCALES = {}
 
 
-Config.checkpoint_every = 50000000
-Config.graph_every = 5000000
+Config.checkpoint_every = 100000
+Config.graph_every = 1000

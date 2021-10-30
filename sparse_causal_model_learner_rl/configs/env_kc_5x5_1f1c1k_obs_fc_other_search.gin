@@ -1,0 +1,45 @@
+import sparse_causal_model_learner_rl.trainable.fcnet
+import sparse_causal_model_learner_rl.loss.losses
+import sparse_causal_model_learner_rl.loss.optimizer
+import sparse_causal_model_learner_rl.configs.search_helpers.attr
+import gin_tune
+
+Config.train_steps = 100000
+
+all/grid_search.values = [
+    {
+        'lr': 1e-4,
+        'relative': False
+    },
+    {
+        'lr': 1e-4,
+        'relative': True
+    },
+    {
+        'lr': 1e-3,
+        'relative': True
+    },
+    {
+        'lr': 1e-2,
+        'relative': True
+    },
+    {
+        'lr': 1e-5,
+        'relative': True
+    },
+    {
+        'lr': 5e-4,
+        'relative': True
+    },
+]
+
+FULL = @all/grid_search()
+part.item = %FULL
+lr/part.key = 'lr'
+relative/part.key = 'relative'
+
+optr/Optimizer.lr = @lr/part()
+reconstruction_loss.relative = @relative/part()
+
+tune_run.resources_per_trial = {'gpu': 1, 'cpu': 4}
+tune_run.queue_trials = False
