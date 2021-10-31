@@ -51,8 +51,8 @@ class TimeProfiler(object):
         self.time_end = {}
         self.events = []
         self.enable = enable
-        self.start('profiler')
         self.prefix = ''
+        self.start('profiler')
 
     def set_prefix(self, p):
         self.prefix = p

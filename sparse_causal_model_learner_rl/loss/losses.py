@@ -140,7 +140,7 @@ def lagrangian_granular(
                print_components=True,
                opt_iteration_i=0,
                epoch_profiler=None,
-               compute_metrics=None
+               compute_metrics=None,
                **kwargs):
     epoch_profiler.start(f'lagrangian_granular_{mode}')
     epoch_profiler.start(f'lagrangian_granular_{mode}_pre')
