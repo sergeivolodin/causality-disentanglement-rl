@@ -166,6 +166,7 @@ def lagrangian_granular(
     def get_losses():
         result = {}
         for loss_key, loss_dct in losses_dict.items():
+            epoch_profiler.start(f'lagrangian_granular_{mode}_loss_{loss_key}')
             mapped = loss_to_lagrange_map.get(loss_key, 1.0)
             if isinstance(mapped, int) or isinstance(mapped, float):
                 lm = mapped
@@ -183,6 +184,7 @@ def lagrangian_granular(
             for ind_loss_key, ind_loss_val in result[loss_key]['computed'].get('losses', {}).items():
                 result[f"{loss_key}/{ind_loss_key}"] = {'computed': {'loss': ind_loss_val, 'metrics': {}},
                                                         'original': loss_dct}
+            epoch_profiler.end(f'lagrangian_granular_{mode}_loss_{loss_key}')
 
         return result
 

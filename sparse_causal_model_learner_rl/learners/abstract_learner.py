@@ -512,7 +512,7 @@ class AbstractLearner(ABC):
                 self.epoch_profiler.start(f'metrics_{metric_label}')
                 self.epoch_profiler.start(f'metrics_{metric_label}_now_epoch_info')
                 now_epoch_info = postprocess_info(epoch_info)
-                self.epoch_profiler.end('metrics_{metric_label}_now_epoch_info')
+                self.epoch_profiler.end(f'metrics_{metric_label}_now_epoch_info')
                 metric = self.config['metrics'][metric_label]
                 self.epoch_profiler.start(f'metrics_{metric_label}_metric')
                 epoch_info['metrics'][metric_label] = metric(**context, context=context,
