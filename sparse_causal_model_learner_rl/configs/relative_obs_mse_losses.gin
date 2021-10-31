@@ -11,12 +11,15 @@ fit_loss_obs_space.cross_std = False
 all_on/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': False}
 all_on/fit_loss_obs_space.detach_features = True
 all_on/fit_loss_obs_space.detach_rotation = True
+all_on/fit_loss_obs_space.fill_switch_grad = False
+all_on/fit_loss_obs_space.add_fcons = False
 
 # all probas are 0.5
 all_half/fit_loss_obs_space.model_forward_kwargs = {'enable_switch': True, 'force_proba': (0.1, 0.9)}
 all_half/fit_loss_obs_space.detach_features = True
 all_half/fit_loss_obs_space.detach_rotation = True
 all_half/fit_loss_obs_space.fill_switch_grad = True
+all_half/fit_loss_obs_space.add_fcons = False
 
 # enabling gradient for the true fit loss (p=p)
 fit/fit_loss_obs_space.detach_features = False

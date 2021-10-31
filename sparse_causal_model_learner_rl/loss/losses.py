@@ -166,8 +166,10 @@ def lagrangian_granular(
     def get_losses():
         result = {}
         for loss_key, loss_dct in losses_dict.items():
-            epoch_profiler.start(f'lagrangian_granular_{mode}_loss_{loss_key}')
+            epoch_profiler.set_prefix(f'lagrangian_granular_{mode}_loss_{loss_key}_')
+            epoch_profiler.start('all')
             mapped = loss_to_lagrange_map.get(loss_key, 1.0)
+            epoch_profiler.start('compute_lm')
             if isinstance(mapped, int) or isinstance(mapped, float):
                 lm = mapped
             elif isinstance(mapped, list):
@@ -178,13 +180,21 @@ def lagrangian_granular(
                         lm += lms[all_losses_lst.index(m)].sum().item()
             else:
                 raise NotImplementedError(f"Wrong input: {mapped}")
+            epoch_profiler.end('compute_lm')
+            epoch_profiler.start('modify_coeff')
             kwargs1 = modify_coeff(kwargs, loss_dct['coeff'] * lm)
+            epoch_profiler.end('modify_coeff')
+            epoch_profiler.start('compute')
             result[loss_key] = {'computed': loss_dct['fcn'](**kwargs1),
                                 'original': loss_dct}
+            epoch_profiler.end('compute')
+            epoch_profiler.start('unpack')
             for ind_loss_key, ind_loss_val in result[loss_key]['computed'].get('losses', {}).items():
                 result[f"{loss_key}/{ind_loss_key}"] = {'computed': {'loss': ind_loss_val, 'metrics': {}},
                                                         'original': loss_dct}
-            epoch_profiler.end(f'lagrangian_granular_{mode}_loss_{loss_key}')
+            epoch_profiler.end('unpack')
+            epoch_profiler.end('all')
+            epoch_profiler.pop_prefix()
 
         return result
 
@@ -857,7 +867,7 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
             'metrics': metrics}
     epoch_profiler.end('data')
     epoch_profiler.end('all')
-    epoch_profiler.set_prefix('')
+    epoch_profiler.pop_prefix()
     return data
 
 

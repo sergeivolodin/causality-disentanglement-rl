@@ -52,10 +52,20 @@ class TimeProfiler(object):
         self.events = []
         self.enable = enable
         self.prefix = ''
+        self.prefixes = []
         self.start('profiler')
 
     def set_prefix(self, p):
-        self.prefix = p
+        self.prefixes.append(p)
+        self.prefix = self._prefix
+
+    def pop_prefix(self):
+        self.prefixes = self.prefixes[:-1]
+        self.prefix = self._prefix
+
+    @property
+    def _prefix(self):
+        return ''.join(self.prefixes)
 
     def start(self, name):
         name = self.prefix + name
