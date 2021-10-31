@@ -187,10 +187,8 @@ def lagrangian_granular(
                 lm = mapped
             elif isinstance(mapped, list):
                 lms = lm_values
-                lm = 0
-                for m in mapped:
-                    if m in all_losses_set:
-                        lm += lms[lm_index(m)].sum()
+                indices = [lm_index(m) for m in mapped]
+                lm = lms[indices].sum()
             else:
                 raise NotImplementedError(f"Wrong input: {mapped}")
             epoch_profiler.end('compute_lm')
