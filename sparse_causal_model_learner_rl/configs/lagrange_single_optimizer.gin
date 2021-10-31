@@ -5,10 +5,10 @@ Config.optimizers = {
     'opt2': @opt2/Optimizer,
 }
 
-opt1/Optimizer.lr = 1e-4
+opt1/Optimizer.lr = 2e-4
 opt1/Optimizer.name = 'Adam'
 
-opt2/Optimizer.lr = 1e-4
+opt2/Optimizer.lr = 1e-3
 opt2/Optimizer.name = 'Adam'
 
 Config.execution = {
