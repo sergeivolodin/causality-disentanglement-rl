@@ -52,8 +52,13 @@ class TimeProfiler(object):
         self.events = []
         self.enable = enable
         self.start('profiler')
+        self.prefix = ''
+
+    def set_prefix(self, p):
+        self.prefix = p
 
     def start(self, name):
+        name = self.prefix + name
         if name in self.time_start:
             raise ValueError(f"{name} already started")
         t = time()
@@ -61,6 +66,7 @@ class TimeProfiler(object):
         self.events.append(('start', name, t))
 
     def end(self, name):
+        name = self.prefix + name
         if name not in self.time_start:
             raise ValueError(f"{name} was not started yet")
         t = time()

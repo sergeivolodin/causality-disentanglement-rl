@@ -211,6 +211,7 @@ def lagrangian_granular(
 
     # computing the objective and the constraints
     for loss_key, config in constraints_dict.items():
+        epoch_profiler.start(f'lagrangian_granular_{mode}_lagrange_fcn_{loss_key}')
         assert loss_key in losses, (loss_key, losses.keys())
         loss_dct = losses[loss_key]
         current_val_coeff = loss_dct['computed']['loss'] * loss_dct['original']['coeff']
@@ -287,6 +288,7 @@ def lagrangian_granular(
                     if current_val_coeff <= c:
                         constraints_satisfied += 1
                     constraints_total += 1
+        epoch_profiler.end(f'lagrangian_granular_{mode}_lagrange_fcn_{loss_key}')
 
     metrics['constraints_satisfied'] = constraints_satisfied
     metrics['constraints_satisfied_frac'] = constraints_satisfied / constraints_total
@@ -642,7 +644,8 @@ def delta_pow2_sum1(true, pred, std_from=None, divide_by_std=False, return_per_c
 @gin.configurable
 def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_feature_keys,
              reconstructor,
-             epoch_profiler,
+             epoch_profiler=None,
+             compute_metrics=None,
              model_forward_kwargs=None,
              fill_switch_grad=False,
              opt_label=None,
@@ -668,9 +671,10 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
     # f_yp_f ~ f_y
 
     time_start = str(time())
-    epoch_profiler.start('fit_loss_obs_space_' + time_start)
+    epoch_profiler.set_prefix(f'fit_loss_obs_space_{time_start}_')
+    epoch_profiler.start('all')
 
-
+    # pre/post
     if rot_pre is None:
         rot_pre = lambda x: x
     if rot_post is None:
@@ -678,35 +682,44 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
 
     if model_forward_kwargs is None:
         model_forward_kwargs = {}
-    epoch_profiler.start('fit_loss_obs_space_' + time_start + 'decoder')
 
+    epoch_profiler.start('decoder')
     f_x = cache_get(loss_local_cache, 'dec_obs_x',  lambda: decoder(obs_x))
 
     if detach_features:
         f_x = f_x.detach()
+    epoch_profiler.end('decoder')
 
+    epoch_profiler.start('rot_pre')
     with torch.set_grad_enabled(not detach_rotation):
         f_x_model = rot_pre(f_x)
+    epoch_profiler.end('rot_pre')
 
-    epoch_profiler.end('fit_loss_obs_space_' + time_start + 'decoder')
-
-    epoch_profiler.start('fit_loss_obs_space_' + time_start + 'model')
+    epoch_profiler.start('model')
     f_yp_model = model(f_x_model, action_x, all=True, **model_forward_kwargs)
     f_yp_f_model = f_yp_model[:, :model.n_features]
-    f_yp_f = rot_post(f_yp_f_model)
-    epoch_profiler.end('fit_loss_obs_space_' + time_start + 'model')
-    epoch_profiler.start('fit_loss_obs_space_' + time_start + 'rec')
-    obs_yp = reconstructor(f_yp_f)
-    epoch_profiler.end('fit_loss_obs_space_' + time_start + 'rec')
+    epoch_profiler.end('model')
 
+    epoch_profiler.start('rot_post')
+    f_yp_f = rot_post(f_yp_f_model)
+    epoch_profiler.end('rot_post')
+
+    epoch_profiler.start('rec')
+    obs_yp = reconstructor(f_yp_f)
+    epoch_profiler.end('rec')
+
+    epoch_profiler.start('loss_rec')
     loss_rec = delta_pow2_sum1(obs_y.flatten(start_dim=1),
                                obs_yp.flatten(start_dim=1),
                                divide_by_std=obs_relative,
                                return_per_component=return_per_component)
+    epoch_profiler.end('loss_rec')
 
     #print("lossrec", loss_rec.shape)
     
+    epoch_profiler.start('loss_rec_discrete')
     loss_rec_discrete = manual_switch_gradient(loss_rec, model) if fill_switch_grad else 0.0
+    epoch_profiler.end('loss_rec_discrete')
     
     #print(loss_rec_discrete)
     
@@ -715,6 +728,7 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
     loss = loss_rec.sum(1) if return_per_component else loss_rec
 
     if additional_feature_keys:
+        epoch_profiler.start('additional')
         f_y_fadd = gather_additional_features(
             additional_feature_keys=additional_feature_keys, **kwargs)
         f_yp_fadd_model = f_yp_model[:, model.n_features:]
@@ -724,39 +738,51 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
         loss_additional, loss_additional_orig = loss_additional + loss_additional_discrete, loss_additional
 
         loss += loss_additional.sum(1) if return_per_component else loss_additional
+        epoch_profiler.end('additional')
     else:
         loss_additional = None
         loss_additional_orig = None
         loss_additional_discrete = 0.0
 
     if add_fcons:
-        epoch_profiler.start('fit_loss_obs_space_' + time_start + 'fcons')
+        epoch_profiler.start('fcons_dec')
         f_y = cache_get(loss_local_cache, 'dec_obs_y', lambda: decoder(obs_y))
 
         if detach_features:
             f_y = f_y.detach()
+        epoch_profiler.end('fcons_dec')
 
+        epoch_profiler.start('fcons_rot_pre')
         with torch.set_grad_enabled(not detach_rotation):
             f_y_model = rot_pre(f_y)
+        epoch_profiler.end('fcons_rot_pre')
 
+        epoch_profiler.start('fcons_loss')
         loss_fcons = delta_pow2_sum1(f_y, f_yp_f, divide_by_std=divide_by_std,
                                      std_from=f_x if cross_std else f_y,
                                      return_per_component=return_per_component)
 
+        epoch_profiler.end('fcons_loss')
+
+        epoch_profiler.start('fcons_discrete')
         loss_fcons_discrete = manual_switch_gradient(loss_fcons, model) if fill_switch_grad else 0.0
+        epoch_profiler.end('fcons_discrete')
         loss_fcons, loss_fcons_orig = loss_fcons + loss_fcons_discrete, loss_fcons
 
         loss += loss_fcons.sum(1) if return_per_component else loss_fcons
 
+        epoch_profiler.start('fcons_loss_model')
         loss_fcons_model = delta_pow2_sum1(f_y_model, f_yp_f_model, divide_by_std=divide_by_std,
                                            std_from=f_x_model if cross_std else f_y_model,
                                            return_per_component=return_per_component)
+        epoch_profiler.end('fcons_loss_model')
 
+        epoch_profiler.start('fcons_discrete_model')
         loss_fcons_model_discrete = manual_switch_gradient(loss_fcons_model, model) if fill_switch_grad else 0.0
+        epoch_profiler.end('fcons_discrete_model')
         loss_fcons_model, loss_fcons_model_orig = loss_fcons_model + loss_fcons_model_discrete, loss_fcons_model
 
         loss += loss_fcons_model.sum(1) if return_per_component else loss_fcons_model
-        epoch_profiler.end('fit_loss_obs_space_' + time_start + 'fcons')
     else:
         loss_fcons = None
         loss_fcons_model = None
@@ -777,7 +803,7 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
     
     if return_per_component and hasattr(discrete_total, 'sum'):
         discrete_total = discrete_total.sum(0)
-    discrete_total = maybe_item(discrete_total)
+    # discrete_total = maybe_item(discrete_total)
 
     def return_metric(t):
         if t is None:
@@ -790,29 +816,31 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
     
     #print(loss.mean(0).item())
 
-    epoch_profiler.start('fit_loss_obs_space_' + time_start + 'metrics')
+    metrics = {}
 
-    metrics = {'mean_feature': f_x.mean(0).detach().cpu().numpy(),
-               'std_feature': f_x.std(0).detach().cpu().numpy(),
-               'min_feature': f_x.min().item(),
-               'max_feature': f_x.max().item(),
-               'loss_fcons': return_metric(loss_fcons_orig),
-               'loss_add': return_metric(loss_additional_orig),
-               'loss_rec': return_metric(loss_rec_orig),
-               'loss_fcons_pre': return_metric(loss_fcons_model_orig),
-               'rec_fit_acc_loss_01_agg': 1 - delta_01_obs(obs_y, obs_yp).item(),
-               'loss_discrete': discrete_total,
-               'loss_orig': loss.mean(0).item() - discrete_total,
-               }
-    epoch_profiler.end('fit_loss_obs_space_' + time_start + 'metrics')
+    epoch_profiler.start('metrics')
+    if compute_metrics:
+        metrics = {'mean_feature': f_x.mean(0).detach().cpu().numpy(),
+                   'std_feature': f_x.std(0).detach().cpu().numpy(),
+                   'min_feature': f_x.min().item(),
+                   'max_feature': f_x.max().item(),
+                   'loss_fcons': return_metric(loss_fcons_orig),
+                   'loss_add': return_metric(loss_additional_orig),
+                   'loss_rec': return_metric(loss_rec_orig),
+                   'loss_fcons_pre': return_metric(loss_fcons_model_orig),
+                   'rec_fit_acc_loss_01_agg': 1 - delta_01_obs(obs_y, obs_yp).item(),
+                   'loss_discrete': discrete_total,
+                   'loss_orig': loss.mean(0).item() - discrete_total,
+                   }
+    epoch_profiler.end('metrics')
 
     def l_out(l):
         if hasattr(l, 'mean'):
             return l.mean(0)
         return 0.0
-    epoch_profiler.end('fit_loss_obs_space_' + time_start)
 
-    return {'loss': loss.mean(0),
+    epoch_profiler.start('data')
+    data = {'loss': loss.mean(0),
             'losses': {
                 'additional': l_out(loss_additional),
                 'obs': l_out(loss_rec),
@@ -825,6 +853,10 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
                 'feat_model_orig': l_out(loss_fcons_model_orig),
             },
             'metrics': metrics}
+    epoch_profiler.end('data')
+    epoch_profiler.end('all')
+    epoch.profiler.set_prefix('')
+    return data
 
 
 def linreg(X, Y):
