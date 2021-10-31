@@ -6,8 +6,8 @@ import sparse_causal_model_learner_rl.metrics.metric_smooth
 ## SMOOTH
 smooth.smooth_steps = 20
 smooth.do_log = True
-fit_loss_smooth/smooth.orig_key = '/fit/loss_orig'
-non_sparse_fit_loss_smooth/smooth.orig_key = '/fit_all_on/loss_orig'
+fit_loss_smooth/smooth.orig_key = '/fit/obs_orig/value'
+non_sparse_fit_loss_smooth/smooth.orig_key = '/fit_all_on/obs_orig/value'
 
 ## SPARSITY GAP
 mult_sparsity_gap.sparse_key = 'fit_loss_smooth'
