@@ -260,16 +260,16 @@ def lagrangian_granular(
             epoch_profiler.end('no_constraint')
         else:
             epoch_profiler.start('controlling')
-            idx = lm_index(loss_key)
             c = config[constraint_val_key]
-            lm = lagrange_multipliers()[idx]
 
             if not config['controlling']:
                 # not using lagrange multiplier
                 idx = lm_index(config['take_lm_from'])
                 lm = lagrange_multipliers()[idx].detach()
             else:
-                if return_per_component and hasattr(current_val_coeff, 'shape') and len(current_val_coeff.shape) and compute_metrics:
+                idx = lm_index(loss_key)
+                lm = lagrange_multipliers()[idx]
+                if compute_metrics and return_per_component and hasattr(current_val_coeff, 'shape') and len(current_val_coeff.shape):
                     assert len(current_val_coeff.shape) == 1, (loss_key, current_val_coeff.shape)
                     n_cmp = current_val_coeff.shape[0]
                     arr = []
