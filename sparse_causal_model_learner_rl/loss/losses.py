@@ -139,9 +139,9 @@ def lagrangian_granular(
                print_equation=None,
                print_components=True,
                opt_iteration_i=0,
-               epoch_profiler=None,
                compute_metrics=None,
                **kwargs):
+    epoch_profiler = kwargs.get('epoch_profiler')
     epoch_profiler.start(f'lagrangian_granular_{mode}')
     epoch_profiler.start(f'lagrangian_granular_{mode}_pre')
     assert mode in ['PRIMAL', 'DUAL'], mode
@@ -855,7 +855,7 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
             'metrics': metrics}
     epoch_profiler.end('data')
     epoch_profiler.end('all')
-    epoch.profiler.set_prefix('')
+    epoch_profiler.set_prefix('')
     return data
 
 
