@@ -28,7 +28,7 @@ lagrangian_granular.constraints_dict = {
         'constraint': %TARGET_REC,
         'constraint_per_component': %TARGET_PER_COMPONENT_REC,
         'controlling': True,
-        'required': False,
+        'required': True,
         #'take_lm_from': 'fit/obs',
     },
 
