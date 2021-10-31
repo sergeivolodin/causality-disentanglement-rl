@@ -161,7 +161,15 @@ def lagrangian_granular(
     if print_equation is None:
         print_equation = loss_per_run_cache['print_equation'].should_run(mode)
 
+
     all_losses_lst = list(sorted(constraints_dict.keys()))
+    if 'all_losses_set' not in loss_per_run_cache:
+        loss_per_run_cache['all_losses_set'] = set(all_losses_lst)
+        loss_per_run_cache['all_losses_lst_rev'] = {val: idx for idx, val in enumerate(all_losses_lst)}
+
+    all_losses_set = loss_per_run_cache['all_losses_set']
+    def lm_index(s):
+        return loss_per_run_cache['all_losses_lst_rev'][s]
     assert lagrange_multipliers.n >= len(all_losses_lst), (lagrange_multipliers.n, all_losses_lst, len(all_losses_lst))
     assert lagrange_multipliers.vectorized == return_per_component, (lagrange_multipliers.vectorized, return_per_component)
     epoch_profiler.end(f'lagrangian_granular_{mode}_pre')
@@ -179,8 +187,8 @@ def lagrangian_granular(
                 lms = lagrange_multipliers()
                 lm = 0
                 for m in mapped:
-                    if m in all_losses_lst:
-                        lm += lms[all_losses_lst.index(m)].sum()
+                    if m in all_losses_set:
+                        lm += lms[lm_index(m)].sum()
             else:
                 raise NotImplementedError(f"Wrong input: {mapped}")
             epoch_profiler.end('compute_lm')
@@ -252,13 +260,13 @@ def lagrangian_granular(
             epoch_profiler.end('no_constraint')
         else:
             epoch_profiler.start('controlling')
-            idx = all_losses_lst.index(loss_key)
+            idx = lm_index(loss_key)
             c = config[constraint_val_key]
             lm = lagrange_multipliers()[idx]
 
             if not config['controlling']:
                 # not using lagrange multiplier
-                idx = all_losses_lst.index(config['take_lm_from'])
+                idx = lm_index(config['take_lm_from'])
                 lm = lagrange_multipliers()[idx].detach()
             else:
                 if return_per_component and hasattr(current_val_coeff, 'shape') and len(current_val_coeff.shape) and compute_metrics:
@@ -340,7 +348,7 @@ def lagrangian_granular(
         current_val_coeff = loss_dct['computed']['loss'] * loss_dct['original']['coeff']
 
         if config[constraint_val_key] is not None:  # this is the objective
-            idx = all_losses_lst.index(loss_key)
+            idx = lm_index(loss_key)
             if config.get('controlling_loss_override', False):
                 loss_dct = losses[config['controlling_loss_override']]
                 current_val_coeff = loss_dct['computed']['loss'] * loss_dct['original']['coeff']
