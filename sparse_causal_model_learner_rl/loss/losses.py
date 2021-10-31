@@ -140,12 +140,12 @@ def lagrangian_granular(
                print_components=True,
                opt_iteration_i=0,
                **kwargs):
+    compute_metrics = kwargs.get('compute_metrics')
     if not compute_metrics:
         print_equation = False
         print_components = False
     # lagrange_multipliers.project()
     lm_values = lagrange_multipliers()
-    compute_metrics = kwargs.get('compute_metrics')
     epoch_profiler = kwargs.get('epoch_profiler')
     epoch_profiler.start(f'lagrangian_granular_{mode}')
     epoch_profiler.start(f'lagrangian_granular_{mode}_pre')
