@@ -81,4 +81,4 @@ BURSTS_TIME_SCALES = {}
 
 
 Config.checkpoint_every = 100000
-Config.graph_every = 1000
+Config.graph_every = 3000
