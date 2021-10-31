@@ -139,7 +139,11 @@ def lagrangian_granular(
                print_equation=None,
                print_components=True,
                opt_iteration_i=0,
+               epoch_profiler=None,
+               compute_metrics=None
                **kwargs):
+    epoch_profiler.start(f'lagrangian_granular_{mode}')
+    epoch_profiler.start(f'lagrangian_granular_{mode}_pre')
     assert mode in ['PRIMAL', 'DUAL'], mode
     metrics = {}
 
@@ -157,6 +161,7 @@ def lagrangian_granular(
     all_losses_lst = list(sorted(constraints_dict.keys()))
     assert lagrange_multipliers.n >= len(all_losses_lst), (lagrange_multipliers.n, all_losses_lst, len(all_losses_lst))
     assert lagrange_multipliers.vectorized == return_per_component, (lagrange_multipliers.vectorized, return_per_component)
+    epoch_profiler.end(f'lagrangian_granular_{mode}_pre')
 
     def get_losses():
         result = {}
@@ -181,18 +186,24 @@ def lagrangian_granular(
 
         return result
 
+    epoch_profiler.start(f'lagrangian_granular_{mode}_losses')
     losses = cache_get(loss_epoch_cache, '_lagrange_losses', get_losses,
                        force=(mode == 'PRIMAL'))
+    epoch_profiler.end(f'lagrangian_granular_{mode}_losses')
+    epoch_profiler.start(f'lagrangian_granular_{mode}_metrics')
 
     total_constraint = 0.0
     total_objective = 0.0
 
 
     # filling in the metrics
-    for loss_key, loss_dct in losses.items():
-        metrics[loss_key] = {'value': maybe_item(maybe_sum(loss_dct['computed']['loss'])),
-                             'coeff': loss_dct['original']['coeff'],
-                             **loss_dct['computed']['metrics']}
+    if compute_metrics:
+        for loss_key, loss_dct in losses.items():
+            metrics[loss_key] = {'value': maybe_item(maybe_sum(loss_dct['computed']['loss'])),
+                                 'coeff': loss_dct['original']['coeff'],
+                                 **loss_dct['computed']['metrics']}
+    epoch_profiler.end(f'lagrangian_granular_{mode}_metrics')
+    epoch_profiler.start(f'lagrangian_granular_{mode}_lagrange_fcn')
 
     constraints_satisfied = 0
     constraints_total = 0
@@ -279,11 +290,15 @@ def lagrangian_granular(
 
     metrics['constraints_satisfied'] = constraints_satisfied
     metrics['constraints_satisfied_frac'] = constraints_satisfied / constraints_total
+    epoch_profiler.end(f'lagrangian_granular_{mode}_lagrange_fcn')
 
+    epoch_profiler.start(f'lagrangian_granular_{mode}_print')
     if print_equation:
         console.print(f"[bold red]LAGRANGIAN[/bold red] mode={mode}\n" + "\n".join(equation))
+    epoch_profiler.end(f'lagrangian_granular_{mode}_print')
 
     # initializing lagrange multipliers
+    epoch_profiler.start(f'lagrangian_granular_{mode}_init')
     for loss_key, config in constraints_dict.items():
         loss_dct = losses[loss_key]
         current_val_coeff = loss_dct['computed']['loss'] * loss_dct['original']['coeff']
@@ -315,15 +330,18 @@ def lagrangian_granular(
                     logging.warning(f"Initializing lagrange multiplier {loss_key} with {new_value}")
 
 
+    epoch_profiler.end(f'lagrangian_granular_{mode}_init')
     lagrangian = total_objective + total_constraint
-    metrics['constraint'] = maybe_item(total_constraint)
-    metrics['objective'] = maybe_item(total_objective)
-    metrics['lagrangian'] = maybe_item(lagrangian)
+    if compute_metrics:
+        metrics['constraint'] = maybe_item(total_constraint)
+        metrics['objective'] = maybe_item(total_objective)
+        metrics['lagrangian'] = maybe_item(lagrangian)
 
     if mode == 'PRIMAL':
         loss = lagrangian
     elif mode == 'DUAL':
         loss = -lagrangian
+    epoch_profiler.end(f'lagrangian_granular_{mode}')
 
     return {'loss': loss,
             'metrics': metrics}
