@@ -141,6 +141,9 @@ def lagrangian_granular(
                opt_iteration_i=0,
                compute_metrics=None,
                **kwargs):
+    if not compute_metrics:
+        print_equation = False
+        print_components = False
     epoch_profiler = kwargs.get('epoch_profiler')
     epoch_profiler.start(f'lagrangian_granular_{mode}')
     epoch_profiler.start(f'lagrangian_granular_{mode}_pre')
@@ -177,7 +180,7 @@ def lagrangian_granular(
                 lm = 0
                 for m in mapped:
                     if m in all_losses_lst:
-                        lm += lms[all_losses_lst.index(m)].sum().item()
+                        lm += lms[all_losses_lst.index(m)].sum()
             else:
                 raise NotImplementedError(f"Wrong input: {mapped}")
             epoch_profiler.end('compute_lm')
@@ -223,22 +226,32 @@ def lagrangian_granular(
 
     # computing the objective and the constraints
     for loss_key, config in constraints_dict.items():
-        epoch_profiler.start(f'lagrangian_granular_{mode}_lagrange_fcn_{loss_key}')
+        epoch_profiler.set_prefix(f'lagrangian_granular_{mode}_lagrange_fcn_{loss_key}')
+        epoch_profiler.start('all')
+        epoch_profiler.start('pre')
         assert loss_key in losses, (loss_key, losses.keys())
         loss_dct = losses[loss_key]
         current_val_coeff = loss_dct['computed']['loss'] * loss_dct['original']['coeff']
-        metrics[loss_key] = loss_dct['computed']['metrics']
-        metrics[loss_key]['value'] = maybe_item(maybe_sum(loss_dct['computed']['loss']))
+
+        if compute_metrics:
+            metrics[loss_key] = loss_dct['computed']['metrics']
+            metrics[loss_key]['value'] = maybe_item(maybe_sum(loss_dct['computed']['loss']))
 
         if mode == 'DUAL':
             current_val_coeff = maybe_detach(current_val_coeff)
 
+        epoch_profiler.end('pre')
+
         if config['constraint'] is None:  # this is the objective
+            epoch_profiler.start('no_constraint')
             total_objective += current_val_coeff
 
             if print_equation:
                 equation.append(f"[bold blue]{loss_key}[/bold blue] [shape={current_val_coeff.shape}] -> min")
+
+            epoch_profiler.end('no_constraint')
         else:
+            epoch_profiler.start('controlling')
             idx = all_losses_lst.index(loss_key)
             c = config[constraint_val_key]
             lm = lagrange_multipliers()[idx]
@@ -248,7 +261,7 @@ def lagrangian_granular(
                 idx = all_losses_lst.index(config['take_lm_from'])
                 lm = lagrange_multipliers()[idx].detach()
             else:
-                if return_per_component and hasattr(current_val_coeff, 'shape') and len(current_val_coeff.shape):
+                if return_per_component and hasattr(current_val_coeff, 'shape') and len(current_val_coeff.shape) and compute_metrics:
                     assert len(current_val_coeff.shape) == 1, (loss_key, current_val_coeff.shape)
                     n_cmp = current_val_coeff.shape[0]
                     arr = []
@@ -257,8 +270,11 @@ def lagrangian_granular(
                         metrics[f'lagrange_multiplier/{loss_key}/{component}'] = lm_item
                         arr.append(lm_item)
                     metrics[f'lagrange_multiplier/{loss_key}/hist'] = arr
-                metrics['lagrange_multiplier/' + loss_key] = maybe_item(maybe_sum(lm))
+                if compute_metrics:
+                    metrics['lagrange_multiplier/' + loss_key] = maybe_item(maybe_sum(lm))
+            epoch_profiler.end('controlling')
 
+            epoch_profiler.start('p2')
             if mode == 'PRIMAL':
                 lm = lm.detach()
             if config.get('controlling_loss_override', False) and mode == 'DUAL':
@@ -275,7 +291,8 @@ def lagrangian_granular(
                         satisfied = current_val_coeff[component] <= c
                         color = 'green' if satisfied else 'red'
                         console.print(f"[bold blue]{loss_key}[/bold blue] [bold {color}]comp {component}[/bold {color}] c=[blue]{c}[/blue] lm=[blue]{lm[component]}[/blue] loss=[bold {color}]{current_val_coeff[component]}[/bold {color}]")
-
+            epoch_profiler.end('p2')
+            epoch_profiler.start('p3')
 
             current_constraint = (current_val_coeff - c) * lm
             if return_per_component:
@@ -289,7 +306,9 @@ def lagrangian_granular(
                 if shape is not None:
                     equation.append(f"[bold blue]{loss_key}[/bold blue] [shape={shape}] <= [blue]{c}[/blue], lm_index=[blue]{idx}[/blue] required=[blue]{required}[/blue]")
 
-            if required:
+            epoch_profiler.end('p3')
+            epoch_profiler.start('p4')
+            if required and compute_metrics:
                 
                 if return_per_component and hasattr(current_val_coeff, 'shape'):
                     n_components = current_val_coeff.shape[0]
@@ -300,10 +319,13 @@ def lagrangian_granular(
                     if current_val_coeff <= c:
                         constraints_satisfied += 1
                     constraints_total += 1
-        epoch_profiler.end(f'lagrangian_granular_{mode}_lagrange_fcn_{loss_key}')
+
+            epoch_profiler.end('p4')
+        epoch_profiler.end('all')
+        epoch_profiler.pop_prefix()
 
     metrics['constraints_satisfied'] = constraints_satisfied
-    metrics['constraints_satisfied_frac'] = constraints_satisfied / constraints_total
+    metrics['constraints_satisfied_frac'] = constraints_satisfied / (0.0001 + constraints_total)
     epoch_profiler.end(f'lagrangian_granular_{mode}_lagrange_fcn')
 
     epoch_profiler.start(f'lagrangian_granular_{mode}_print')
