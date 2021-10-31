@@ -66,7 +66,8 @@ TARGET_FIT_OBS = 0.1
 TARGET_FIT_FEAT = 0.005
 TARGET_FIT_ADD = 0
 
-reconstruction_loss.disable = True
+reconstruction_loss.disable = False
+reconstruction_loss.relative = True
 
 LearnableSwitchSimple.initial_proba = 1.0
 LearnableSwitchSimple.init_identity_up_to = 0
