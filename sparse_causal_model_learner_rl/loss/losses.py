@@ -144,6 +144,8 @@ def lagrangian_granular(
     if not compute_metrics:
         print_equation = False
         print_components = False
+    # lagrange_multipliers.project()
+    lm_values = lagrange_multipliers()
     epoch_profiler = kwargs.get('epoch_profiler')
     epoch_profiler.start(f'lagrangian_granular_{mode}')
     epoch_profiler.start(f'lagrangian_granular_{mode}_pre')
@@ -184,7 +186,7 @@ def lagrangian_granular(
             if isinstance(mapped, int) or isinstance(mapped, float):
                 lm = mapped
             elif isinstance(mapped, list):
-                lms = lagrange_multipliers()
+                lms = lm_values
                 lm = 0
                 for m in mapped:
                     if m in all_losses_set:
@@ -265,10 +267,10 @@ def lagrangian_granular(
             if not config['controlling']:
                 # not using lagrange multiplier
                 idx = lm_index(config['take_lm_from'])
-                lm = lagrange_multipliers()[idx].detach()
+                lm = lm_values[idx].detach()
             else:
                 idx = lm_index(loss_key)
-                lm = lagrange_multipliers()[idx]
+                lm = lm_values[idx]
                 if compute_metrics and return_per_component and hasattr(current_val_coeff, 'shape') and len(current_val_coeff.shape):
                     assert len(current_val_coeff.shape) == 1, (loss_key, current_val_coeff.shape)
                     n_cmp = current_val_coeff.shape[0]
