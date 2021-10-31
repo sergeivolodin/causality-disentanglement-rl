@@ -26,7 +26,7 @@ class ProfilerItem:
             return '%.2f' % (delta * 1000) + 'ms'
         elif delta >= 0.000001:
             return '%.2f' % (delta * 1000000) + 'mcs'
-        else: return str(delta)
+        else: return str(round(delta, 10))
 
     def describe(self, offset=0):
         if self.parent:
@@ -35,7 +35,8 @@ class ProfilerItem:
             percent = 1.0
         percent = round(percent * 100, 2)
         indent = "    " * offset
-        print(f"{indent}- {self.name} {percent}% of {self.parent} // {self.print_delta()}")
+        accounted_children_time = round(sum([x.delta() for x in self.children]) / self.delta() * 100, 2)
+        print(f"{indent}- {percent}% // {self.print_delta()} {self.name} [accounted {accounted_children_time}%]")
         for item in self.children:
             item.describe(offset=offset + 1)
 
