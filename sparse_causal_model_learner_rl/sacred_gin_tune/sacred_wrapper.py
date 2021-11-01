@@ -189,6 +189,9 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
     if checkpoint_dir:
         learner = pickle.load(open(os.path.join(checkpoint_dir, "checkpoint"), 'rb'))
         learner.callback = callback
+        if config.get('reset_optimizers', False):
+            logging.info("Creating optimizers again")
+            learner.create_optimizers()
     else:
         learner = learner_cls(config, callback=callback)
 
