@@ -38,7 +38,7 @@ ModelDecoder.use_batchnorm = False
 
 # MODEL
 Config.model = @sparse_model/ManyNetworkCombinedModel
-model_gnn/FCCombinedModel.hidden_sizes = [512, 512]  # tuning...
+model_gnn/FCCombinedModel.hidden_sizes = [1024, 1024]  # tuning...
 model_gnn/FCCombinedModel.activation_cls = [@Sin, @Sin, None]
 model_gnn/FCCombinedModel.skipconns = None
 WithInputSwitch.model_cls = @model_gnn/FCCombinedModel
