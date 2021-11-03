@@ -528,12 +528,6 @@ def manual_switch_gradient(loss_delta_noreduce, model, eps=1e-5, loss_coeff=1.0,
      p on and off.
     """
 
-    if disable:
-        if return_per_component:
-            return torch.zeros(delta.shape[1], dtype=loss_delta_noreduce.dtype, device=loss_delta_noreduce.device)
-        else:
-            return 0.0
-
     mask = model.model.last_mask
     input_dim = model.n_features + model.n_actions
     output_dim = model.n_features + model.n_additional_features
@@ -552,6 +546,12 @@ def manual_switch_gradient(loss_delta_noreduce, model, eps=1e-5, loss_coeff=1.0,
     else:
         raise NotImplementedError
         
+    if disable:
+        if return_per_component:
+            return torch.zeros(delta.shape[1], dtype=loss_delta_noreduce.dtype, device=loss_delta_noreduce.device)
+        else:
+            return 0.0
+
     mask_coeff = (mask - 0.5) * 2
 
     mask_pos = mask
