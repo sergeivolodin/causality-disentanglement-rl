@@ -70,6 +70,7 @@ class LearnableSwitchSimple(Switch):
     """Sample from Bernoulli, return p for grad."""
     def __init__(self, initial_proba=0.5, return_grad=True,
                  min_proba=0.0, init_identity_up_to=5,
+                 load_array=None,
                  **kwargs):
         super(LearnableSwitchSimple, self).__init__(**kwargs)
 
@@ -80,6 +81,11 @@ class LearnableSwitchSimple(Switch):
                 init[:m, :m] = np.eye(m)
             else:
                 raise ValueError(f"Cannot init with identity when rank is not 2: {self.shape}")
+        if load_array:
+            data = np.array(load_array, dtype=np.float32)
+            assert data.shape == init.shape, (data.shape, init.shape)
+            init[:, :] = data
+
         self.probas = torch.nn.Parameter(torch.from_numpy(init))
         self.return_grad = return_grad
         self.min_proba = min_proba

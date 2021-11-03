@@ -521,12 +521,19 @@ def reconstruction_loss_value_function_reward_to_go(obs_x, decoder, value_predic
 
 
 @gin.configurable
-def manual_switch_gradient(loss_delta_noreduce, model, eps=1e-5, loss_coeff=1.0):
+def manual_switch_gradient(loss_delta_noreduce, model, eps=1e-5, loss_coeff=1.0, disable=False):
     """Fill in the gradient of switch probas manually
 
     Assuming that the batch size is enough to estimate mean loss with
      p on and off.
     """
+
+    if disable:
+        if return_per_component:
+            return torch.zeros(delta.shape[1], dtype=loss_delta_noreduce.dtype, device=loss_delta_noreduce.device)
+        else:
+            return 0.0
+
     mask = model.model.last_mask
     input_dim = model.n_features + model.n_actions
     output_dim = model.n_features + model.n_additional_features
@@ -984,8 +991,11 @@ def nonzero_proba_loss(model, eps=1e-3, do_abs=True, **kwargs):
 
 @gin.configurable
 def sparsity_loss(model, device, add_reg=True, ord=1, eps=1e-8, add_inv=True,
+                  disable=False,
                   **kwargs):
     """Ensure that the model is sparse."""
+    if disable:
+        return {'loss': 0.0, 'metrics': {}}
     params = [x[1] for x in model.sparsify_me()]
 
     def inverse_or_pinverse(M, eps=eps, add_reg=add_reg):
