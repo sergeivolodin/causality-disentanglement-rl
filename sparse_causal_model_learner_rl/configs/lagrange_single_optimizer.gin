@@ -8,7 +8,7 @@ Config.optimizers = {
 opt1/Optimizer.lr = 1e-4
 opt1/Optimizer.name = 'Adam'
 
-opt2/Optimizer.lr = 1e-4
+opt2/Optimizer.lr = 5e-4
 opt2/Optimizer.name = 'Adam'
 
 Config.execution = {

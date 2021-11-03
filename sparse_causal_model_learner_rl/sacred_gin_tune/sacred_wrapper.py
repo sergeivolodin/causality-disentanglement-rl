@@ -187,8 +187,15 @@ def main_fcn(config, ex, checkpoint_dir, do_tune=True, do_sacred=True, do_tqdm=F
         epoch_profiler.end('report_sacred')
 
     if checkpoint_dir:
+        current_config = gin.config_str()
         learner = pickle.load(open(os.path.join(checkpoint_dir, "checkpoint"), 'rb'))
         learner.callback = callback
+        if config.get('reload_config', False):
+            logging.info("Loading new config")
+            gin.parse_config(current_config)
+        if config.get('reset_optimizers', False):
+            logging.info("Creating optimizers again")
+            learner.create_optimizers()
     else:
         learner = learner_cls(config, callback=callback)
 

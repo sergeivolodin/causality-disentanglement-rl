@@ -13,7 +13,7 @@ N_FEATURES = 11 # player 2, health, keys, key x2, chest x2 food x2 ->
 Config.min_collected_sample_ratio = 0.1
 Config.buffer_steps = 100000
 Config.minibatch_size = 2000
-Config.n_collectors = 2
+Config.n_collectors = 3
 Config.env_steps = 2000
 Config.collect_initial_steps = 100000
 tune_run.resources_per_trial = {'gpu': 0.4, 'cpu': 4}
@@ -38,8 +38,8 @@ ModelDecoder.use_batchnorm = False
 
 # MODEL
 Config.model = @sparse_model/ManyNetworkCombinedModel
-model_gnn/FCCombinedModel.hidden_sizes = [256, 256]  # tuning...
-model_gnn/FCCombinedModel.activation_cls = [@Sin, @Sin, @Sin]
+model_gnn/FCCombinedModel.hidden_sizes = [1024, 1024]  # tuning...
+model_gnn/FCCombinedModel.activation_cls = [@Sin, @Sin, None]
 model_gnn/FCCombinedModel.skipconns = None
 WithInputSwitch.model_cls = @model_gnn/FCCombinedModel
 sparse_model/ManyNetworkCombinedModel.model_cls = @sparse_model/WithInputSwitch
@@ -63,10 +63,11 @@ rec/FCCombinedModel.add_input_batchnorm = False
 
 TARGET_REC = 0.1
 TARGET_FIT_OBS = 0.1
-TARGET_FIT_FEAT = 0.005
+TARGET_FIT_FEAT = 0.05
 TARGET_FIT_ADD = 0
 
-reconstruction_loss.disable = True
+reconstruction_loss.disable = False
+reconstruction_loss.relative = True
 
 LearnableSwitchSimple.initial_proba = 1.0
 LearnableSwitchSimple.init_identity_up_to = 0
@@ -81,4 +82,4 @@ BURSTS_TIME_SCALES = {}
 
 
 Config.checkpoint_every = 100000
-Config.graph_every = 1000
+Config.graph_every = 3000

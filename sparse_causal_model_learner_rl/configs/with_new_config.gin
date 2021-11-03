@@ -1,0 +1,3 @@
+import sparse_causal_model_learner_rl.config
+
+Config.reload_config = True
