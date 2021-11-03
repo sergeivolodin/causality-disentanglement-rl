@@ -547,10 +547,11 @@ def manual_switch_gradient(loss_delta_noreduce, model, eps=1e-5, loss_coeff=1.0,
         raise NotImplementedError
         
     if disable:
+        kwargs_zeros = {'dtype': loss_delta_noreduce.dtype, 'device': loss_delta_noreduce.device}
         if return_per_component:
-            return torch.zeros(delta.shape[1], dtype=loss_delta_noreduce.dtype, device=loss_delta_noreduce.device)
+            return torch.zeros(delta.shape[1], **kwargs_zeros)
         else:
-            return 0.0
+            return torch.zeros((), **kwargs_zeros)
 
     mask_coeff = (mask - 0.5) * 2
 
@@ -995,7 +996,7 @@ def sparsity_loss(model, device, add_reg=True, ord=1, eps=1e-8, add_inv=True,
                   **kwargs):
     """Ensure that the model is sparse."""
     if disable:
-        return {'loss': 0.0, 'metrics': {}}
+        return {'loss': torch.zeros((), device=model.device, dtype=torch.float32), 'metrics': {}}
     params = [x[1] for x in model.sparsify_me()]
 
     def inverse_or_pinverse(M, eps=eps, add_reg=add_reg):
