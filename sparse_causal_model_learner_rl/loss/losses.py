@@ -996,7 +996,7 @@ def sparsity_loss(model, device, add_reg=True, ord=1, eps=1e-8, add_inv=True,
                   **kwargs):
     """Ensure that the model is sparse."""
     if disable:
-        return {'loss': torch.zeros((), device=model.device, dtype=torch.float32), 'metrics': {}}
+        return {'loss': torch.zeros((), device=device, dtype=torch.float32), 'metrics': {}}
     params = [x[1] for x in model.sparsify_me()]
 
     def inverse_or_pinverse(M, eps=eps, add_reg=add_reg):
