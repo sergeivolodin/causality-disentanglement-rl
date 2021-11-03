@@ -1,0 +1,25 @@
+import sparse_causal_model_learner_rl.trainable.gumbel_switch
+import sparse_causal_model_learner_rl.loss.losses
+
+sparsity_loss.disable = True
+manual_switch_gradient.disable = True
+
+MODEL_ = [
+               # effects                       # causes
+	# 1  3  5  7  8  9  A  B 
+	[ 1, 0, 0, 1, 0, 0, 0, 0 ], # from feature 1 (food xy)
+	[ 0, 1, 1, 0, 1, 0, 0, 0 ], # from feature 3 (key x)
+	[ 0, 0, 1, 0, 0, 0, 0, 0 ], # from feature 5 (chest x)
+	[ 0, 0, 0, 1, 0, 0, 0, 0 ], # from feature 7 health
+	[ 0, 0, 1, 0, 1, 0, 0, 0 ], # from feature 8 keys
+	[ 0, 0, 0, 0, 0, 0, 0, 0 ], # from feature 9 UNUSED
+	[ 1, 1, 1, 1, 1, 0, 1, 0 ], # from feature A player x
+	[ 1, 1, 1, 1, 1, 0, 0, 1 ], # from feature B player y
+	[ 0, 0, 0, 0, 0, 0, 1, 0 ], # from action 1 (right)
+	[ 0, 0, 0, 0, 0, 0, 1, 0 ], # from action 2 (left)
+	[ 0, 0, 0, 0, 0, 0, 0, 1 ], # from action 3 (down)
+	[ 0, 0, 0, 0, 0, 0, 0, 1 ], # from action 4(up)
+]
+
+
+LearnableSwitchSimple.load_array = %MODEL_
