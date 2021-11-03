@@ -5,18 +5,22 @@ sparsity_loss.disable = True
 manual_switch_gradient.disable = True
 
 MODEL_ = [
- #1  2  3  4  5  6  7  8  9  A  B  d  a  w  s 
- [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], # to feature 1
- [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], # to feature 2
- [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], # to feature 3
- [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], # to feature 4
- [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], # to feature 5
- [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], # to feature 6
- [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], # to feature 7
- [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], # to feature 8
- [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], # to feature 9
- [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], # to feature 10
- [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], # to feature 11
+	# 1  2  3  4  5  6  7  8  9  A  B 
+	[ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ], # from feature 1 (food x)
+	[ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ], # from feature 2 (food y)
+	[ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ], # from feature 3 (key x)
+	[ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ], # from feature 4 (key y)
+	[ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ], # from feature 5 (chest x)
+	[ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ], # from feature 6 (chest y)
+	[ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ], # from feature 7 health
+	[ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ], # from feature 8 keys
+	[ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ], # from feature 9 UNUSED
+	[ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ], # from feature A player x
+	[ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ], # from feature B player y
+	[ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ], # from action 1 (right)
+	[ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ], # from action 2 (left)
+	[ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ], # from action 3 (down)
+	[ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ], # from action 4(up)
 ]
 
 
