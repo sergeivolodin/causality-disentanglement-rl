@@ -1045,3 +1045,86 @@ def soft_batchnorm_regul(decoder, **kwargs):
     all_zeros = torch.tensor(np.zeros(n), dtype=torch.float32, requires_grad=False)
     regul_loss = mse(torch.log(torch.abs(params['weight'])), all_zeros) + mse(params['bias'], all_zeros)
     return regul_loss
+
+@gin.configurable
+def fit_loss_simple(model, obs_x, action_x, additional_y, obs_y, decoder, epoch_profiler, model_forward_kwargs=None, loss_epoch_cache=None, fill_switch_grad=False, additional_feature_keys=None, compute_metrics=False, **kwargs):
+    """Compute the fit loss for the model (no reconstructor)."""
+
+    if model_forward_kwargs is None: model_forward_kwargs = {}
+
+    epoch_profiler.set_prefix('fit_simple')
+    epoch_profiler.start('all')
+
+    epoch_profiler.start('decoder_x')
+    features_x = cache_get(loss_epoch_cache, 'dec_obs_x', lambda: decoder(obs_x))
+    epoch_profiler.end('decoder_x')
+
+    epoch_profiler.start('decoder_y')
+    features_y = cache_get(loss_epoch_cache, 'dec_obs_y', lambda: decoder(obs_y))
+    epoch_profiler.end('decoder_y')
+
+    epoch_profiler.start('model')
+    features_y_pred_all = model(obs_x, action_x, all=True, **model_forward_kwargs)
+    epoch_profiler.end('model')
+
+    epoch_profiler.start('select_features')
+    features_y_pred = features_y_pred_all[:, :model.n_features]
+    epoch_profiler.end('select_features')
+
+    epoch_profiler.start('loss_fit')
+    loss_fit = delta_pow2_sum1(
+            features_y,
+            features_y_pred,
+            divide_by_std=True,
+            return_per_component=False)
+    epoch_profiler.end('loss_fit')
+
+    epoch_profiler.start('discrete_fit')
+    loss_fit_discrete = manual_switch_gradient(loss_fit, model) if fill_switch_grad else 0.0
+    epoch_profiler.end('discrete_fit')
+
+    loss = loss_fit + loss_fit_discrete
+
+    epoch_profiler.start('additional')
+    if additional_feature_keys:
+        additional_y = gather_additional_features(
+            additional_feature_keys=additional_feature_keys, **kwargs)
+        additional_y_pred = features_y_pred_all[:, model_n_features:]
+
+        loss_fit_add = delta_pow2_sum1(
+                additional_y,
+                additional_y_pred,
+                divide_by_std=True,
+                return_per_component=False)
+
+        loss_fit_add_discrete = manual_switch_gradient(loss_fit_add, model) if fill_switch_grad else 0.0
+
+        loss += loss_fit_add + loss_fit_add_discrete
+    else:
+        loss_fit_add = 0.0
+        loss_fit_add_discrete = 0.0
+    epoch_profiler.end('additional')
+
+    epoch_profiler.start('metrics')
+    if compute_metrics:
+        metrics = {
+            'mean_feature': features_x.mean(0).detach().cpu().numpy(),
+            'std_feature': features_x.std(0).detach().cpu().numpy(),
+            'min_feature': features_x.min().item(),
+            'max_feature': features_x.max().item(),
+            'loss_fit': loss_fit,
+            'loss_fit_discrete': loss_fit_discrete,
+            'loss_fit_add': loss_fit_add,
+            'loss_fit_add_discrete': loss_fit_add_discrete
+        }
+    else:
+        metrics = {}
+    epoch_profiler.end('metrics')
+
+    return {
+        'loss': loss,
+        'metrics': metrics
+    }
+
+    epoch_profiler.end('all')
+    epoch_profiler.pop_prefix()

@@ -3,7 +3,7 @@ import torch
 
 
 @gin.configurable
-def contrastive_loss_full(obs, decoder, epoch_profiler, margin_val=0.1):
+def contrastive_loss_full(obs, decoder, epoch_profiler, margin_val=0.1, **kwargs):
   """Compute the margin loss excluding elements where it is exactly 0.
 
      Args:
