@@ -1,0 +1,20 @@
+# Compute relative MSE losses in feature space
+# Used without the reconstructor
+
+import sparse_causal_model_learner_rl.loss.losses
+import sparse_causal_model_learner_rl.loss.contrastive_full
+
+# all probas are 1
+all_on/fit_loss_simple.model_forward_kwargs = {'enable_switch': False}
+all_on/fit_loss_simple.fill_switch_grad = False
+
+# all probas are 0.5
+all_half/fit_loss_simple.model_forward_kwargs = {'enable_switch': True, 'force_proba': (0.1, 0.9)}
+all_half/fit_loss_simple.fill_switch_grad = True
+
+# enabling gradient for the true fit loss (p=p)
+fit/fit_loss_simple.fill_switch_grad = True
+fit/fit_loss_simple.model_forward_kwargs = {}
+
+# setting the margin
+contrastive_loss_full.margin_val = 0.1
