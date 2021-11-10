@@ -1128,7 +1128,7 @@ def fit_loss_simple(model, obs_x, action_x, additional_y, obs_y, decoder, epoch_
             'fit': loss_fit + loss_fit_discrete,
             'additional_orig': loss_fit_add,
             'additional': loss_fit_add + loss_fit_add_discrete,
-        }
+        },
         'metrics': metrics
     }
 

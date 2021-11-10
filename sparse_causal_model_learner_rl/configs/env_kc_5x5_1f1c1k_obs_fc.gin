@@ -64,7 +64,7 @@ rec/FCCombinedModel.add_input_batchnorm = False
 TARGET_REC = 0.1
 TARGET_FIT_OBS = 0.1
 TARGET_FIT_FEAT = 0.01
-TARGET_FIT_MARGIN = 1e-20
+TARGET_MARGIN = 1e-20
 TARGET_FIT_ADD = 0
 
 reconstruction_loss.disable = False

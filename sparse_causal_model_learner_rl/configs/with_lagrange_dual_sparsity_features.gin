@@ -7,6 +7,7 @@ import sparse_causal_model_learner_rl.learners.rl_learner
 N_CONSTRAINTS = 14
 LagrangeMultipliers.n = %N_CONSTRAINTS
 Config.lagrange_multipliers = @LagrangeMultipliers
+Config.reconstructor = None
 
 lagrangian_granular.losses_dict = %LOSSES_DICT
 lagrangian_granular.loss_to_lagrange_map = {
