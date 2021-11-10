@@ -1047,7 +1047,7 @@ def soft_batchnorm_regul(decoder, **kwargs):
     return regul_loss
 
 @gin.configurable
-def fit_loss_simple(model, obs_x, action_x, obs_y, decoder, epoch_profiler, model_forward_kwargs=None, loss_epoch_cache=None, fill_switch_grad=False, additional_feature_keys=None, compute_metrics=False, **kwargs):
+def fit_loss_simple(model, obs_x, action_x, obs_y, decoder, epoch_profiler, model_forward_kwargs=None, loss_epoch_cache=None, fill_switch_grad=False, additional_feature_keys=None, compute_metrics=False, relative=True, **kwargs):
     """Compute the fit loss for the model (no reconstructor)."""
 
     if model_forward_kwargs is None: model_forward_kwargs = {}
@@ -1075,7 +1075,7 @@ def fit_loss_simple(model, obs_x, action_x, obs_y, decoder, epoch_profiler, mode
     loss_fit = delta_pow2_sum1(
             features_y,
             features_y_pred,
-            divide_by_std=True,
+            divide_by_std=relative,
             return_per_component=False)
     epoch_profiler.end('loss_fit')
 
@@ -1094,7 +1094,7 @@ def fit_loss_simple(model, obs_x, action_x, obs_y, decoder, epoch_profiler, mode
         loss_fit_add = delta_pow2_sum1(
                 additional_y,
                 additional_y_pred,
-                divide_by_std=True,
+                divide_by_std=relative,
                 return_per_component=False)
 
         loss_fit_add_discrete = manual_switch_gradient(loss_fit_add, model) if fill_switch_grad else 0.0

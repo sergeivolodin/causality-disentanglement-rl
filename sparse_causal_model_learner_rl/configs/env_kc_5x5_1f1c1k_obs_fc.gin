@@ -17,7 +17,7 @@ Config.n_collectors = 3
 Config.env_steps = 2000
 Config.collect_initial_steps = 100000
 tune_run.resources_per_trial = {'gpu': 0.4, 'cpu': 4}
-Config.collect_every = 1
+Config.collect_every = 10
 Config.batch_training = False
 Config.shuffle = False
 Config.train_steps = 10000000
@@ -38,7 +38,7 @@ ModelDecoder.use_batchnorm = False
 
 # MODEL
 Config.model = @sparse_model/ManyNetworkCombinedModel
-model_gnn/FCCombinedModel.hidden_sizes = [1024, 1024]  # tuning...
+model_gnn/FCCombinedModel.hidden_sizes = [256, 256] # tuning...
 model_gnn/FCCombinedModel.activation_cls = [@Sin, @Sin, None]
 model_gnn/FCCombinedModel.skipconns = None
 WithInputSwitch.model_cls = @model_gnn/FCCombinedModel
@@ -63,7 +63,7 @@ rec/FCCombinedModel.add_input_batchnorm = False
 
 TARGET_REC = 0.1
 TARGET_FIT_OBS = 0.1
-TARGET_FIT_FEAT = 0.01
+TARGET_FIT_FEAT = 1e-20
 TARGET_MARGIN = 1e-20
 TARGET_FIT_ADD = 0
 
