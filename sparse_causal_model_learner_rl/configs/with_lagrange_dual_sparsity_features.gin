@@ -1,4 +1,5 @@
 # Use two-optimizer setup with a lagrange multiplier
+import sparse_causal_model_learner_rl.metrics.metric_smooth
 import sparse_causal_model_learner_rl.loss.losses
 import sparse_causal_model_learner_rl.trainable.lagrange
 import sparse_causal_model_learner_rl.configs.search_helpers.opt_cycle
@@ -132,3 +133,6 @@ Config.stopping_condition = @causal_learner_stopping_condition
 causal_learner_stopping_condition.metric_geq = {
     'constraints_satisfied_frac': 1.0,
 }
+
+fit_loss_smooth/smooth.orig_key = '/fit/fit_orig/value'
+non_sparse_fit_loss_smooth/smooth.orig_key = '/fit_all_on/fit_orig/value'
