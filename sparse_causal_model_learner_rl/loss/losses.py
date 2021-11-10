@@ -1047,7 +1047,7 @@ def soft_batchnorm_regul(decoder, **kwargs):
     return regul_loss
 
 @gin.configurable
-def fit_loss_simple(model, obs_x, action_x, additional_y, obs_y, decoder, epoch_profiler, model_forward_kwargs=None, loss_epoch_cache=None, fill_switch_grad=False, additional_feature_keys=None, compute_metrics=False, **kwargs):
+def fit_loss_simple(model, obs_x, action_x, obs_y, decoder, epoch_profiler, model_forward_kwargs=None, loss_epoch_cache=None, fill_switch_grad=False, additional_feature_keys=None, compute_metrics=False, **kwargs):
     """Compute the fit loss for the model (no reconstructor)."""
 
     if model_forward_kwargs is None: model_forward_kwargs = {}
@@ -1064,7 +1064,7 @@ def fit_loss_simple(model, obs_x, action_x, additional_y, obs_y, decoder, epoch_
     epoch_profiler.end('decoder_y')
 
     epoch_profiler.start('model')
-    features_y_pred_all = model(obs_x, action_x, all=True, **model_forward_kwargs)
+    features_y_pred_all = model(features_x, action_x, all=True, **model_forward_kwargs)
     epoch_profiler.end('model')
 
     epoch_profiler.start('select_features')
@@ -1105,6 +1105,19 @@ def fit_loss_simple(model, obs_x, action_x, additional_y, obs_y, decoder, epoch_
         loss_fit_add_discrete = 0.0
     epoch_profiler.end('additional')
 
+    def l_out(l):
+        if hasattr(l, 'mean'):
+            return l.mean(0)
+        return 0.0
+
+    epoch_profiler.start('l_out')
+    loss_fit = l_out(loss_fit)
+    loss_fit_discrete = l_out(loss_fit_discrete)
+    loss_fit_add = l_out(loss_fit_add)
+    loss_fit_add_discrete = l_out(loss_fit_add_discrete)
+    loss = l_out(loss)
+    epoch_profiler.end('l_out')
+
     epoch_profiler.start('metrics')
     if compute_metrics:
         metrics = {
@@ -1120,8 +1133,10 @@ def fit_loss_simple(model, obs_x, action_x, additional_y, obs_y, decoder, epoch_
     else:
         metrics = {}
     epoch_profiler.end('metrics')
+    epoch_profiler.end('all')
+    epoch_profiler.pop_prefix()
 
-    return {
+    data = {
         'loss': loss,
         'losses': {
             'fit_orig': loss_fit,
@@ -1132,5 +1147,4 @@ def fit_loss_simple(model, obs_x, action_x, additional_y, obs_y, decoder, epoch_
         'metrics': metrics
     }
 
-    epoch_profiler.end('all')
-    epoch_profiler.pop_prefix()
+    return data
