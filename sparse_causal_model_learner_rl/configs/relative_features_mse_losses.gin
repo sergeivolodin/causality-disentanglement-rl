@@ -19,4 +19,4 @@ fit/fit_loss_simple.model_forward_kwargs = {}
 # setting the margin
 contrastive_loss_full.margin_val = 0.1
 
-fit_loss_simple.relative = False
+fit_loss_simple.relative = True
