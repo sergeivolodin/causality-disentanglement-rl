@@ -1,0 +1,133 @@
+# Use two-optimizer setup with a lagrange multiplier
+import sparse_causal_model_learner_rl.loss.losses
+import sparse_causal_model_learner_rl.trainable.lagrange
+import sparse_causal_model_learner_rl.configs.search_helpers.opt_cycle
+import sparse_causal_model_learner_rl.learners.rl_learner
+
+N_CONSTRAINTS = 14
+LagrangeMultipliers.n = %N_CONSTRAINTS
+Config.lagrange_multipliers = @LagrangeMultipliers
+
+lagrangian_granular.losses_dict = %LOSSES_DICT
+lagrangian_granular.loss_to_lagrange_map = {
+    'sparsity': 1.0,
+    'margin': ['margin'],
+    'fit': ['fit/fit', 'fit/additional'],
+    'fit_all_on': ['fit_all_on/fit', 'fit_all_on/additional'],
+    'fit_all_half': ['fit_all_half/fit', 'fit_all_half/additional'],
+}
+lagrangian_granular.constraints_dict = {
+    'sparsity': {  # objective
+        'constraint': None,
+        'constraint_per_component': None,
+        'controlling': False
+    },
+
+    # MARGIN loss
+    'margin': {  # fit loss: observation part
+        'constraint': %TARGET_MARGIN,
+        'constraint_per_component': %TARGET_PER_COMPONENT_MARGIN,
+        'controlling': True,
+        'required': True,
+    },
+
+    # FIT LOSS
+
+    'fit/fit': {  # fit loss: observation part
+        'constraint': %TARGET_FIT_FEAT,
+        'constraint_per_component': %TARGET_PER_COMPONENT_FIT_FEAT,
+        'controlling': True,
+        'required': True,
+        'controlling_loss_override': 'fit/fit_orig',
+    },
+
+    'fit/additional': {  # fit loss: rew/done part
+        'constraint': %TARGET_FIT_ADD,
+        'constraint_per_component': %TARGET_PER_COMPONENT_FIT_ADD,
+        'controlling': True,
+        'required': True,
+        'controlling_loss_override': 'fit/additional_orig',
+    },
+
+    # FIT ALL ON
+
+    'fit_all_on/fit': {  # fit loss: observation part
+        'constraint': %TARGET_FIT_FEAT,
+        'constraint_per_component': %TARGET_PER_COMPONENT_FIT_FEAT,
+        'controlling': True,
+        'required': True,
+        'controlling_loss_override': 'fit_all_on/fit_orig',
+    },
+
+    'fit_all_on/additional': {  # fit loss: rew/done part
+        'constraint': %TARGET_FIT_ADD,
+        'constraint_per_component': %TARGET_PER_COMPONENT_FIT_ADD,
+        'controlling': True,
+        'required': True,
+        'controlling_loss_override': 'fit_all_on/additional_orig',
+    },
+
+    # FIT EXPLORATION
+
+    'fit_all_half/fit': {  # loss: observation part
+        'constraint': 0,
+        'constraint_per_component': 0,
+        'controlling': False,
+        'take_lm_from': 'fit/fit',
+    },
+
+    'fit_all_half/additional': {  # fit loss: rew/done part
+        'constraint': 0,
+        'constraint_per_component': 0,
+        'controlling': False,
+        'take_lm_from': 'fit/additional',
+    },
+}
+
+primal/lagrangian_granular.mode = 'PRIMAL'
+dual/lagrangian_granular.mode = 'DUAL'
+
+Config.losses = {
+    'primal': {'fcn': @primal/lagrangian_granular, 'coeff': 1.0},
+    'dual': {'fcn': @dual/lagrangian_granular, 'coeff': 1.0},
+}
+
+Config.optimizers = {
+    'opt1': @opt1/Optimizer,
+    'opt2': @opt2/Optimizer,
+}
+
+opt1/Optimizer.lr = 1e-3
+opt1/Optimizer.name = 'Adam'
+
+opt2/Optimizer.lr = 1e-3
+opt2/Optimizer.name = 'Adam'
+
+Config.execution = {
+    'opt1': ['primal'],
+    'opt2': ['dual'],
+}
+
+Config.optim_params = {
+    'opt1': ['model', 'decoder'],
+
+    'opt2': ['lagrange_multipliers']
+}
+
+FIT_COEFF = 1.0
+SPARSITY_COEFF = 1.0
+REC_COEFF = 1.0
+FIT_ON_COEFF = 1.0
+FIT_HALF_COEFF = 0.02
+
+LagrangeMultipliers.param_min = -10
+LagrangeMultipliers.param_max = 7
+LagrangeMultipliers.param_init = 0.0
+LagrangeMultipliers.fcn = 'exp'
+
+Config.opt_enabled_fcn = None
+
+Config.stopping_condition = @causal_learner_stopping_condition
+causal_learner_stopping_condition.metric_geq = {
+    'constraints_satisfied_frac': 1.0,
+}

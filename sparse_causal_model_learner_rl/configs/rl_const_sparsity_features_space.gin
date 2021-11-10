@@ -44,21 +44,23 @@ Config.opt_iterations = {'opt1': 1}
 Config.schedulers = {}
 
 # LOSSES
-LOSSES_ALL = ['fit', 'sparsity', 'fit_all_on', 'fit_all_half']
+LOSSES_ALL = ['fit', 'sparsity', 'fit_all_on', 'fit_all_half', 'margin']
 
 # coefficients
 FIT_COEFF = 1.
 SPARSITY_COEFF = 1.
 FIT_ON_COEFF = 1.
 FIT_HALF_COEFF = 1.
+MARGIN_COEFF = 1.
 
 SPARSITY_LOSS_FCN = @sparsity_loss
 
 LOSSES_DICT = {'fit': {'fcn': @fit/fit_loss_simple, 'coeff': %FIT_COEFF},
-                 'sparsity': {'fcn': %SPARSITY_LOSS_FCN, 'coeff': %SPARSITY_COEFF},
-                 'fit_all_on': {'fcn': @all_on/fit_loss_simple, 'coeff': %FIT_ON_COEFF},
-                 'fit_all_half': {'fcn': @all_half/fit_loss_simple, 'coeff': %FIT_HALF_COEFF},
-                }
+	       'sparsity': {'fcn': %SPARSITY_LOSS_FCN, 'coeff': %SPARSITY_COEFF},
+               'fit_all_on': {'fcn': @all_on/fit_loss_simple, 'coeff': %FIT_ON_COEFF},
+	       'fit_all_half': {'fcn': @all_half/fit_loss_simple, 'coeff': %FIT_HALF_COEFF},
+	       'margin': {'fcn': @contrastive_loss_full, 'coeff': %MARGIN_COEFF}
+              }
 
 Config.losses = %LOSSES_DICT
 
@@ -87,6 +89,7 @@ TARGET_PER_COMPONENT_REC = 0
 TARGET_PER_COMPONENT_FIT_OBS = 0
 TARGET_PER_COMPONENT_FIT_FEAT = 0
 TARGET_PER_COMPONENT_FIT_ADD = 0
+TARGET_PER_COMPONENT_MARGIN = 0
 MAX_LOSS_DIM = 1
 
 # takes ~80% time of backward pass
