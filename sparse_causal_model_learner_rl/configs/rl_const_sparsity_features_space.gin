@@ -1,0 +1,97 @@
+import sparse_causal_model_learner_rl.trainable.decoder
+import sparse_causal_model_learner_rl.trainable.model
+import sparse_causal_model_learner_rl.trainable.gumbel_switch
+import sparse_causal_model_learner_rl.config
+import sparse_causal_model_learner_rl.loss.losses
+import sparse_causal_model_learner_rl.loss.contrastive_full
+import sparse_causal_model_learner_rl.loss.optimizer
+import sparse_causal_model_learner_rl.metrics.nnz
+import sparse_causal_model_learner_rl.metrics.model_entropy
+import gin_tune
+import sparse_causal_model_learner_rl.trainable.fcnet
+import sparse_causal_model_learner_rl.metrics.context_rewrite
+import sparse_causal_model_learner_rl.visual.learner_visual
+import sparse_causal_model_learner_rl.trainable.combined
+include 'common.gin'
+
+# takes ~+10% time because of reporting
+# include 'with_communicator.gin'
+
+include 'with_rl_normalizer.gin'
+include 'relative_features_mse_losses.gin'
+include 'global_sparsity_config.gin'
+include 'with_full_metrics.gin'
+
+# TRIALS
+Config.train_steps = 2000000
+tune_run.num_samples = 1
+
+# OPTIMIZERS
+Config.optimizers = {'opt1': @opt1/Optimizer}
+
+opt1/Optimizer.lr = 1e-3
+opt1/Optimizer.name = 'Adam'
+
+Config.execution = {
+    'opt1': %LOSSES_ALL,
+}
+
+Config.optim_params = {
+    'opt1': ['model', 'decoder'],
+}
+Config.opt_iterations = {'opt1': 1}
+
+Config.schedulers = {}
+
+# LOSSES
+LOSSES_ALL = ['fit', 'sparsity', 'fit_all_on', 'fit_all_half']
+
+# coefficients
+FIT_COEFF = 1.
+SPARSITY_COEFF = 1.
+FIT_ON_COEFF = 1.
+FIT_HALF_COEFF = 1.
+
+SPARSITY_LOSS_FCN = @sparsity_loss
+
+LOSSES_DICT = {'fit': {'fcn': @fit/fit_loss_simple, 'coeff': %FIT_COEFF},
+                 'sparsity': {'fcn': %SPARSITY_LOSS_FCN, 'coeff': %SPARSITY_COEFF},
+                 'fit_all_on': {'fcn': @all_on/fit_loss_simple, 'coeff': %FIT_ON_COEFF},
+                 'fit_all_half': {'fcn': @all_half/fit_loss_simple, 'coeff': %FIT_HALF_COEFF},
+                }
+
+Config.losses = %LOSSES_DICT
+
+# OTHER
+Config._update_function = []
+
+## Frequency
+Config.checkpoint_every = 1000
+Config.graph_every = 500
+Config.report_weights = False
+Config.report_weights_every = 1000
+
+# tune takes ~2-10ms to report data
+Config.report_every = 200
+
+# sacred does it in a background process
+Config.sacred_every = 50
+
+Config.metrics_every = 50
+Config.keep_history = False
+Config.max_history_size = 100
+Config.loss_every = 1000000000000000
+
+
+TARGET_PER_COMPONENT_REC = 0
+TARGET_PER_COMPONENT_FIT_OBS = 0
+TARGET_PER_COMPONENT_FIT_FEAT = 0
+TARGET_PER_COMPONENT_FIT_ADD = 0
+MAX_LOSS_DIM = 1
+
+# takes ~80% time of backward pass
+Config.metric_grad_norm = False
+
+
+# takes ~2-10ms on every run
+Config.tune_no_empty_report = True
