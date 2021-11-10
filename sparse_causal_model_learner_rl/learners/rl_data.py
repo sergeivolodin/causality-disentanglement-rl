@@ -102,7 +102,7 @@ class RLContext():
         self.collector.flush()
 
     def collect_get_context(self):
-        self.profiler = TimeProfiler(enable=False)
+        self.profiler = TimeProfiler(enable=False, strict=False)
         profiler = self.profiler
         profiler.start('collect_steps')
         self.collect_steps()
@@ -116,7 +116,7 @@ class RLContext():
     def get_context(self):
         # x: pre time-step, y: post time-step
 
-        profiler = self.profiler
+        profiler = self.profiler or TimeProfiler(enable=False, strict=False)
         profiler.start('episodes')
 
         # observations, actions, rewards-to-go, total rewards

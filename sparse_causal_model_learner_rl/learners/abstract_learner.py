@@ -89,7 +89,7 @@ class AbstractLearner(ABC):
         self.config.update_communicator()
 
         self.loss_per_run_cache = {}
-        self.epoch_profiler = TimeProfiler()
+        self.epoch_profiler = TimeProfiler(strict=False)
         self.epoch_times_unreported = []
 
     # attributes to save to pickle files
@@ -191,7 +191,7 @@ class AbstractLearner(ABC):
         self.create_trainables()
         tqdm_ = tqdm if do_tqdm else (lambda x: x)
         for _ in tqdm_(range(self.epochs, self.config['train_steps'])):
-            self.epoch_profiler = TimeProfiler()
+            self.epoch_profiler = TimeProfiler(strict=False)
             if self.config.get('detect_anomaly', False):
                 with torch.autograd.detect_anomaly():
                     self._epoch()
