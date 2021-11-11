@@ -123,7 +123,7 @@ FIT_ON_COEFF = 1.0
 FIT_HALF_COEFF = 0.02
 
 LagrangeMultipliers.param_min = -10
-LagrangeMultipliers.param_max = 7
+LagrangeMultipliers.param_max = 10
 LagrangeMultipliers.param_init = 0.0
 LagrangeMultipliers.fcn = 'exp'
 
