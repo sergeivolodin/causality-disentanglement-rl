@@ -9,7 +9,7 @@ class Sin(nn.Module):
         return torch.sin(x)
 
 ReLU = gin.configurable(nn.ReLU)
-LeakyReLU = gin.external_configurable(nn.LeakyReLU)
+LeakyReLU = gin.configurable(nn.LeakyReLU)
 Tanh = gin.configurable(nn.Tanh)
 Sigmoid = gin.external_configurable(nn.Sigmoid)
 Linear = gin.external_configurable(nn.Linear)
