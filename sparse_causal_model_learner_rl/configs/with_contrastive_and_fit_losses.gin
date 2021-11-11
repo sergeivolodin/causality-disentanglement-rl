@@ -1,0 +1,33 @@
+# Use two-optimizer setup with a lagrange multiplier
+import sparse_causal_model_learner_rl.metrics.metric_smooth
+import sparse_causal_model_learner_rl.loss.losses
+import sparse_causal_model_learner_rl.trainable.lagrange
+import sparse_causal_model_learner_rl.configs.search_helpers.opt_cycle
+import sparse_causal_model_learner_rl.learners.rl_learner
+
+Config.reconstructor = None
+
+Config.losses = {
+    'fit': {'fcn': @fit_all_on/fit_loss_simple, 'coeff': 1.0},
+    'margin': {'fcn': @contrastive_loss_full, 'coeff': 1.0},
+}
+
+Config.optimizers = {
+    'opt1': @opt1/Optimizer,
+}
+
+opt1/Optimizer.lr = 1e-3
+opt1/Optimizer.name = 'Adam'
+
+Config.execution = {
+    'opt1': ['fit', 'margin'],
+}
+
+Config.optim_params = {
+    'opt1': ['model', 'decoder'],
+}
+
+Config.opt_enabled_fcn = None
+
+fit_loss_smooth/smooth.orig_key = '/fit/fit_orig/value'
+non_sparse_fit_loss_smooth/smooth.orig_key = '/fit_all_on/fit_orig/value'
