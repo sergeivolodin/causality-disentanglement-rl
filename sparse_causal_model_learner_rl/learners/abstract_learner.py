@@ -441,9 +441,9 @@ class AbstractLearner(ABC):
                                   loss_coeff=loss['coeff'],
                                   opt_iteration_i=opt_iteration_i,
                                   loss_per_run_cache=loss_per_run_cache)
-                    self.epoch_profiler.start(f"opt_{opt_label}_{opt_iteration_i}_forward_loss")
+                    self.epoch_profiler.start(f"opt_{opt_label}_{opt_iteration_i}_forward_loss_{loss_label}")
                     value, metrics = get_loss_and_metrics(loss['fcn'], **kwargs)
-                    self.epoch_profiler.end(f"opt_{opt_label}_{opt_iteration_i}_forward_loss")
+                    self.epoch_profiler.end(f"opt_{opt_label}_{opt_iteration_i}_forward_loss_{loss_label}")
                     epoch_info['metrics'][loss_label] = metrics
                     coeff = loss['coeff']
                     epoch_info['losses'][f"{opt_label}/{loss_label}/coeff"] = coeff

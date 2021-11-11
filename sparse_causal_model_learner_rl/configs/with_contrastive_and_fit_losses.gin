@@ -29,5 +29,5 @@ Config.optim_params = {
 
 Config.opt_enabled_fcn = None
 
-fit_loss_smooth/smooth.orig_key = '/fit/fit_orig/value'
-non_sparse_fit_loss_smooth/smooth.orig_key = '/fit_all_on/fit_orig/value'
+fit_loss_smooth/smooth.orig_key = '/fit/loss_fit_orig'
+non_sparse_fit_loss_smooth/smooth.orig_key = '/fit/loss_fit_orig'

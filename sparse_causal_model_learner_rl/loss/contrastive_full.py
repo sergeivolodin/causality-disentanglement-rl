@@ -15,7 +15,7 @@ def contrastive_loss_full(obs, decoder, epoch_profiler, margin_val=0.1, **kwargs
   """
   features = decoder(obs)
 
-  epoch_profiler.set_prefix('contrastive_full')
+  epoch_profiler.set_prefix('contrastive_full_')
   epoch_profiler.start('all')
 
   epoch_profiler.start('cdist')

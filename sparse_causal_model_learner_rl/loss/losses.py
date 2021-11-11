@@ -234,7 +234,7 @@ def lagrangian_granular(
 
     # computing the objective and the constraints
     for loss_key, config in constraints_dict.items():
-        epoch_profiler.set_prefix(f'lagrangian_granular_{mode}_lagrange_fcn_{loss_key}')
+        epoch_profiler.set_prefix(f'lagrangian_granular_{mode}_lagrange_fcn_{loss_key}_')
         epoch_profiler.start('all')
         epoch_profiler.start('pre')
         assert loss_key in losses, (loss_key, losses.keys())
@@ -1052,7 +1052,7 @@ def fit_loss_simple(model, obs_x, action_x, obs_y, decoder, epoch_profiler, mode
 
     if model_forward_kwargs is None: model_forward_kwargs = {}
 
-    epoch_profiler.set_prefix('fit_simple')
+    epoch_profiler.set_prefix('fit_simple_')
     epoch_profiler.start('all')
 
     epoch_profiler.start('decoder_x')
@@ -1125,9 +1125,9 @@ def fit_loss_simple(model, obs_x, action_x, obs_y, decoder, epoch_profiler, mode
             'std_feature': features_x.std(0).detach().cpu().numpy(),
             'min_feature': features_x.min().item(),
             'max_feature': features_x.max().item(),
-            'loss_fit': loss_fit,
+            'loss_fit_orig': loss_fit,
             'loss_fit_discrete': loss_fit_discrete,
-            'loss_fit_add': loss_fit_add,
+            'loss_fit_add_orig': loss_fit_add,
             'loss_fit_add_discrete': loss_fit_add_discrete
         }
     else:
