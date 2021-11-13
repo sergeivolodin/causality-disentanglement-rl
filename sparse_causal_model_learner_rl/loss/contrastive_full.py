@@ -3,7 +3,7 @@ import torch
 
 
 @gin.configurable
-def contrastive_loss_full(obs, decoder, epoch_profiler, margin_val=0.1, **kwargs):
+def contrastive_loss_full(obs, decoder, epoch_profiler, margin_val=0.1, max_exact_items=500, **kwargs):
   """Compute the margin loss excluding elements where it is exactly 0.
 
      Args:
@@ -19,7 +19,7 @@ def contrastive_loss_full(obs, decoder, epoch_profiler, margin_val=0.1, **kwargs
 
   epoch_profiler.start('cdist')
   # approximate pairwise distances with matrix multiplication
-  features_pairwise_approx = torch.cdist(features, features, p=2)
+  features_pairwise_approx = torch.cdist(features, features, p=2, compute_mode='use_mm_for_euclid_dist')
   epoch_profiler.end('cdist')
 
   epoch_profiler.start('eye')
@@ -43,7 +43,7 @@ def contrastive_loss_full(obs, decoder, epoch_profiler, margin_val=0.1, **kwargs
   epoch_profiler.end('nonzero')
 
   # computing exact value in case if it's feasible (guaranteed linear time)
-  if len(nonzero_x) <= len(features):
+  if len(nonzero_x) <= min(max_exact_items, len(features)):
     epoch_profiler.start('exact')
     # pairwise distances for selected items
     distances = torch.norm(features[nonzero_x] - features[nonzero_y],
