@@ -36,5 +36,5 @@ def test_profiler_output():
     p.report()
     data = p.nested()
     data = only_name(traverse_to_json(data))
-    data_expected = {'profiler': [{'test1': [{'test11': []}, {'test12': [{'test123': []}]}]}, {'test2': []}]}
+    data_expected = {'profiler': [{'profiler_test1': [{'profiler_test1_test11': []}, {'profiler_test1_test12': [{'profiler_test1_test12_test123': []}]}]}, {'profiler_test2': []}]}
     assert data == data_expected

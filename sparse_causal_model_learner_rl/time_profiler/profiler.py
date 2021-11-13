@@ -57,19 +57,35 @@ class TimeProfiler(object):
         self.strict = strict
         self.start('profiler')
 
-    def set_prefix(self, p):
+    def error(self, msg):
+        if self.strict:
+            raise ValueError(msg)
+        else:
+            logging.error(msg)
+
+    def _set_prefix(self, p):
         self.prefixes.append(p)
         self.prefix = self._prefix
 
-    def pop_prefix(self):
+    def _pop_prefix(self, p):
+        if self.prefixes[-1] != p:
+            msg = f"pop_prefix() value is invalid. Existing: {self.prefixes}, got {p}"
         self.prefixes = self.prefixes[:-1]
         self.prefix = self._prefix
 
     @property
     def _prefix(self):
-        return ''.join(self.prefixes)
+        return ''.join([p + '_' for p in self.prefixes])
 
     def start(self, name):
+        self._start(name)
+        self._set_prefix(name)
+    
+    def end(self, name):
+        self._pop_prefix(name)
+        self._end(name)
+
+    def _start(self, name):
         name = self.prefix + name
         if name in self.time_start:
             msg = f"{name} already started"
@@ -81,7 +97,7 @@ class TimeProfiler(object):
         self.time_start[name] = t
         self.events.append(('start', name, t))
 
-    def end(self, name):
+    def _end(self, name):
         name = self.prefix + name
         if name not in self.time_start:
             raise ValueError(f"{name} was not started yet")
