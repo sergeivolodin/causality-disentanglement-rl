@@ -148,7 +148,7 @@ def lagrangian_granular(
     lm_values = lagrange_multipliers()
     epoch_profiler = kwargs.get('epoch_profiler')
     epoch_profiler.start(f'lagrangian_granular_{mode}')
-    epoch_profiler.start(f'lagrangian_granular_{mode}_pre')
+    epoch_profiler.start('pre')
     assert mode in ['PRIMAL', 'DUAL'], mode
     metrics = {}
 
@@ -174,13 +174,12 @@ def lagrangian_granular(
         return loss_per_run_cache['all_losses_lst_rev'][s]
     assert lagrange_multipliers.n >= len(all_losses_lst), (lagrange_multipliers.n, all_losses_lst, len(all_losses_lst))
     assert lagrange_multipliers.vectorized == return_per_component, (lagrange_multipliers.vectorized, return_per_component)
-    epoch_profiler.end(f'lagrangian_granular_{mode}_pre')
+    epoch_profiler.end('pre')
 
     def get_losses():
         result = {}
         for loss_key, loss_dct in losses_dict.items():
-            epoch_profiler.set_prefix(f'lagrangian_granular_{mode}_loss_{loss_key}_')
-            epoch_profiler.start('all')
+            epoch_profiler.start(f'loss_{loss_key}')
             mapped = loss_to_lagrange_map.get(loss_key, 1.0)
             epoch_profiler.start('compute_lm')
             if isinstance(mapped, int) or isinstance(mapped, float):
@@ -204,16 +203,15 @@ def lagrangian_granular(
                 result[f"{loss_key}/{ind_loss_key}"] = {'computed': {'loss': ind_loss_val, 'metrics': {}},
                                                         'original': loss_dct}
             epoch_profiler.end('unpack')
-            epoch_profiler.end('all')
-            epoch_profiler.pop_prefix()
+            epoch_profiler.end(f'loss_{loss_key}')
 
         return result
 
-    epoch_profiler.start(f'lagrangian_granular_{mode}_losses')
+    epoch_profiler.start('losses')
     losses = cache_get(loss_epoch_cache, '_lagrange_losses', get_losses,
                        force=(mode == 'PRIMAL'))
-    epoch_profiler.end(f'lagrangian_granular_{mode}_losses')
-    epoch_profiler.start(f'lagrangian_granular_{mode}_metrics')
+    epoch_profiler.end('losses')
+    epoch_profiler.start('metrics')
 
     total_constraint = 0.0
     total_objective = 0.0
@@ -225,8 +223,8 @@ def lagrangian_granular(
             metrics[loss_key] = {'value': maybe_item(maybe_sum(loss_dct['computed']['loss'])),
                                  'coeff': loss_dct['original']['coeff'],
                                  **loss_dct['computed']['metrics']}
-    epoch_profiler.end(f'lagrangian_granular_{mode}_metrics')
-    epoch_profiler.start(f'lagrangian_granular_{mode}_lagrange_fcn')
+    epoch_profiler.end('metrics')
+    epoch_profiler.start('lagrange_fcn')
 
     constraints_satisfied = 0
     constraints_total = 0
@@ -234,8 +232,7 @@ def lagrangian_granular(
 
     # computing the objective and the constraints
     for loss_key, config in constraints_dict.items():
-        epoch_profiler.set_prefix(f'lagrangian_granular_{mode}_lagrange_fcn_{loss_key}_')
-        epoch_profiler.start('all')
+        epoch_profiler.start(f'fcn_{loss_key}')
         epoch_profiler.start('pre')
         assert loss_key in losses, (loss_key, losses.keys())
         loss_dct = losses[loss_key]
@@ -329,20 +326,19 @@ def lagrangian_granular(
                     constraints_total += 1
 
             epoch_profiler.end('p4')
-        epoch_profiler.end('all')
-        epoch_profiler.pop_prefix()
+        epoch_profiler.end(f'fcn_{loss_key}')
 
     metrics['constraints_satisfied'] = constraints_satisfied
     metrics['constraints_satisfied_frac'] = constraints_satisfied / (0.0001 + constraints_total)
-    epoch_profiler.end(f'lagrangian_granular_{mode}_lagrange_fcn')
+    epoch_profiler.end('lagrange_fcn')
 
-    epoch_profiler.start(f'lagrangian_granular_{mode}_print')
+    epoch_profiler.start('print')
     if print_equation:
         console.print(f"[bold red]LAGRANGIAN[/bold red] mode={mode}\n" + "\n".join(equation))
-    epoch_profiler.end(f'lagrangian_granular_{mode}_print')
+    epoch_profiler.end('print')
 
     # initializing lagrange multipliers
-    epoch_profiler.start(f'lagrangian_granular_{mode}_init')
+    epoch_profiler.start('init')
     for loss_key, config in constraints_dict.items():
         loss_dct = losses[loss_key]
         current_val_coeff = loss_dct['computed']['loss'] * loss_dct['original']['coeff']
@@ -374,7 +370,7 @@ def lagrangian_granular(
                     logging.warning(f"Initializing lagrange multiplier {loss_key} with {new_value}")
 
 
-    epoch_profiler.end(f'lagrangian_granular_{mode}_init')
+    epoch_profiler.end('init')
     lagrangian = total_objective + total_constraint
     if compute_metrics:
         metrics['constraint'] = maybe_item(total_constraint)
@@ -457,25 +453,28 @@ def reconstruction_loss(obs, decoder, reconstructor, relative=False,
     else:
         mse = lambda x, y: (x - y).flatten(start_dim=1).pow(2).sum(1).mean(0)
     
-    epoch_profiler.start('reconstruction_loss/decode')
+    epoch_profiler.start('reconstruction_loss')
+    epoch_profiler.start('decode')
     decoded = decoder(obs)
-    epoch_profiler.end('reconstruction_loss/decode')
+    epoch_profiler.end('decode')
 
-    epoch_profiler.start('reconstruction_loss/reconstruct')
+    epoch_profiler.start('reconstruct')
     rec_dec_obs = reconstructor(decoded, source_index=1)
-    epoch_profiler.end('reconstruction_loss/reconstruct')
+    epoch_profiler.end('reconstruct')
 
     metrics = {}
 
 
-    epoch_profiler.start('reconstruction_loss/mse')
+    epoch_profiler.start('mse')
     loss = mse(rec_dec_obs, obs)
-    epoch_profiler.end('reconstruction_loss/mse')
+    epoch_profiler.end('mse')
     
     if report_01 and compute_metrics:
-        epoch_profiler.start('reconstruction_loss/accuracy')
+        epoch_profiler.start('accuracy')
         metrics['rec_acc_loss_01_agg'] = 1 - delta_01_obs(obs, rec_dec_obs).item()
-        epoch_profiler.end('reconstruction_loss/accuracy')
+        epoch_profiler.end('accuracy')
+
+    epoch_profiler.end('reconstruction_loss')
         
     return {'loss': loss,
             'losses': {'reconstruction': loss},
@@ -720,9 +719,7 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
     # f_yp_f_model ~ f_y_model [loss_fcons_model]
     # f_yp_f ~ f_y
 
-    time_start = str(time())
-    epoch_profiler.set_prefix(f'fit_loss_obs_space_{time_start}_')
-    epoch_profiler.start('all')
+    epoch_profiler.start(f'fit_loss_obs_space')
 
     # pre/post
     if rot_pre is None:
@@ -904,8 +901,7 @@ def fit_loss_obs_space(obs_x, obs_y, action_x, decoder, model, additional_featur
             },
             'metrics': metrics}
     epoch_profiler.end('data')
-    epoch_profiler.end('all')
-    epoch_profiler.pop_prefix()
+    epoch_profiler.end('fit_loss_obs_space')
     return data
 
 
@@ -1052,7 +1048,7 @@ def fit_loss_simple(model, obs_x, action_x, obs_y, decoder, epoch_profiler, mode
 
     if model_forward_kwargs is None: model_forward_kwargs = {}
 
-    epoch_profiler.set_prefix('fit_simple_')
+    epoch_profiler.start('fit_simple')
     epoch_profiler.start('all')
 
     epoch_profiler.start('decoder_x')
@@ -1134,7 +1130,7 @@ def fit_loss_simple(model, obs_x, action_x, obs_y, decoder, epoch_profiler, mode
         metrics = {}
     epoch_profiler.end('metrics')
     epoch_profiler.end('all')
-    epoch_profiler.pop_prefix()
+    epoch_profiler.end('fit_simple')
 
     data = {
         'loss': loss,

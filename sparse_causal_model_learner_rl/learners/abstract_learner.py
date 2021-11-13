@@ -89,7 +89,7 @@ class AbstractLearner(ABC):
         self.config.update_communicator()
 
         self.loss_per_run_cache = {}
-        self.epoch_profiler = TimeProfiler(strict=False)
+        self.epoch_profiler = TimeProfiler()
         self.epoch_times_unreported = []
 
     # attributes to save to pickle files
@@ -191,7 +191,7 @@ class AbstractLearner(ABC):
         self.create_trainables()
         tqdm_ = tqdm if do_tqdm else (lambda x: x)
         for _ in tqdm_(range(self.epochs, self.config['train_steps'])):
-            self.epoch_profiler = TimeProfiler(strict=False)
+            self.epoch_profiler = TimeProfiler()
             if self.config.get('detect_anomaly', False):
                 with torch.autograd.detect_anomaly():
                     self._epoch()
@@ -411,7 +411,7 @@ class AbstractLearner(ABC):
         # train using losses
         loss_epoch_cache = {}
         for opt_label in sorted(self.optimizer_objects.keys()):
-            self.epoch_profiler.start('opt_' + opt_label)
+            self.epoch_profiler.start(f'opt_{opt_label}')
             opt = self.optimizer_objects[opt_label]
 
             # disabling and enabling optimizers
@@ -419,15 +419,17 @@ class AbstractLearner(ABC):
                 fcn = self.config.get('opt_enabled_fcn')
                 opt_enabled = fcn(opt_key=opt_label, learner=self)
                 if not opt_enabled:
+                    self.epoch_profiler.end(f'opt_{opt_label}')
                     continue
 
             for opt_iteration_i in range(self.config.get('opt_iterations', {}).get(opt_label, 1)):
-                self.epoch_profiler.start(f"opt_{opt_label}_{opt_iteration_i}_zero_grad")
+                self.epoch_profiler.start(str(opt_iteration_i))
+                self.epoch_profiler.start("zero_grad")
                 opt.zero_grad()
-                self.epoch_profiler.end(f"opt_{opt_label}_{opt_iteration_i}_zero_grad")
+                self.epoch_profiler.end("zero_grad")
                 loss_local_cache = {}
                 total_loss = 0
-                self.epoch_profiler.start(f"opt_{opt_label}_{opt_iteration_i}_forward")
+                self.epoch_profiler.start("forward")
                 for loss_label in self.config['execution'].get(opt_label, []):
                     loss = self.config['losses'][loss_label]
 
@@ -441,62 +443,61 @@ class AbstractLearner(ABC):
                                   loss_coeff=loss['coeff'],
                                   opt_iteration_i=opt_iteration_i,
                                   loss_per_run_cache=loss_per_run_cache)
-                    self.epoch_profiler.start(f"opt_{opt_label}_{opt_iteration_i}_forward_loss_{loss_label}")
+                    self.epoch_profiler.start(f"loss_{loss_label}")
                     value, metrics = get_loss_and_metrics(loss['fcn'], **kwargs)
-                    self.epoch_profiler.end(f"opt_{opt_label}_{opt_iteration_i}_forward_loss_{loss_label}")
+                    self.epoch_profiler.end(f"loss_{loss_label}")
                     epoch_info['metrics'][loss_label] = metrics
                     coeff = loss['coeff']
                     epoch_info['losses'][f"{opt_label}/{loss_label}/coeff"] = coeff
                     epoch_info['losses'][f"{opt_label}/{loss_label}/value"] = value
                     total_loss += coeff * value
-                self.epoch_profiler.end(f"opt_{opt_label}_{opt_iteration_i}_forward")
-                self.epoch_profiler.start(f"opt_{opt_label}_{opt_iteration_i}_backward")
+                self.epoch_profiler.end("forward")
+                self.epoch_profiler.start("backward")
                 if hasattr(total_loss, 'backward'):
-                    self.epoch_profiler.start(f"opt_{opt_label}_{opt_iteration_i}_backward_loss_backward")
+                    self.epoch_profiler.start("loss_backward")
                     total_loss.backward()
-                    self.epoch_profiler.end(f"opt_{opt_label}_{opt_iteration_i}_backward_loss_backward")
+                    self.epoch_profiler.end("loss_backward")
 
                     if self.config.get('grad_clip_value', None) is not None:
-                        self.epoch_profiler.start(f"opt_{opt_label}_{opt_iteration_i}_backward_clip_grad")
+                        self.epoch_profiler.start("clip_grad")
                         clip_grad_norm_(self.params_for_optimizers[opt_label],
                                         self.config.get('grad_clip_value'))
-                        self.epoch_profiler.end(f"opt_{opt_label}_{opt_iteration_i}_backward_clip_grad")
+                        self.epoch_profiler.end("clip_grad")
 
                     if self.config.get('metric_grad_norm', True):
                         # computing gradient values
-                        self.epoch_profiler.start(f"opt_{opt_label}_{opt_iteration_i}_backward_grad_norm")
-                        self.epoch_profiler.start(f"opt_{opt_label}_{opt_iteration_i}_backward_grad_norm_1")
+                        self.epoch_profiler.start("grad_norm")
+                        self.epoch_profiler.start("1")
                         grad_norms1 = [p.grad.data.norm(1).item()
                                       for p in self.params_for_optimizers[opt_label]
                                       if p.grad is not None]
                         epoch_info['grads'][f"{opt_label}/grad_total_l1mean"] = np.mean(grad_norms1)
-                        self.epoch_profiler.end(f"opt_{opt_label}_{opt_iteration_i}_backward_grad_norm_1")
+                        self.epoch_profiler.end("1")
 
-                        self.epoch_profiler.start(f"opt_{opt_label}_{opt_iteration_i}_backward_grad_norm_2")
+                        self.epoch_profiler.start("2")
                         grad_norms2 = [p.grad.data.norm(2).item() ** 2
                                        for p in self.params_for_optimizers[opt_label]
                                        if p.grad is not None]
 
 
                         epoch_info['grads'][f"{opt_label}/grad_total_l2sum"] = np.sum(grad_norms2) ** 0.5
-                        self.epoch_profiler.end(f"opt_{opt_label}_{opt_iteration_i}_backward_grad_norm_2")
-                        self.epoch_profiler.end(f"opt_{opt_label}_{opt_iteration_i}_backward_grad_norm")
+                        self.epoch_profiler.end("2")
+                        self.epoch_profiler.end("grad_norm")
 
 
                 else:
                     logging.warning(f"Warning: no losses for optimizer {opt_label}")
-                self.epoch_profiler.start(f"opt_{opt_label}_{opt_iteration_i}_loss_item")
                 epoch_info['losses'][f"{opt_label}/value"] = total_loss
-                self.epoch_profiler.end(f"opt_{opt_label}_{opt_iteration_i}_loss_item")
-                self.epoch_profiler.start(f"opt_{opt_label}_{opt_iteration_i}_opt_step")
+                self.epoch_profiler.start("opt_step")
                 opt.step()
-                self.epoch_profiler.end(f"opt_{opt_label}_{opt_iteration_i}_opt_step")
+                self.epoch_profiler.end("opt_step")
 
                 if hasattr(total_loss, 'backward') and opt_label in self.scheduler_objects:
                     self.scheduler_objects[opt_label].step(total_loss)
                     epoch_info['metrics'][f"{opt_label}/scheduler_lr"] = self.scheduler_objects[opt_label]._last_lr[0]
-                self.epoch_profiler.end(f"opt_{opt_label}_{opt_iteration_i}_backward")
-            self.epoch_profiler.end('opt_' + opt_label)
+                self.epoch_profiler.end("backward")
+                self.epoch_profiler.end(str(opt_iteration_i))
+            self.epoch_profiler.end(f"opt_{opt_label}")
 
         self.epoch_profiler.start('metrics')
         if compute_metrics:
@@ -509,18 +510,18 @@ class AbstractLearner(ABC):
             self.epoch_times_unreported = []
 
             for metric_label in sorted(self.config['metrics'].keys()):
-                self.epoch_profiler.start(f'metrics_{metric_label}')
-                self.epoch_profiler.start(f'metrics_{metric_label}_now_epoch_info')
+                self.epoch_profiler.start(metric_label)
+                self.epoch_profiler.start('now_epoch_info')
                 now_epoch_info = postprocess_info(epoch_info)
-                self.epoch_profiler.end(f'metrics_{metric_label}_now_epoch_info')
+                self.epoch_profiler.end('now_epoch_info')
                 metric = self.config['metrics'][metric_label]
-                self.epoch_profiler.start(f'metrics_{metric_label}_metric')
+                self.epoch_profiler.start('metric')
                 epoch_info['metrics'][metric_label] = metric(**context, context=context,
                                                              learner=self,
                                                              prev_epoch_info=self.epoch_info,
                                                              now_epoch_info=now_epoch_info)
-                self.epoch_profiler.end(f'metrics_{metric_label}_metric')
-                self.epoch_profiler.end(f'metrics_{metric_label}')
+                self.epoch_profiler.end('metric')
+                self.epoch_profiler.end(metric_label)
 
         def get_weights():
             return {label + '/' + param_name: np.copy(param.detach().cpu().numpy())

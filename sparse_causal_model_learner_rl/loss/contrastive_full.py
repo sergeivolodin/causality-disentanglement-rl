@@ -15,8 +15,7 @@ def contrastive_loss_full(obs, decoder, epoch_profiler, margin_val=0.1, **kwargs
   """
   features = decoder(obs)
 
-  epoch_profiler.set_prefix('contrastive_full_')
-  epoch_profiler.start('all')
+  epoch_profiler.start('contrastive_full')
 
   epoch_profiler.start('cdist')
   # approximate pairwise distances with matrix multiplication
@@ -66,8 +65,7 @@ def contrastive_loss_full(obs, decoder, epoch_profiler, margin_val=0.1, **kwargs
     # no exact number
     n_nonzero_exact = -1
 
-  epoch_profiler.end('all')
-  epoch_profiler.pop_prefix()
+  epoch_profiler.end('contrastive_full')
 
   return {'loss': loss / features.shape[0],
           'metrics': {

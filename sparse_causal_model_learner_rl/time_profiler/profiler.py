@@ -47,7 +47,7 @@ class ProfilerItem:
 @gin.configurable
 class TimeProfiler(object):
     """Profile execution."""
-    def __init__(self, enable=False, strict=True):
+    def __init__(self, enable=False, strict=False):
         self.time_start = {}
         self.time_end = {}
         self.events = []
@@ -70,6 +70,7 @@ class TimeProfiler(object):
     def _pop_prefix(self, p):
         if self.prefixes[-1] != p:
             msg = f"pop_prefix() value is invalid. Existing: {self.prefixes}, got {p}"
+            self.error(msg)
         self.prefixes = self.prefixes[:-1]
         self.prefix = self._prefix
 
@@ -88,11 +89,7 @@ class TimeProfiler(object):
     def _start(self, name):
         name = self.prefix + name
         if name in self.time_start:
-            msg = f"{name} already started"
-            if self.strict:
-                raise ValueError(msg)
-            else:
-                logging.error(msg)
+            self.error(f"{name} already started")
         t = time()
         self.time_start[name] = t
         self.events.append(('start', name, t))
@@ -100,7 +97,8 @@ class TimeProfiler(object):
     def _end(self, name):
         name = self.prefix + name
         if name not in self.time_start:
-            raise ValueError(f"{name} was not started yet")
+            msg = f"{name} was not started yet, started items: {list(self.time_start.keys())}"
+            self.error(msg)
         t = time()
         self.time_end[name] = t
         self.events.append(('end', name, t))
