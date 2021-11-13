@@ -14,6 +14,8 @@ class ProfilerItem:
         self.t_end = t_end
         self.parent = parent
         self.children = children
+        self.shorten_name = True
+        self.sort_children = True
 
     def delta(self):
         return self.t_end - self.t_start
@@ -34,10 +36,17 @@ class ProfilerItem:
         else:
             percent = 1.0
         percent = round(percent * 100, 2)
-        indent = "    " * offset
+        indent = "|   " * offset
         accounted_children_time = round(sum([x.delta() for x in self.children]) / self.delta() * 100, 2)
-        print(f"{indent}- {percent}% // {self.print_delta()} {self.name} [accounted {accounted_children_time}%]")
-        for item in self.children:
+        name = self.name
+        if self.parent and self.shorten_name:
+            assert name.startswith(self.parent.name)
+            name = name[len(self.parent.name) + 1:]
+        print(f"{indent}- {name} {percent}% // {self.print_delta()} [accounted {accounted_children_time}%]")
+        children = self.children
+        if self.sort_children:
+            children = sorted(children, key=lambda c: -c.delta())
+        for item in children:
             item.describe(offset=offset + 1)
 
     def __repr__(self):
