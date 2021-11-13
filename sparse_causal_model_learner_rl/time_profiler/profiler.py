@@ -39,13 +39,16 @@ class ProfilerItem:
         if percent < self.min_frac_print:
             return
         percent = round(percent * 100, 2)
-        indent = "|   " * offset
+        indent = 0
+        if offset > 0:
+            indent = "|   " * (offset - 1) + "|--"
+            indent += "-+" if self.children else "-"
         accounted_children_time = round(sum([x.delta() for x in self.children]) / self.delta() * 100, 2)
         name = self.name
         if self.parent and self.shorten_name:
             assert name.startswith(self.parent.name)
             name = name[len(self.parent.name) + 1:]
-        print(f"{indent}- {name} {percent}% // {self.print_delta()} [accounted {accounted_children_time}%]")
+        print(f"{indent} {name} {percent}% // {self.print_delta()} [accounted {accounted_children_time}%]")
         children = self.children
         if self.sort_children:
             children = sorted(children, key=lambda c: -c.delta())
