@@ -56,8 +56,9 @@ class ProfilerItem:
 @gin.configurable
 class TimeProfiler(object):
     """Profile execution."""
-    def __init__(self, enable=False, strict=False):
+    def __init__(self, enable=False, name="?", strict=False):
         self.time_start = {}
+        self.name = name
         self.time_end = {}
         self.events = []
         self.enable = enable
@@ -145,7 +146,7 @@ class TimeProfiler(object):
         self.end('profiler')
         if not self.enable:
             return
-        print("==== PROFILE ====")
+        print(f"==== PROFILE {self.name} ====")
         self.nested().describe()
         print("\n\n")
 
