@@ -2,6 +2,8 @@ import gin
 import logging
 from collections import deque
 from time import time
+from rich.console import Console
+console = Console(color_system="256")
 
 
 class ProfilerItem:
@@ -39,7 +41,7 @@ class ProfilerItem:
         if percent < self.min_frac_print:
             return
         percent = round(percent * 100, 2)
-        indent = 0
+        indent = ""
         if offset > 0:
             indent = "|   " * (offset - 1) + "|--"
             indent += "-+" if self.children else "-"
@@ -48,7 +50,7 @@ class ProfilerItem:
         if self.parent and self.shorten_name:
             assert name.startswith(self.parent.name)
             name = name[len(self.parent.name) + 1:]
-        print(f"{indent} {name} {percent}% // {self.print_delta()} [accounted {accounted_children_time}%]")
+        console.print(f"{indent}- [bold blue]{name}[/bold blue] [bold red]{percent}%[/bold red] // [bold green]{self.print_delta()}[/bold green] [accounted {accounted_children_time}%]")
         children = self.children
         if self.sort_children:
             children = sorted(children, key=lambda c: -c.delta())
