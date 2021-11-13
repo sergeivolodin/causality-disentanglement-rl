@@ -102,6 +102,8 @@ Config.optimizers = {
 opt1/Optimizer.lr = 1e-4
 opt1/Optimizer.name = 'Adam'
 
+lagrangian_granular.normalize_by_lms = True
+
 opt2/Optimizer.lr = 1e-3
 opt2/Optimizer.name = 'Adam'
 
