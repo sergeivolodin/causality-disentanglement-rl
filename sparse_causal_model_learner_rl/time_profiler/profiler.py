@@ -148,5 +148,6 @@ class TimeProfiler(object):
             return
         print(f"==== PROFILE {self.name} ====")
         self.nested().describe()
+        print(f"... PROFILE {self.name} end")
         print("\n\n")
 
