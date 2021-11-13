@@ -1,8 +1,4 @@
-import tensorflow as tf
-
-tf.compat.v1.disable_eager_execution()
 from causal_util import load_env
-from encoder.observation_encoder import KerasEncoderWrapper
 import argparse
 from tqdm import tqdm
 from uuid import uuid1
@@ -94,6 +90,7 @@ if __name__ == '__main__':
     config_descr = '_'.join(args.config.split('/'))
     fn_out = f"episodes-{args.n_episodes}-config-{config_descr}-{str(uuid1())}.pkl"
 
+    from encoder.observation_encoder import KerasEncoderWrapper
     gin.parse_config_file(args.config)
     gin.bind_parameter("observation_encoder.KerasEncoder.model_callable", None)
     env = load_env()

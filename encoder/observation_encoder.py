@@ -1,12 +1,13 @@
 import gin
 import gym
 import numpy as np
-import tensorflow as tf
 from gym.wrappers import TransformObservation
 import encoder
 import os
 from causal_util.helpers import np_random_seed
 from functools import partial
+def maybe_tf():
+    import tensorflow as tf
 
 
 @gin.configurable
@@ -14,6 +15,7 @@ class KerasEncoder(object):
     """Applies a keras model to observations."""
 
     def __init__(self, model_callable=None, model_filename=None, **kwargs):
+        import_tf()
         if model_filename is not None:
             if model_filename.startswith('/'):
                 model_filename = os.path.join(os.path.dirname(encoder.__file__), "encoders", model_filename[1:])
@@ -105,6 +107,7 @@ class KerasEncoderWrapper(TransformObservation):
     """Use a keras model to transform observations."""
 
     def __init__(self, env, **kwargs):
+        import_tf()
         if isinstance(env, str):
             env = gym.make(env)
         fcn = KerasEncoder(inp_shape=env.observation_space.shape, **kwargs)
