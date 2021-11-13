@@ -15,6 +15,15 @@ Sigmoid = gin.external_configurable(nn.Sigmoid)
 Linear = gin.external_configurable(nn.Linear)
 
 
+@gin.configurable
+class PReLU(nn.Module):
+    GIVE_N_FEATURES = True
+    def __init__(self, *args, **kwargs):
+        super(PReLU, self).__init__()
+        self.act = torch.nn.PReLU(num_parameters=1)#kwargs.get('features', 1))
+    def forward(self, x):
+        return self.act(x)
+
 def build_activation(cls, features=None):
     """Build an activation function with parameters."""
     if hasattr(cls, 'GIVE_N_FEATURES'):
