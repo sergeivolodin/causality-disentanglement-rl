@@ -39,7 +39,7 @@ ModelDecoder.use_batchnorm = False
 # MODEL
 Config.model = @sparse_model/ManyNetworkCombinedModel
 model_gnn/FCCombinedModel.hidden_sizes = [256, 256] # tuning...
-model_gnn/FCCombinedModel.activation_cls = [@LeakyReLU, @LeakyReLU, None]
+model_gnn/FCCombinedModel.activation_cls = [@PReLU, @PReLU, None]
 model_gnn/FCCombinedModel.skipconns = None
 WithInputSwitch.model_cls = @model_gnn/FCCombinedModel
 sparse_model/ManyNetworkCombinedModel.model_cls = @sparse_model/WithInputSwitch
