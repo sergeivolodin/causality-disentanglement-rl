@@ -17,6 +17,7 @@ parser = argparse.ArgumentParser(description="Causal learning experiment")
 parser.add_argument('--config', type=str, required=True, action='append')
 parser.add_argument('--n_cpus', type=int, required=False, default=None)
 parser.add_argument('--print_config', action='store_true')
+parser.add_argument('--no_dashboard', action='store_true')
 parser.add_argument('--n_gpus', type=int, required=False, default=None)
 parser.add_argument('--nowrap', action='store_true')
 parser.add_argument('--resume', action='store_true')
@@ -52,7 +53,7 @@ if __name__ == '__main__':
         kwargs = {'num_cpus': args.n_cpus}
         if args.n_cpus == 0:
             kwargs = {'num_cpus': 1, 'local_mode': True}
-        ray.init(**kwargs, num_gpus=args.n_gpus, include_dashboard=True)
+        ray.init(**kwargs, num_gpus=args.n_gpus, include_dashboard=not args.no_dashboard)
 
         if args.resume:
             gin.bind_parameter('tune_run.resume', True)
