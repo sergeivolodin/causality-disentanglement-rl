@@ -1049,7 +1049,6 @@ def fit_loss_simple(model, obs_x, action_x, obs_y, decoder, epoch_profiler, mode
     if model_forward_kwargs is None: model_forward_kwargs = {}
 
     epoch_profiler.start('fit_simple')
-    epoch_profiler.start('all')
 
     epoch_profiler.start('decoder_x')
     features_x = cache_get(loss_epoch_cache, 'dec_obs_x', lambda: decoder(obs_x))
@@ -1129,7 +1128,6 @@ def fit_loss_simple(model, obs_x, action_x, obs_y, decoder, epoch_profiler, mode
     else:
         metrics = {}
     epoch_profiler.end('metrics')
-    epoch_profiler.end('all')
     epoch_profiler.end('fit_simple')
 
     data = {

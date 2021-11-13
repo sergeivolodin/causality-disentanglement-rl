@@ -16,9 +16,10 @@ class ProfilerItem:
         self.children = children
         self.shorten_name = True
         self.sort_children = True
+        self.min_frac_print = 0.05
 
     def delta(self):
-        return self.t_end - self.t_start
+        return (self.t_end or 0.0) - (self.t_start or 0.0)
 
     def print_delta(self):
         delta = self.delta()
@@ -35,6 +36,8 @@ class ProfilerItem:
             percent = self.delta() / self.parent.delta()
         else:
             percent = 1.0
+        if percent < self.min_frac_print:
+            return
         percent = round(percent * 100, 2)
         indent = "|   " * offset
         accounted_children_time = round(sum([x.delta() for x in self.children]) / self.delta() * 100, 2)
