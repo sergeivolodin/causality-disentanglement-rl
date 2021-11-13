@@ -387,7 +387,7 @@ def lagrangian_granular(
         loss = -lagrangian
     epoch_profiler.end(f'lagrangian_granular_{mode}')
 
-    if normalize_by_lms and mode === 'PRIMAL':
+    if normalize_by_lms and mode == 'PRIMAL':
         loss = loss / (1 + lm_values[list(lm_used)].sum().detach())
 
     return {'loss': loss,
