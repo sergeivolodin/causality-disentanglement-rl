@@ -138,6 +138,7 @@ def lagrangian_granular(
                loss_per_run_cache=None,
                print_equation=None,
                print_components=True,
+               normalize_by_lms=False,
                opt_iteration_i=0,
                **kwargs):
     compute_metrics = kwargs.get('compute_metrics')
@@ -146,6 +147,7 @@ def lagrangian_granular(
         print_components = False
     # lagrange_multipliers.project()
     lm_values = lagrange_multipliers()
+    lm_used = set()
     epoch_profiler = kwargs.get('epoch_profiler')
     epoch_profiler.start(f'lagrangian_granular_{mode}')
     epoch_profiler.start('pre')
@@ -188,6 +190,7 @@ def lagrangian_granular(
                 lms = lm_values
                 indices = [lm_index(m) for m in mapped]
                 lm = lms[indices].sum()
+                lm_used.update(indices)
             else:
                 raise NotImplementedError(f"Wrong input: {mapped}")
             epoch_profiler.end('compute_lm')
@@ -266,6 +269,7 @@ def lagrangian_granular(
             else:
                 idx = lm_index(loss_key)
                 lm = lm_values[idx]
+                lm_used.add(idx)
                 if compute_metrics and return_per_component and hasattr(current_val_coeff, 'shape') and len(current_val_coeff.shape):
                     assert len(current_val_coeff.shape) == 1, (loss_key, current_val_coeff.shape)
                     n_cmp = current_val_coeff.shape[0]
@@ -382,6 +386,9 @@ def lagrangian_granular(
     elif mode == 'DUAL':
         loss = -lagrangian
     epoch_profiler.end(f'lagrangian_granular_{mode}')
+
+    if normalize_by_lms and mode === 'PRIMAL':
+        loss = loss / (1 + lm_values[list(lm_used)].sum().detach())
 
     return {'loss': loss,
             'metrics': metrics}
