@@ -1,4 +1,4 @@
-include 'configs/env_kc_5x5_1f1c1k_obs_fc.gin'
+include 'env_kc_5x5_1f1c1k_obs_fc.gin'
 
 N_FEATURES = 18
 
