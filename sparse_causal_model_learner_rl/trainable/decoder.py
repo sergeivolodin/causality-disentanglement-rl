@@ -1,4 +1,5 @@
 import gin
+from einops import rearrange
 import numpy as np
 from torch import nn
 import torch
@@ -44,6 +45,45 @@ class IdentityDecoder(Decoder):
 
     def forward(self, x):
         return x
+
+import gin
+
+
+@gin.configurable
+class SingleObjectPerChannelDecoder(nn.Module):
+  """Get a model with x-axis, y-axis and sum filters."""
+  def __init__(self, input_shape, output_shape):
+
+    assert len(input_shape) == 3, input_shape
+    assert len(output_shape) == 1, output_shape
+
+    height, width, channels = input_shape
+    num_out_features = channels * 3
+    assert output_shape[0] == num_out_features
+
+    super(SingleObjectPerChannelDecoder, self).__init__()
+
+    self.ones = torch.ones(
+        (height, width),
+        dtype=torch.float32
+    )
+
+    def get_filter_y(height, width):
+      """Get a matrix [[1, 2, ...], [1, 2, ...], ...]."""
+      return torch.arange(
+          1, 1 + width, dtype=torch.float32)\
+      .unsqueeze(0).repeat(height, 1)
+
+    self.filter_x = get_filter_y(width, height).T
+    self.filter_y = get_filter_y(height, width)
+
+    self.stacked = nn.Parameter(torch.stack([self.ones, self.filter_x, self.filter_y]))
+
+  def forward(self, x):
+    out = torch.einsum('bhwc, fhw -> bfc', x, self.stacked.detach())
+    out = rearrange(out, 'b f c -> b ( f c )')
+    return out
+
 
 @gin.configurable
 class ModelDecoder(Decoder):
