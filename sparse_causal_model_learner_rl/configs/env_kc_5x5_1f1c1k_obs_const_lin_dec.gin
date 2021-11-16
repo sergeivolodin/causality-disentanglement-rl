@@ -1,0 +1,10 @@
+include 'env_kc_5x5_1f1c1k_obs_fc.gin'
+
+N_FEATURES = 18
+SingleObjectWithLinear.intermediate_features = 18
+
+# DECODER
+Config.decoder = @ModelDecoder
+ModelDecoder.model_cls = @decoder/SingleObjectWithLinear
+ModelDecoder.flatten = False
+ModelDecoder.use_batchnorm = False

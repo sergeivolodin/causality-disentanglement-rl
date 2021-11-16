@@ -46,8 +46,6 @@ class IdentityDecoder(Decoder):
     def forward(self, x):
         return x
 
-import gin
-
 
 @gin.configurable
 class SingleObjectPerChannelDecoder(nn.Module):
@@ -84,6 +82,16 @@ class SingleObjectPerChannelDecoder(nn.Module):
     out = rearrange(out, 'b f c -> b ( f c )')
     return out
 
+
+@gin.configurable
+class SingleObjectWithLinear(nn.Module):
+    def __init__(self, input_shape, intermediate_features, output_shape):
+        self.const_dec = SingleObjectPerChannelDecoder(input_shape=input_shape, output_shape=(intermediate_features,))
+        self.fc1 = nn.Linear(intermediate_features, output_shape[0])
+    def forward(self, x):
+        x = self.const_dec(x)
+        x = self.fc1(x)
+        return x
 
 @gin.configurable
 class ModelDecoder(Decoder):
