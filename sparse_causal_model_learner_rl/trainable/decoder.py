@@ -86,6 +86,7 @@ class SingleObjectPerChannelDecoder(nn.Module):
 @gin.configurable
 class SingleObjectWithLinear(nn.Module):
     def __init__(self, input_shape, intermediate_features, output_shape):
+        super(SingleObjectWithLinear, self).__init__()
         self.const_dec = SingleObjectPerChannelDecoder(input_shape=input_shape, output_shape=(intermediate_features,))
         self.fc1 = nn.Linear(intermediate_features, output_shape[0])
     def forward(self, x):
