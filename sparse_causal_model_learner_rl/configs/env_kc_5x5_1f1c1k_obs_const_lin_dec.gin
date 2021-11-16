@@ -1,5 +1,8 @@
 include 'env_kc_5x5_1f1c1k_obs_fc.gin'
 
+TARGET_FIT_FEAT = 0
+TARGET_MARGIN = 0
+
 N_FEATURES = 18
 SingleObjectWithLinear.intermediate_features = 18
 
