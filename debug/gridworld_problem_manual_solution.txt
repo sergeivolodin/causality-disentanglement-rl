@@ -1,0 +1,36 @@
+[observations], [actions]
+
+WANT:
+set of features f1, ..., fn such that there are equations describing
+  f_i = formula(factors)
+AND number of features is minimal
+AND complexity of formulas is minimal
+
+f_i === F_i(observation)
+
+<keychest>
+
+observation[h, w, c]
+
+def features(observation):
+  health = sum observation[:, :, health_channel]
+  keys = sum observation[:, :, keys_channel]
+  player_x, player_y = index observation[:, :, player_channel]
+  foods_x, foods_y = indexes observation[:, :, food_channel]
+  keys_x, keys_y = indexes observation[:, :, key_channel]
+  chests_x, chests_y = indexes observatoin[:, :, key_channel]
+
+def reconstructor(features):
+  set_progress observation[:, :, health_channel]
+
+
+def model(features):
+  health <- health - 1 + any(player == foods)
+  keys <- keys + any(player == keys) - (any(player == chests) and keys > 0)
+  player = clamp(player_x - left + right, 0, 5), clamp(player_y - up + down, 0, 5)
+  foods <- foods or None if any(player == foods)
+  chests <- chests or None if any(player == chests) and keys > 0
+  keys <- keys or None if any(player == keys)
+
+
+
