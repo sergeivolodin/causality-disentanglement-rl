@@ -106,12 +106,15 @@ class KeyChestEnvironment(object):
               'keys_collected': (0, 0, 255), 'button': (252, 3, 244)}
     ACTIONS = {0: (1, 0), 1: (-1, 0), 2: (0, 1), 3: (0, -1)}
     ACTION_NAMES = {(1, 0): "down", (-1, 0): "up", (0, 1): "right", (0, -1): "left"}
+    OBJECTS_INDEX = {obj: idx for idx, obj in enumerate(OBJECTS)}
 
     def __init__(self, labyrinth_maps, initial_health, food_efficiency,
                  food_rows=None, keys_rows=None, callback=None,
                  flatten_observation=False, return_rgb=False,
                  select_outputs=None,
-                 return_features_xy=False):
+                 return_features_xy=False,
+                 move_with_player=False
+                 ):
         """Environment with keys and chests."""
         self.initial_maps = deepcopy(labyrinth_maps)
 
@@ -120,7 +123,7 @@ class KeyChestEnvironment(object):
         assert len(select_outputs) == len(set(select_outputs)), select_outputs
         assert all([z in self.OBJECTS for z in select_outputs]), (self.OBJECTS, select_outputs)
         self.select_outputs = select_outputs
-        self.select_output_indices = [self.OBJECTS.index(z) for z in self.select_outputs]
+        self.select_output_indices = [self.OBJECTS_INDEX.get(z) for z in self.select_outputs]
 
         self.maps = {x: np.array(y, dtype=np.bool) for x, y in labyrinth_maps.items()}
         self.executor = DelayedExecutor()
@@ -145,6 +148,8 @@ class KeyChestEnvironment(object):
         self.n_keys_init = np.sum(self.maps['key'])
         self.n_chests_init = np.sum(self.maps['chest'])
         self.n_food_init = np.sum(self.maps['food'])
+
+        self.move_with_player = move_with_player
 
         # to see if everything fits
         self.render()
@@ -215,14 +220,14 @@ class KeyChestEnvironment(object):
                          dtype=np.bool)
 
         def fill_progress_bars(result):
-            fill_n(result[self.OBJECTS.index('health')], 0, self.health)
-            fill_n(result[self.OBJECTS.index('keys_collected')], self.food_rows, self.keys)
+            fill_n(result[self.OBJECTS_INDEX.get('health')], 0, self.health)
+            fill_n(result[self.OBJECTS_INDEX.get('keys_collected')], self.food_rows, self.keys)
 
         def fill_wall(result):
-            result[self.OBJECTS.index('wall'), dx1 - 1, :] = True
-            result[self.OBJECTS.index('wall'), -1, :] = True
-            result[self.OBJECTS.index('wall'), dx1 - 1:, 0] = True
-            result[self.OBJECTS.index('wall'), dx1 - 1:, -1] = True
+            result[self.OBJECTS_INDEX.get('wall'), dx1 - 1, :] = True
+            result[self.OBJECTS_INDEX.get('wall'), -1, :] = True
+            result[self.OBJECTS_INDEX.get('wall'), dx1 - 1:, 0] = True
+            result[self.OBJECTS_INDEX.get('wall'), dx1 - 1:, -1] = True
 
         def copy_objects(result):
             # for idx, obj in enumerate(self.OBJECTS):
@@ -237,6 +242,44 @@ class KeyChestEnvironment(object):
             return np.transpose(result, (1, 2, 0)).astype(np.float32)
 
         result = reshape(result)
+
+        if self.move_with_player:
+            object_fixed = ['keys_collected', 'health']
+            object_moving = ['wall', 'key', 'chest', 'food', 'button', 'lamp_on', 'lamp_off',
+               'player']
+
+            result_move = np.full(fill_value=0.0, shape=(2 * sx + dx, 2 * sy + dy, len(self.OBJECTS)))
+            # print(result.shape, sx+dx, sy+dy)
+            SX, SY = sx + dx, sy + dy
+
+            def copy_channels(DX, DY, channel_idxes):
+                assert DX >= 0 and DY >= 0, f"DX, DY must be >= 0: {DX} {DY}"
+
+                result_move[DX:DX+SX, DY:DY+SY, channel_idxes] = result[:, :, channel_idxes]
+
+            copy_channels(
+                0,
+                result_move.shape[1] // 2 - SY // 2,
+                [self.OBJECTS_INDEX.get(o) for o in object_fixed]
+            )
+
+            PLAYER_X_MID = sx // 2
+            PLAYER_Y_MID = sy // 2
+
+            PLAYER_REL_X = self.player_position[0] - PLAYER_X_MID
+            PLAYER_REL_Y = self.player_position[1] - PLAYER_Y_MID
+
+            MDX = result_move.shape[0] // 2 - PLAYER_REL_X - SX // 2
+            MDY = result_move.shape[1] // 2 - PLAYER_REL_Y - SY // 2
+
+            # print(self.player_position, PLAYER_X_MID, PLAYER_Y_MID, PLAYER_REL_X, PLAYER_REL_Y, MDX, MDY)
+
+            copy_channels(MDX, MDY,
+                [self.OBJECTS_INDEX.get(o) for o in object_moving]
+            )                            
+
+            # result_move[:sx+dx, :sy+dy, :] = result
+            result = result_move
 
         return result
 
@@ -599,6 +642,6 @@ def upscale_channels_obs(obs, env):
     h, w, c = obs.shape
     output = np.zeros((h, w, len(env.engine.OBJECTS)))
     for i, obj in enumerate(select_outputs):
-        out_i = env.engine.OBJECTS.index(obj)
+        out_i = env.engine.OBJECTS_INDEX.get(obj)
         output[:, :, out_i] = obs[:, :, i]
     return output

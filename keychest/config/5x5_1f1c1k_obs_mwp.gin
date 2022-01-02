@@ -1,0 +1,3 @@
+include '5x5_1f1c1k.gin'
+
+KeyChestEnvironment.move_with_player = True
