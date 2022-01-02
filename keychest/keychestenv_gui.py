@@ -35,7 +35,7 @@ def gui_for_env_gofa(env):
     show_rendered()
 
     while True:
-        k = cv2.waitKey(1)
+        k = cv2.waitKey(0)
 
         if k == ord('x'):
             break
@@ -68,7 +68,7 @@ def gui_for_env(env):
             sleep(0.1)
             continue
 
-        key_map = {82: 'up', 84: 'down', 81: 'left', 83: 'right'}
+        key_map = {ord('w'): 'up', ord('s'): 'down', ord('a'): 'left', ord('d'): 'right'}
 
         if k == ord('x'):
             break
