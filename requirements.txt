@@ -6,7 +6,7 @@ gin-config==0.3.0
 google-auth-oauthlib==0.4.1
 graphviz==0.14.2
 jupyter==1.0.0
-jupyterlab==2.2.6
+jupyterlab==2.2.10
 path==15.0.0
 pip-chill==1.0.0
 plotly==4.11.0
